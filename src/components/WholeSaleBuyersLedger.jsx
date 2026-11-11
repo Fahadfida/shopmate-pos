@@ -1,47 +1,45 @@
-import React, { useState, useEffect } from "react";
-
-const getIpc = () =>
-  window.require ? window.require("electron").ipcRenderer : null;
+import React, { useState, useEffect } from 'react';
+import { getIpc } from '../utils/ipc';
 
 export default function KhataLedger({ currentUser }) {
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [ledgerEntries, setLedgerEntries] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [customerFilter, setCustomerFilter] = useState("active"); // 'active' | 'archived' | 'all'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [customerFilter, setCustomerFilter] = useState('active'); // 'active' | 'archived' | 'all'
 
   // Advanced Ledger Filters
-  const [filterStartDate, setFilterStartDate] = useState("");
-  const [filterEndDate, setFilterEndDate] = useState("");
-  const [ledgerSearch, setLedgerSearch] = useState("");
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
+  const [ledgerSearch, setLedgerSearch] = useState('');
 
   // Modals State
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("CASH");
-  const [paymentNotes, setPaymentNotes] = useState("");
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('CASH');
+  const [paymentNotes, setPaymentNotes] = useState('');
 
   const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
-  const [debtAmount, setDebtAmount] = useState("");
-  const [debtNotes, setDebtNotes] = useState("");
+  const [debtAmount, setDebtAmount] = useState('');
+  const [debtNotes, setDebtNotes] = useState('');
 
   const [isCreditModalOpen, setIsCreditModalOpen] = useState(false);
-  const [creditAmount, setCreditAmount] = useState("");
-  const [creditNotes, setCreditNotes] = useState("");
+  const [creditAmount, setCreditAmount] = useState('');
+  const [creditNotes, setCreditNotes] = useState('');
 
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [customerForm, setCustomerForm] = useState({
-    name: "",
-    phone: "",
+    name: '',
+    phone: '',
     credit_limit: 0,
-    avatar: "",
+    avatar: '',
   });
 
   const loadCustomers = async () => {
     const ipc = getIpc();
     if (ipc) {
-      const data = await ipc.invoke("get-customers");
+      const data = await ipc.invoke('get-customers');
       setCustomers(data || []);
       if (selectedCustomer) {
         const refreshed = (data || []).find(
@@ -58,7 +56,7 @@ export default function KhataLedger({ currentUser }) {
   const loadLedger = async (customerId) => {
     const ipc = getIpc();
     if (ipc) {
-      const entries = await ipc.invoke("get-customer-ledger", customerId);
+      const entries = await ipc.invoke('get-customer-ledger', customerId);
       setLedgerEntries(entries || []);
     }
   };
@@ -70,9 +68,9 @@ export default function KhataLedger({ currentUser }) {
   const selectCustomer = (cust) => {
     setSelectedCustomer(cust);
     loadLedger(cust.id);
-    setFilterStartDate("");
-    setFilterEndDate("");
-    setLedgerSearch("");
+    setFilterStartDate('');
+    setFilterEndDate('');
+    setLedgerSearch('');
   };
 
   const handleAvatarUpload = (e) => {
@@ -92,7 +90,7 @@ export default function KhataLedger({ currentUser }) {
     if (ipc) {
       let res;
       if (editingCustomer) {
-        res = await ipc.invoke("update-customer", {
+        res = await ipc.invoke('update-customer', {
           id: editingCustomer.id,
           name: customerForm.name,
           phone: customerForm.phone,
@@ -100,16 +98,16 @@ export default function KhataLedger({ currentUser }) {
           avatar: customerForm.avatar,
         });
       } else {
-        res = await ipc.invoke("add-customer", customerForm);
+        res = await ipc.invoke('add-customer', customerForm);
       }
 
       if (res.success) {
         setIsCustomerModalOpen(false);
         setEditingCustomer(null);
-        setCustomerForm({ name: "", phone: "", credit_limit: 0, avatar: "" });
+        setCustomerForm({ name: '', phone: '', credit_limit: 0, avatar: '' });
         loadCustomers();
       } else {
-        alert("Error saving customer profile: " + res.error);
+        alert('Error saving customer profile: ' + res.error);
       }
     }
   };
@@ -119,18 +117,18 @@ export default function KhataLedger({ currentUser }) {
     const target = cust || selectedCustomer;
     if (!target) return;
 
-    if (currentUser?.role !== "ADMIN") {
-      return alert("Access Denied: Manager (ADMIN) permissions required.");
+    if (currentUser?.role !== 'ADMIN') {
+      return alert('Access Denied: Manager (ADMIN) permissions required.');
     }
 
     if (target.balance > 0 && target.is_active === 1) {
       return alert(
-        "Cannot archive party while outstanding debt balance is due.",
+        'Cannot archive party while outstanding debt balance is due.',
       );
     }
 
     const nextActiveState = target.is_active === 0 ? 1 : 0;
-    const actionText = nextActiveState === 0 ? "archive" : "reactivate";
+    const actionText = nextActiveState === 0 ? 'archive' : 'reactivate';
     if (
       !window.confirm(
         `Are you sure you want to ${actionText} customer "${target.name}"?`,
@@ -140,7 +138,7 @@ export default function KhataLedger({ currentUser }) {
 
     const ipc = getIpc();
     if (ipc) {
-      const res = await ipc.invoke("toggle-archive-customer", {
+      const res = await ipc.invoke('toggle-archive-customer', {
         customerId: target.id,
         is_active: nextActiveState,
         currentUser,
@@ -153,7 +151,7 @@ export default function KhataLedger({ currentUser }) {
         }
         loadCustomers();
       } else {
-        alert("Action Error: " + res.error);
+        alert('Action Error: ' + res.error);
       }
     }
   };
@@ -162,10 +160,10 @@ export default function KhataLedger({ currentUser }) {
     e.preventDefault();
     const ipc = getIpc();
     const amt = parseFloat(paymentAmount);
-    if (!amt || amt <= 0) return alert("Enter a valid settlement amount.");
+    if (!amt || amt <= 0) return alert('Enter a valid settlement amount.');
 
     if (ipc) {
-      const res = await ipc.invoke("record-customer-payment", {
+      const res = await ipc.invoke('record-customer-payment', {
         customer_id: selectedCustomer.id,
         amount: amt,
         payment_method: paymentMethod,
@@ -175,11 +173,11 @@ export default function KhataLedger({ currentUser }) {
 
       if (res.success) {
         setIsPaymentModalOpen(false);
-        setPaymentAmount("");
-        setPaymentNotes("");
+        setPaymentAmount('');
+        setPaymentNotes('');
         loadCustomers();
       } else {
-        alert("Payment Error: " + res.error);
+        alert('Payment Error: ' + res.error);
       }
     }
   };
@@ -189,7 +187,7 @@ export default function KhataLedger({ currentUser }) {
     e.preventDefault();
     const ipc = getIpc();
     const amt = parseFloat(debtAmount);
-    if (!amt || amt <= 0) return alert("Enter a valid debt amount.");
+    if (!amt || amt <= 0) return alert('Enter a valid debt amount.');
 
     const currentBalance = selectedCustomer.balance || 0;
     const creditLimit = selectedCustomer.credit_limit || 0;
@@ -202,7 +200,7 @@ export default function KhataLedger({ currentUser }) {
     }
 
     if (ipc) {
-      const res = await ipc.invoke("record-customer-debt", {
+      const res = await ipc.invoke('record-customer-debt', {
         customer_id: selectedCustomer.id,
         amount: amt,
         notes: debtNotes,
@@ -211,11 +209,11 @@ export default function KhataLedger({ currentUser }) {
 
       if (res.success) {
         setIsDebtModalOpen(false);
-        setDebtAmount("");
-        setDebtNotes("");
+        setDebtAmount('');
+        setDebtNotes('');
         loadCustomers();
       } else {
-        alert("Debt Adjustment Error: " + res.error);
+        alert('Debt Adjustment Error: ' + res.error);
       }
     }
   };
@@ -224,24 +222,24 @@ export default function KhataLedger({ currentUser }) {
     e.preventDefault();
     const ipc = getIpc();
     const amt = parseFloat(creditAmount);
-    if (!amt || amt <= 0) return alert("Enter a valid credit amount.");
+    if (!amt || amt <= 0) return alert('Enter a valid credit amount.');
 
     if (ipc) {
-      const res = await ipc.invoke("record-customer-payment", {
+      const res = await ipc.invoke('record-customer-payment', {
         customer_id: selectedCustomer.id,
         amount: amt,
-        payment_method: "DISCOUNT/RETURN",
-        notes: creditNotes || "Manual Credit / Discount Adjustment",
+        payment_method: 'DISCOUNT/RETURN',
+        notes: creditNotes || 'Manual Credit / Discount Adjustment',
         currentUser,
       });
 
       if (res.success) {
         setIsCreditModalOpen(false);
-        setCreditAmount("");
-        setCreditNotes("");
+        setCreditAmount('');
+        setCreditNotes('');
         loadCustomers();
       } else {
-        alert("Credit Adjustment Error: " + res.error);
+        alert('Credit Adjustment Error: ' + res.error);
       }
     }
   };
@@ -256,13 +254,13 @@ export default function KhataLedger({ currentUser }) {
         <tr>
           <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #334155;">${e.date}</td>
           <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #334155;">${e.description}</td>
-          <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: #dc2626; text-align: right;">${e.debit > 0 ? `Rs. ${e.debit.toLocaleString()}` : "-"}</td>
-          <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: #059669; text-align: right;">${e.credit > 0 ? `Rs. ${e.credit.toLocaleString()}` : "-"}</td>
+          <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: #dc2626; text-align: right;">${e.debit > 0 ? `Rs. ${e.debit.toLocaleString()}` : '-'}</td>
+          <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: #059669; text-align: right;">${e.credit > 0 ? `Rs. ${e.credit.toLocaleString()}` : '-'}</td>
           <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: #0f172a; text-align: right;">Rs. ${e.balance_after?.toLocaleString()}</td>
         </tr>
       `,
         )
-        .join("");
+        .join('');
 
       const html = `
         <!DOCTYPE html>
@@ -293,19 +291,19 @@ export default function KhataLedger({ currentUser }) {
               </div>
               <div style="text-align: right;">
                 <p style="margin: 0; font-weight: bold; font-size: 13px;">Issued Date: ${new Date().toLocaleDateString()}</p>
-                <p style="margin: 2px 0 0 0; font-size: 11px; color: #64748b;">Status: ${selectedCustomer.is_active === 0 ? "Archived Party" : "Active Account"}</p>
+                <p style="margin: 2px 0 0 0; font-size: 11px; color: #64748b;">Status: ${selectedCustomer.is_active === 0 ? 'Archived Party' : 'Active Account'}</p>
               </div>
             </div>
 
             <div class="meta-box">
               <div>
                 <strong>Party Name:</strong> ${selectedCustomer.name}<br/>
-                <strong>Phone Number:</strong> ${selectedCustomer.phone || "N/A"}<br/>
+                <strong>Phone Number:</strong> ${selectedCustomer.phone || 'N/A'}<br/>
                 <strong>Credit Limit:</strong> Rs. ${selectedCustomer.credit_limit?.toLocaleString()}
               </div>
               <div>
                 <strong>Account ID:</strong> #${selectedCustomer.id}<br/>
-                <strong>Operator:</strong> ${currentUser?.username || "Manager"}
+                <strong>Operator:</strong> ${currentUser?.username || 'Manager'}
               </div>
             </div>
 
@@ -332,7 +330,7 @@ export default function KhataLedger({ currentUser }) {
         </html>
       `;
 
-      const res = await ipc.invoke("export-ledger-pdf", html);
+      const res = await ipc.invoke('export-ledger-pdf', html);
       if (res.success && !res.canceled) {
         alert(
           `✅ Corporate A4 Customer statement exported successfully:\n${res.filePath}`,
@@ -351,19 +349,19 @@ export default function KhataLedger({ currentUser }) {
 
     if (!matchesSearch) return false;
 
-    if (customerFilter === "active")
+    if (customerFilter === 'active')
       return c.is_active === 1 || c.is_active === undefined;
-    if (customerFilter === "archived") return c.is_active === 0;
+    if (customerFilter === 'archived') return c.is_active === 0;
     return true; // 'all'
   });
 
   const filteredLedger = ledgerEntries.filter((entry) => {
-    const matchesSearch = (entry.description || "")
+    const matchesSearch = (entry.description || '')
       .toLowerCase()
       .includes(ledgerSearch.toLowerCase());
 
     let matchesDate = true;
-    const entryDate = entry.date ? entry.date.substring(0, 10) : "";
+    const entryDate = entry.date ? entry.date.substring(0, 10) : '';
 
     if (filterStartDate && entryDate < filterStartDate) matchesDate = false;
     if (filterEndDate && entryDate > filterEndDate) matchesDate = false;
@@ -374,65 +372,65 @@ export default function KhataLedger({ currentUser }) {
   return (
     <div
       style={{
-        display: "flex",
-        gap: "16px",
-        height: "calc(100vh - 90px)",
-        overflow: "hidden",
+        display: 'flex',
+        gap: '16px',
+        height: 'calc(100vh - 90px)',
+        overflow: 'hidden',
       }}
     >
       {/* 👥 LEFT COLUMN: PARTY DIRECTORY */}
       <div
         className="card"
         style={{
-          flex: "1.1",
-          display: "flex",
-          flexDirection: "column",
-          gap: "10px",
-          padding: "14px",
-          background: "#fff",
-          borderRadius: "8px",
-          border: "1px solid #e2e8f0",
-          overflow: "hidden",
+          flex: '1.1',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+          padding: '14px',
+          background: '#fff',
+          borderRadius: '8px',
+          border: '1px solid #e2e8f0',
+          overflow: 'hidden',
         }}
       >
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
           }}
         >
           <div>
             <h4
               style={{
                 margin: 0,
-                color: "#0f172a",
-                fontSize: "0.95rem",
-                fontWeight: "bold",
+                color: '#0f172a',
+                fontSize: '0.95rem',
+                fontWeight: 'bold',
               }}
             >
               Whole Sale Buyers
             </h4>
-            <span style={{ fontSize: "0.68rem", color: "#64748b" }}>
+            <span style={{ fontSize: '0.68rem', color: '#64748b' }}>
               Showing {filteredCustomers.length} records
             </span>
           </div>
           <button
             className="btn btn-primary"
             style={{
-              fontSize: "0.72rem",
-              padding: "6px 12px",
-              background: "#0d5c75",
-              color: "#fff",
-              fontWeight: "bold",
+              fontSize: '0.72rem',
+              padding: '6px 12px',
+              background: '#0d5c75',
+              color: '#fff',
+              fontWeight: 'bold',
             }}
             onClick={() => {
               setEditingCustomer(null);
               setCustomerForm({
-                name: "",
-                phone: "",
+                name: '',
+                phone: '',
                 credit_limit: 0,
-                avatar: "",
+                avatar: '',
               });
               setIsCustomerModalOpen(true);
             }}
@@ -444,34 +442,34 @@ export default function KhataLedger({ currentUser }) {
         {/* ACTIVE / ARCHIVED FILTER PILLS */}
         <div
           style={{
-            display: "flex",
-            gap: "4px",
-            background: "#f1f5f9",
-            padding: "4px",
-            borderRadius: "6px",
+            display: 'flex',
+            gap: '4px',
+            background: '#f1f5f9',
+            padding: '4px',
+            borderRadius: '6px',
           }}
         >
           {[
-            { id: "active", label: "Active" },
-            { id: "archived", label: "Archived" },
-            { id: "all", label: "All Parties" },
+            { id: 'active', label: 'Active' },
+            { id: 'archived', label: 'Archived' },
+            { id: 'all', label: 'All Parties' },
           ].map((pill) => (
             <button
               key={pill.id}
               className="btn"
               style={{
                 flex: 1,
-                fontSize: "0.68rem",
-                padding: "4px",
-                border: "none",
-                borderRadius: "4px",
-                fontWeight: customerFilter === pill.id ? "bold" : "normal",
-                background: customerFilter === pill.id ? "#fff" : "transparent",
-                color: customerFilter === pill.id ? "#0d5c75" : "#64748b",
+                fontSize: '0.68rem',
+                padding: '4px',
+                border: 'none',
+                borderRadius: '4px',
+                fontWeight: customerFilter === pill.id ? 'bold' : 'normal',
+                background: customerFilter === pill.id ? '#fff' : 'transparent',
+                color: customerFilter === pill.id ? '#0d5c75' : '#64748b',
                 boxShadow:
                   customerFilter === pill.id
-                    ? "0 1px 2px rgba(0,0,0,0.05)"
-                    : "none",
+                    ? '0 1px 2px rgba(0,0,0,0.05)'
+                    : 'none',
               }}
               onClick={() => setCustomerFilter(pill.id)}
             >
@@ -486,25 +484,25 @@ export default function KhataLedger({ currentUser }) {
           placeholder="🔍 Search party name or phone..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ margin: 0, padding: "7px 10px", fontSize: "0.75rem" }}
+          style={{ margin: 0, padding: '7px 10px', fontSize: '0.75rem' }}
         />
 
         <div
           style={{
-            overflowY: "auto",
-            display: "flex",
-            flexDirection: "column",
-            gap: "6px",
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
             flex: 1,
           }}
         >
           {filteredCustomers.length === 0 ? (
             <div
               style={{
-                textAlign: "center",
-                color: "#94a3b8",
-                padding: "30px 0",
-                fontSize: "0.75rem",
+                textAlign: 'center',
+                color: '#94a3b8',
+                padding: '30px 0',
+                fontSize: '0.75rem',
               }}
             >
               No party records found.
@@ -520,20 +518,20 @@ export default function KhataLedger({ currentUser }) {
                   key={cust.id}
                   onClick={() => selectCustomer(cust)}
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    padding: "10px",
-                    borderRadius: "6px",
-                    cursor: "pointer",
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
                     background: isSelected
-                      ? "#e0f2fe"
+                      ? '#e0f2fe'
                       : isArchived
-                        ? "#f8fafc"
-                        : "#fff",
+                        ? '#f8fafc'
+                        : '#fff',
                     border: isSelected
-                      ? "1px solid #0284c7"
-                      : "1px solid #f1f5f9",
+                      ? '1px solid #0284c7'
+                      : '1px solid #f1f5f9',
                     opacity: isArchived ? 0.7 : 1,
                   }}
                 >
@@ -542,25 +540,25 @@ export default function KhataLedger({ currentUser }) {
                       src={cust.avatar}
                       alt={cust.name}
                       style={{
-                        width: "36px",
-                        height: "36px",
-                        borderRadius: "50%",
-                        objectFit: "cover",
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
                       }}
                     />
                   ) : (
                     <div
                       style={{
-                        width: "36px",
-                        height: "36px",
-                        borderRadius: "50%",
-                        background: isArchived ? "#94a3b8" : "#0d5c75",
-                        color: "#fff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: "bold",
-                        fontSize: "0.8rem",
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        background: isArchived ? '#94a3b8' : '#0d5c75',
+                        color: '#fff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 'bold',
+                        fontSize: '0.8rem',
                         flexShrink: 0,
                       }}
                     >
@@ -571,39 +569,39 @@ export default function KhataLedger({ currentUser }) {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div
                       style={{
-                        fontWeight: "bold",
-                        fontSize: "0.8rem",
-                        color: "#1e293b",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
+                        fontWeight: 'bold',
+                        fontSize: '0.8rem',
+                        color: '#1e293b',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
                       }}
                     >
-                      {cust.name}{" "}
+                      {cust.name}{' '}
                       {isArchived && (
-                        <span style={{ fontSize: "0.65rem", color: "#d97706" }}>
+                        <span style={{ fontSize: '0.65rem', color: '#d97706' }}>
                           (Archived)
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: "0.68rem", color: "#64748b" }}>
-                      {cust.phone || "No phone"}
+                    <div style={{ fontSize: '0.68rem', color: '#64748b' }}>
+                      {cust.phone || 'No phone'}
                     </div>
                   </div>
 
-                  <div style={{ textAlign: "right" }}>
+                  <div style={{ textAlign: 'right' }}>
                     <div
                       className="monospace"
                       style={{
-                        fontSize: "0.82rem",
-                        fontWeight: "bold",
-                        color: hasDebt ? "#dc2626" : "#059669",
+                        fontSize: '0.82rem',
+                        fontWeight: 'bold',
+                        color: hasDebt ? '#dc2626' : '#059669',
                       }}
                     >
                       Rs. {cust.balance?.toLocaleString()}
                     </div>
-                    <div style={{ fontSize: "0.6rem", color: "#64748b" }}>
-                      {hasDebt ? "Debt Due" : "Clear"}
+                    <div style={{ fontSize: '0.6rem', color: '#64748b' }}>
+                      {hasDebt ? 'Debt Due' : 'Clear'}
                     </div>
                   </div>
                 </div>
@@ -617,15 +615,15 @@ export default function KhataLedger({ currentUser }) {
       <div
         className="card"
         style={{
-          flex: "2.3",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          padding: "16px",
-          background: "#fff",
-          borderRadius: "8px",
-          border: "1px solid #e2e8f0",
-          overflow: "hidden",
+          flex: '2.3',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: '16px',
+          background: '#fff',
+          borderRadius: '8px',
+          border: '1px solid #e2e8f0',
+          overflow: 'hidden',
         }}
       >
         {selectedCustomer ? (
@@ -633,45 +631,45 @@ export default function KhataLedger({ currentUser }) {
             {/* PARTY HEADER & ACTION TOOLBAR */}
             <div
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                borderBottom: "1px solid #e2e8f0",
-                paddingBottom: "10px",
-                marginBottom: "10px",
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                borderBottom: '1px solid #e2e8f0',
+                paddingBottom: '10px',
+                marginBottom: '10px',
               }}
             >
               <div
-                style={{ display: "flex", alignItems: "center", gap: "12px" }}
+                style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
               >
                 {selectedCustomer.avatar ? (
                   <img
                     src={selectedCustomer.avatar}
                     alt={selectedCustomer.name}
                     style={{
-                      width: "44px",
-                      height: "44px",
-                      borderRadius: "50%",
-                      objectFit: "cover",
-                      border: "2px solid #0d5c75",
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '2px solid #0d5c75',
                     }}
                   />
                 ) : (
                   <div
                     style={{
-                      width: "44px",
-                      height: "44px",
-                      borderRadius: "50%",
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '50%',
                       background:
                         selectedCustomer.is_active === 0
-                          ? "#94a3b8"
-                          : "#0d5c75",
-                      color: "#fff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: "bold",
-                      fontSize: "1rem",
+                          ? '#94a3b8'
+                          : '#0d5c75',
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 'bold',
+                      fontSize: '1rem',
                     }}
                   >
                     {selectedCustomer.name.substring(0, 2).toUpperCase()}
@@ -679,13 +677,13 @@ export default function KhataLedger({ currentUser }) {
                 )}
                 <div>
                   <h3
-                    style={{ margin: 0, color: "#1e293b", fontSize: "1.05rem" }}
+                    style={{ margin: 0, color: '#1e293b', fontSize: '1.05rem' }}
                   >
                     {selectedCustomer.name}
                   </h3>
-                  <div style={{ fontSize: "0.72rem", color: "#64748b" }}>
-                    Phone: <strong>{selectedCustomer.phone || "N/A"}</strong> |
-                    Credit Limit:{" "}
+                  <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                    Phone: <strong>{selectedCustomer.phone || 'N/A'}</strong> |
+                    Credit Limit:{' '}
                     <span className="monospace">
                       Rs. {selectedCustomer.credit_limit?.toLocaleString()}
                     </span>
@@ -695,20 +693,20 @@ export default function KhataLedger({ currentUser }) {
 
               <div
                 style={{
-                  display: "flex",
-                  gap: "6px",
-                  flexWrap: "wrap",
-                  justifyContent: "flex-end",
+                  display: 'flex',
+                  gap: '6px',
+                  flexWrap: 'wrap',
+                  justifyContent: 'flex-end',
                 }}
               >
                 <button
                   className="btn btn-success"
                   style={{
-                    fontSize: "0.72rem",
-                    padding: "6px 10px",
-                    background: "#10b981",
-                    color: "#fff",
-                    fontWeight: "bold",
+                    fontSize: '0.72rem',
+                    padding: '6px 10px',
+                    background: '#10b981',
+                    color: '#fff',
+                    fontWeight: 'bold',
                   }}
                   onClick={() => setIsPaymentModalOpen(true)}
                 >
@@ -717,11 +715,11 @@ export default function KhataLedger({ currentUser }) {
                 <button
                   className="btn"
                   style={{
-                    background: "#fee2e2",
-                    color: "#dc2626",
-                    fontSize: "0.72rem",
-                    padding: "6px 10px",
-                    fontWeight: "bold",
+                    background: '#fee2e2',
+                    color: '#dc2626',
+                    fontSize: '0.72rem',
+                    padding: '6px 10px',
+                    fontWeight: 'bold',
                   }}
                   onClick={() => setIsDebtModalOpen(true)}
                 >
@@ -730,11 +728,11 @@ export default function KhataLedger({ currentUser }) {
                 <button
                   className="btn"
                   style={{
-                    background: "#e0f2fe",
-                    color: "#0369a1",
-                    fontSize: "0.72rem",
-                    padding: "6px 10px",
-                    fontWeight: "bold",
+                    background: '#e0f2fe',
+                    color: '#0369a1',
+                    fontSize: '0.72rem',
+                    padding: '6px 10px',
+                    fontWeight: 'bold',
                   }}
                   onClick={() => setIsCreditModalOpen(true)}
                 >
@@ -743,19 +741,19 @@ export default function KhataLedger({ currentUser }) {
                 <button
                   className="btn"
                   style={{
-                    fontSize: "0.72rem",
-                    padding: "6px 10px",
-                    background: "#f1f5f9",
-                    color: "#334155",
-                    fontWeight: "bold",
+                    fontSize: '0.72rem',
+                    padding: '6px 10px',
+                    background: '#f1f5f9',
+                    color: '#334155',
+                    fontWeight: 'bold',
                   }}
                   onClick={() => {
                     setEditingCustomer(selectedCustomer);
                     setCustomerForm({
-                      name: selectedCustomer.name || "",
-                      phone: selectedCustomer.phone || "",
+                      name: selectedCustomer.name || '',
+                      phone: selectedCustomer.phone || '',
                       credit_limit: selectedCustomer.credit_limit || 0,
-                      avatar: selectedCustomer.avatar || "",
+                      avatar: selectedCustomer.avatar || '',
                     });
                     setIsCustomerModalOpen(true);
                   }}
@@ -765,11 +763,11 @@ export default function KhataLedger({ currentUser }) {
                 <button
                   className="btn btn-primary"
                   style={{
-                    fontSize: "0.72rem",
-                    padding: "6px 12px",
-                    background: "#0d5c75",
-                    color: "#fff",
-                    fontWeight: "bold",
+                    fontSize: '0.72rem',
+                    padding: '6px 12px',
+                    background: '#0d5c75',
+                    color: '#fff',
+                    fontWeight: 'bold',
                   }}
                   onClick={handleExportA4PDF}
                 >
@@ -777,7 +775,7 @@ export default function KhataLedger({ currentUser }) {
                 </button>
 
                 {/* ARCHIVE / REACTIVATE TOGGLE WITH BALANCE GUARD */}
-                {currentUser?.role === "ADMIN" && (
+                {currentUser?.role === 'ADMIN' && (
                   <button
                     className="btn"
                     disabled={
@@ -787,41 +785,41 @@ export default function KhataLedger({ currentUser }) {
                     title={
                       selectedCustomer.balance > 0 &&
                       selectedCustomer.is_active === 1
-                        ? "Cannot archive party while debt balance is due."
-                        : "Archive / Reactivate Party"
+                        ? 'Cannot archive party while debt balance is due.'
+                        : 'Archive / Reactivate Party'
                     }
                     style={{
-                      fontSize: "0.72rem",
-                      padding: "6px 10px",
+                      fontSize: '0.72rem',
+                      padding: '6px 10px',
                       background:
                         selectedCustomer.balance > 0 &&
                         selectedCustomer.is_active === 1
-                          ? "#f1f5f9"
+                          ? '#f1f5f9'
                           : selectedCustomer.is_active === 1
-                            ? "#fef3c7"
-                            : "#dcfce7",
+                            ? '#fef3c7'
+                            : '#dcfce7',
                       color:
                         selectedCustomer.balance > 0 &&
                         selectedCustomer.is_active === 1
-                          ? "#94a3b8"
+                          ? '#94a3b8'
                           : selectedCustomer.is_active === 1
-                            ? "#d97706"
-                            : "#15803d",
-                      fontWeight: "bold",
-                      border: "none",
+                            ? '#d97706'
+                            : '#15803d',
+                      fontWeight: 'bold',
+                      border: 'none',
                       cursor:
                         selectedCustomer.balance > 0 &&
                         selectedCustomer.is_active === 1
-                          ? "not-allowed"
-                          : "pointer",
+                          ? 'not-allowed'
+                          : 'pointer',
                     }}
                     onClick={() =>
                       handleToggleArchiveCustomer(selectedCustomer)
                     }
                   >
                     {selectedCustomer.is_active === 1
-                      ? "📦 Archive"
-                      : "🔄 Reactivate"}
+                      ? '📦 Archive'
+                      : '🔄 Reactivate'}
                   </button>
                 )}
               </div>
@@ -830,14 +828,14 @@ export default function KhataLedger({ currentUser }) {
             {/* ADVANCED FILTER TOOLBAR (Date range + description search) */}
             <div
               style={{
-                display: "flex",
-                gap: "8px",
-                background: "#f8fafc",
-                padding: "8px 10px",
-                borderRadius: "6px",
-                border: "1px solid #e2e8f0",
-                marginBottom: "8px",
-                alignItems: "center",
+                display: 'flex',
+                gap: '8px',
+                background: '#f8fafc',
+                padding: '8px 10px',
+                borderRadius: '6px',
+                border: '1px solid #e2e8f0',
+                marginBottom: '8px',
+                alignItems: 'center',
               }}
             >
               <input
@@ -849,17 +847,17 @@ export default function KhataLedger({ currentUser }) {
                 style={{
                   flex: 1,
                   margin: 0,
-                  padding: "4px 8px",
-                  fontSize: "0.72rem",
+                  padding: '4px 8px',
+                  fontSize: '0.72rem',
                 }}
               />
               <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  fontSize: "0.7rem",
-                  color: "#64748b",
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '0.7rem',
+                  color: '#64748b',
                 }}
               >
                 <span>From:</span>
@@ -868,10 +866,10 @@ export default function KhataLedger({ currentUser }) {
                   value={filterStartDate}
                   onChange={(e) => setFilterStartDate(e.target.value)}
                   style={{
-                    fontSize: "0.7rem",
-                    padding: "3px",
-                    borderRadius: "4px",
-                    border: "1px solid #cbd5e1",
+                    fontSize: '0.7rem',
+                    padding: '3px',
+                    borderRadius: '4px',
+                    border: '1px solid #cbd5e1',
                   }}
                 />
                 <span>To:</span>
@@ -880,10 +878,10 @@ export default function KhataLedger({ currentUser }) {
                   value={filterEndDate}
                   onChange={(e) => setFilterEndDate(e.target.value)}
                   style={{
-                    fontSize: "0.7rem",
-                    padding: "3px",
-                    borderRadius: "4px",
-                    border: "1px solid #cbd5e1",
+                    fontSize: '0.7rem',
+                    padding: '3px',
+                    borderRadius: '4px',
+                    border: '1px solid #cbd5e1',
                   }}
                 />
               </div>
@@ -891,17 +889,17 @@ export default function KhataLedger({ currentUser }) {
                 <button
                   className="btn"
                   style={{
-                    fontSize: "0.68rem",
-                    padding: "4px 6px",
-                    background: "#fee2e2",
-                    color: "#dc2626",
-                    border: "none",
-                    fontWeight: "bold",
+                    fontSize: '0.68rem',
+                    padding: '4px 6px',
+                    background: '#fee2e2',
+                    color: '#dc2626',
+                    border: 'none',
+                    fontWeight: 'bold',
                   }}
                   onClick={() => {
-                    setFilterStartDate("");
-                    setFilterEndDate("");
-                    setLedgerSearch("");
+                    setFilterStartDate('');
+                    setFilterEndDate('');
+                    setLedgerSearch('');
                   }}
                 >
                   Clear
@@ -913,39 +911,39 @@ export default function KhataLedger({ currentUser }) {
             <div
               style={{
                 flex: 1,
-                overflowY: "auto",
-                display: "flex",
-                flexDirection: "column",
-                gap: "4px",
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
               }}
             >
               <div
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "1.3fr 2fr 1fr 1fr 1fr",
-                  fontSize: "0.7rem",
-                  fontWeight: "bold",
-                  background: "#f3efef",
-                  padding: "8px",
-                  borderRadius: "4px",
-                  borderBottom: "1px solid #cbd5e0",
-                  background: "navy",
+                  display: 'grid',
+                  gridTemplateColumns: '1.3fr 2fr 1fr 1fr 1fr',
+                  fontSize: '0.7rem',
+                  fontWeight: 'bold',
+                  background: '#f3efef',
+                  padding: '8px',
+                  borderRadius: '4px',
+                  borderBottom: '1px solid #cbd5e0',
+                  background: 'navy',
                 }}
               >
                 <span>TIMESTAMP</span>
                 <span>DESCRIPTION / NOTES</span>
-                <span style={{ textAlign: "right" }}>DEBIT (+)</span>
-                <span style={{ textAlign: "right" }}>CREDIT (-)</span>
-                <span style={{ textAlign: "right" }}>BALANCE</span>
+                <span style={{ textAlign: 'right' }}>DEBIT (+)</span>
+                <span style={{ textAlign: 'right' }}>CREDIT (-)</span>
+                <span style={{ textAlign: 'right' }}>BALANCE</span>
               </div>
 
               {filteredLedger.length === 0 ? (
                 <div
                   style={{
-                    textAlign: "center",
-                    color: "#94a3b8",
-                    padding: "40px 0",
-                    fontSize: "0.75rem",
+                    textAlign: 'center',
+                    color: '#94a3b8',
+                    padding: '40px 0',
+                    fontSize: '0.75rem',
                   }}
                 >
                   No ledger entries matching your filters.
@@ -955,51 +953,51 @@ export default function KhataLedger({ currentUser }) {
                   <div
                     key={entry.id}
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: "1.3fr 2fr 1fr 1fr 1fr",
-                      fontSize: "0.74rem",
-                      alignItems: "center",
-                      background: "#fff",
-                      padding: "7px 8px",
-                      borderBottom: "1px solid #f1f5f9",
+                      display: 'grid',
+                      gridTemplateColumns: '1.3fr 2fr 1fr 1fr 1fr',
+                      fontSize: '0.74rem',
+                      alignItems: 'center',
+                      background: '#fff',
+                      padding: '7px 8px',
+                      borderBottom: '1px solid #f1f5f9',
                     }}
                   >
-                    <span style={{ fontSize: "0.68rem", color: "#64748b" }}>
+                    <span style={{ fontSize: '0.68rem', color: '#64748b' }}>
                       {entry.date}
                     </span>
-                    <span style={{ color: "#334155" }}>
+                    <span style={{ color: '#334155' }}>
                       {entry.description}
                     </span>
                     <span
                       className="monospace"
                       style={{
-                        textAlign: "right",
-                        color: entry.debit > 0 ? "#dc2626" : "#94a3b8",
-                        fontWeight: entry.debit > 0 ? "bold" : "normal",
+                        textAlign: 'right',
+                        color: entry.debit > 0 ? '#dc2626' : '#94a3b8',
+                        fontWeight: entry.debit > 0 ? 'bold' : 'normal',
                       }}
                     >
                       {entry.debit > 0
                         ? `Rs. ${entry.debit.toLocaleString()}`
-                        : "—"}
+                        : '—'}
                     </span>
                     <span
                       className="monospace"
                       style={{
-                        textAlign: "right",
-                        color: entry.credit > 0 ? "#059669" : "#94a3b8",
-                        fontWeight: entry.credit > 0 ? "bold" : "normal",
+                        textAlign: 'right',
+                        color: entry.credit > 0 ? '#059669' : '#94a3b8',
+                        fontWeight: entry.credit > 0 ? 'bold' : 'normal',
                       }}
                     >
                       {entry.credit > 0
                         ? `Rs. ${entry.credit.toLocaleString()}`
-                        : "—"}
+                        : '—'}
                     </span>
                     <span
                       className="monospace"
                       style={{
-                        textAlign: "right",
-                        fontWeight: "bold",
-                        color: "#0d5c75",
+                        textAlign: 'right',
+                        fontWeight: 'bold',
+                        color: '#0d5c75',
                       }}
                     >
                       Rs. {entry.balance_after?.toLocaleString()}
@@ -1011,29 +1009,29 @@ export default function KhataLedger({ currentUser }) {
 
             <div
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                borderTop: "2px solid #e2e8f0",
-                paddingTop: "10px",
-                marginTop: "8px",
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                borderTop: '2px solid #e2e8f0',
+                paddingTop: '10px',
+                marginTop: '8px',
               }}
             >
-              <span style={{ fontSize: "0.72rem", color: "#64748b" }}>
+              <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
                 Account ID: #{selectedCustomer.id}
               </span>
               <div
                 style={{
-                  fontSize: "0.95rem",
-                  fontWeight: "bold",
-                  color: "#1e293b",
+                  fontSize: '0.95rem',
+                  fontWeight: 'bold',
+                  color: '#1e293b',
                 }}
               >
-                Net Balance Due:{" "}
+                Net Balance Due:{' '}
                 <span
                   className="monospace"
                   style={{
-                    color: selectedCustomer.balance > 0 ? "#dc2626" : "#059669",
+                    color: selectedCustomer.balance > 0 ? '#dc2626' : '#059669',
                   }}
                 >
                   Rs. {selectedCustomer.balance?.toLocaleString()}
@@ -1043,7 +1041,7 @@ export default function KhataLedger({ currentUser }) {
           </>
         ) : (
           <div
-            style={{ textAlign: "center", color: "#a0aec0", margin: "auto" }}
+            style={{ textAlign: 'center', color: '#a0aec0', margin: 'auto' }}
           >
             <h4>
               👈 Select a party profile from the directory to view statement.
@@ -1062,29 +1060,29 @@ export default function KhataLedger({ currentUser }) {
           <div
             className="card"
             style={{
-              width: "400px",
-              background: "#fff",
-              padding: "20px",
-              borderRadius: "8px",
+              width: '400px',
+              background: '#fff',
+              padding: '20px',
+              borderRadius: '8px',
             }}
           >
-            <h3 style={{ margin: "0 0 12px 0", color: "#0d5c75" }}>
+            <h3 style={{ margin: '0 0 12px 0', color: '#0d5c75' }}>
               {editingCustomer
-                ? "✏️ Edit Party Profile"
-                : "+ Register New Party"}
+                ? '✏️ Edit Party Profile'
+                : '+ Register New Party'}
             </h3>
             <form
               onSubmit={handleSaveCustomer}
-              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
             >
               <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  background: "#f8fafc",
-                  padding: "8px",
-                  borderRadius: "6px",
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  background: '#f8fafc',
+                  padding: '8px',
+                  borderRadius: '6px',
                 }}
               >
                 {customerForm.avatar ? (
@@ -1092,24 +1090,24 @@ export default function KhataLedger({ currentUser }) {
                     src={customerForm.avatar}
                     alt="Preview"
                     style={{
-                      width: "44px",
-                      height: "44px",
-                      borderRadius: "50%",
-                      objectFit: "cover",
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
                     }}
                   />
                 ) : (
                   <div
                     style={{
-                      width: "44px",
-                      height: "44px",
-                      borderRadius: "50%",
-                      background: "#cbd5e1",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "0.7rem",
-                      color: "#475569",
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '50%',
+                      background: '#cbd5e1',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.7rem',
+                      color: '#475569',
                     }}
                   >
                     No Pic
@@ -1118,9 +1116,9 @@ export default function KhataLedger({ currentUser }) {
                 <div>
                   <label
                     style={{
-                      fontSize: "0.7rem",
-                      fontWeight: "bold",
-                      color: "#475569",
+                      fontSize: '0.7rem',
+                      fontWeight: 'bold',
+                      color: '#475569',
                     }}
                   >
                     Party Avatar / Badge
@@ -1129,7 +1127,7 @@ export default function KhataLedger({ currentUser }) {
                     type="file"
                     accept="image/*"
                     onChange={handleAvatarUpload}
-                    style={{ fontSize: "0.7rem", marginTop: "2px" }}
+                    style={{ fontSize: '0.7rem', marginTop: '2px' }}
                   />
                 </div>
               </div>
@@ -1154,7 +1152,7 @@ export default function KhataLedger({ currentUser }) {
                 placeholder="Phone Number"
               />
               <div>
-                <label style={{ fontSize: "0.68rem", color: "#64748b" }}>
+                <label style={{ fontSize: '0.68rem', color: '#64748b' }}>
                   Credit Limit (Rs.) [0 for unlimited]
                 </label>
                 <input
@@ -1170,18 +1168,18 @@ export default function KhataLedger({ currentUser }) {
                 />
               </div>
 
-              <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  style={{ flex: 1, background: "#0d5c75", fontWeight: "bold" }}
+                  style={{ flex: 1, background: '#0d5c75', fontWeight: 'bold' }}
                 >
-                  {editingCustomer ? "Update Party" : "Save Party"}
+                  {editingCustomer ? 'Update Party' : 'Save Party'}
                 </button>
                 <button
                   type="button"
                   className="btn"
-                  style={{ background: "#cbd5e0" }}
+                  style={{ background: '#cbd5e0' }}
                   onClick={() => setIsCustomerModalOpen(false)}
                 >
                   Cancel
@@ -1198,18 +1196,18 @@ export default function KhataLedger({ currentUser }) {
           <div
             className="card"
             style={{
-              width: "380px",
-              background: "#fff",
-              padding: "18px",
-              borderRadius: "8px",
+              width: '380px',
+              background: '#fff',
+              padding: '18px',
+              borderRadius: '8px',
             }}
           >
-            <h3 style={{ margin: "0 0 10px 0", color: "#10b981" }}>
+            <h3 style={{ margin: '0 0 10px 0', color: '#10b981' }}>
               💵 Receive Cash Payment
             </h3>
             <form
               onSubmit={handleRecordPayment}
-              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
             >
               <input
                 type="number"
@@ -1236,15 +1234,15 @@ export default function KhataLedger({ currentUser }) {
                 onChange={(e) => setPaymentNotes(e.target.value)}
                 placeholder="Notes / Reference"
               />
-              <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                 <button
                   type="submit"
                   className="btn btn-success"
                   style={{
                     flex: 1,
-                    background: "#10b981",
-                    color: "#fff",
-                    fontWeight: "bold",
+                    background: '#10b981',
+                    color: '#fff',
+                    fontWeight: 'bold',
                   }}
                 >
                   Confirm Payment
@@ -1252,7 +1250,7 @@ export default function KhataLedger({ currentUser }) {
                 <button
                   type="button"
                   className="btn"
-                  style={{ background: "#cbd5e0" }}
+                  style={{ background: '#cbd5e0' }}
                   onClick={() => setIsPaymentModalOpen(false)}
                 >
                   Cancel
@@ -1269,18 +1267,18 @@ export default function KhataLedger({ currentUser }) {
           <div
             className="card"
             style={{
-              width: "380px",
-              background: "#fff",
-              padding: "18px",
-              borderRadius: "8px",
+              width: '380px',
+              background: '#fff',
+              padding: '18px',
+              borderRadius: '8px',
             }}
           >
-            <h3 style={{ margin: "0 0 10px 0", color: "#dc2626" }}>
+            <h3 style={{ margin: '0 0 10px 0', color: '#dc2626' }}>
               + Add Debt (Debit Entry)
             </h3>
             <form
               onSubmit={handleAddDebt}
-              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
             >
               <input
                 type="number"
@@ -1299,15 +1297,15 @@ export default function KhataLedger({ currentUser }) {
                 placeholder="Reason / Particulars"
                 required
               />
-              <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                 <button
                   type="submit"
                   className="btn btn-primary"
                   style={{
                     flex: 1,
-                    background: "#dc2626",
-                    color: "#fff",
-                    fontWeight: "bold",
+                    background: '#dc2626',
+                    color: '#fff',
+                    fontWeight: 'bold',
                   }}
                 >
                   Add Debt
@@ -1315,7 +1313,7 @@ export default function KhataLedger({ currentUser }) {
                 <button
                   type="button"
                   className="btn"
-                  style={{ background: "#cbd5e0" }}
+                  style={{ background: '#cbd5e0' }}
                   onClick={() => setIsDebtModalOpen(false)}
                 >
                   Cancel
@@ -1332,18 +1330,18 @@ export default function KhataLedger({ currentUser }) {
           <div
             className="card"
             style={{
-              width: "380px",
-              background: "#fff",
-              padding: "18px",
-              borderRadius: "8px",
+              width: '380px',
+              background: '#fff',
+              padding: '18px',
+              borderRadius: '8px',
             }}
           >
-            <h3 style={{ margin: "0 0 10px 0", color: "#0284c7" }}>
+            <h3 style={{ margin: '0 0 10px 0', color: '#0284c7' }}>
               + Add Credit / Discount Adjustment
             </h3>
             <form
               onSubmit={handleAddCreditAdjustment}
-              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
             >
               <input
                 type="number"
@@ -1362,15 +1360,15 @@ export default function KhataLedger({ currentUser }) {
                 placeholder="Reason (e.g. Special Discount / Return)"
                 required
               />
-              <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                 <button
                   type="submit"
                   className="btn btn-primary"
                   style={{
                     flex: 1,
-                    background: "#0284c7",
-                    color: "#fff",
-                    fontWeight: "bold",
+                    background: '#0284c7',
+                    color: '#fff',
+                    fontWeight: 'bold',
                   }}
                 >
                   Apply Credit
@@ -1378,7 +1376,7 @@ export default function KhataLedger({ currentUser }) {
                 <button
                   type="button"
                   className="btn"
-                  style={{ background: "#cbd5e0" }}
+                  style={{ background: '#cbd5e0' }}
                   onClick={() => setIsCreditModalOpen(false)}
                 >
                   Cancel

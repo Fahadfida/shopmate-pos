@@ -16,9 +16,7 @@ import ActivationModal from './components/ActivationModal';
 import RefundsRepairs from './components/RefundsRepairs';
 import Sidebar from './components/Sidebar';
 import Toast from './components/Toast'; // 👈 Import Toast component
-
-const getIpc = () =>
-  window.require ? window.require('electron').ipcRenderer : null;
+import { getIpc } from './utils/ipc';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);

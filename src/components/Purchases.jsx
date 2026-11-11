@@ -1,37 +1,35 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from 'react';
 
-const getIpc = () =>
-  window.require ? window.require("electron").ipcRenderer : null;
-
+import { getIpc } from '../utils/ipc';
 export default function Purchases({ currentUser }) {
   const [items, setItems] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
-  const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState("GRID"); // 'GRID' or 'LIST'
+  const [search, setSearch] = useState('');
+  const [viewMode, setViewMode] = useState('GRID'); // 'GRID' or 'LIST'
 
   // Purchase Form State
-  const [purchaseType, setPurchaseType] = useState("REGISTERED"); // 'REGISTERED' or 'DIRECT'
+  const [purchaseType, setPurchaseType] = useState('REGISTERED'); // 'REGISTERED' or 'DIRECT'
   const [purchase, setPurchase] = useState({
-    supplier_id: "",
-    custom_supplier_name: "",
-    item_id: "",
-    qty_received: "",
-    unit_cost: "",
-    payment_type: "CREDIT", // 'CREDIT' or 'CASH'
+    supplier_id: '',
+    custom_supplier_name: '',
+    item_id: '',
+    qty_received: '',
+    unit_cost: '',
+    payment_type: 'CREDIT', // 'CREDIT' or 'CASH'
     invoice_no: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
     date: new Date().toISOString().substring(0, 10),
   });
 
   // Item Search Lookup States
-  const [itemSearchText, setItemSearchText] = useState("");
+  const [itemSearchText, setItemSearchText] = useState('');
   const [isItemDropdownOpen, setIsItemDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   const loadData = async () => {
     const ipc = getIpc();
     if (ipc) {
-      const fetchedItems = await ipc.invoke("get-items");
-      const fetchedSuppliers = await ipc.invoke("get-suppliers");
+      const fetchedItems = await ipc.invoke('get-items');
+      const fetchedSuppliers = await ipc.invoke('get-suppliers');
 
       setItems(fetchedItems || []);
       setSuppliers(fetchedSuppliers || []);
@@ -49,27 +47,27 @@ export default function Purchases({ currentUser }) {
         setIsItemDropdownOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleRecordPurchase = async (e) => {
     e.preventDefault();
     if (!purchase.item_id)
       return alert(
-        "Please select an inventory item from the lookup search or product cards.",
+        'Please select an inventory item from the lookup search or product cards.',
       );
 
     const ipc = getIpc();
     if (ipc) {
       const finalInvoiceNo =
-        purchaseType === "DIRECT" && purchase.custom_supplier_name
+        purchaseType === 'DIRECT' && purchase.custom_supplier_name
           ? `${purchase.invoice_no} [Vendor: ${purchase.custom_supplier_name}]`
           : purchase.invoice_no;
 
-      const res = await ipc.invoke("record-purchase", {
+      const res = await ipc.invoke('record-purchase', {
         supplier_id:
-          purchaseType === "REGISTERED" ? purchase.supplier_id : null,
+          purchaseType === 'REGISTERED' ? purchase.supplier_id : null,
         item_id: purchase.item_id,
         qty_received: parseFloat(purchase.qty_received),
         unit_cost: parseFloat(purchase.unit_cost),
@@ -81,22 +79,22 @@ export default function Purchases({ currentUser }) {
 
       if (res.success) {
         alert(
-          "✅ Stock received & Weighted Average Cost updated successfully!",
+          '✅ Stock received & Weighted Average Cost updated successfully!',
         );
         setPurchase({
-          supplier_id: "",
-          custom_supplier_name: "",
-          item_id: "",
-          qty_received: "",
-          unit_cost: "",
-          payment_type: "CREDIT",
+          supplier_id: '',
+          custom_supplier_name: '',
+          item_id: '',
+          qty_received: '',
+          unit_cost: '',
+          payment_type: 'CREDIT',
           invoice_no: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
           date: new Date().toISOString().substring(0, 10),
         });
-        setItemSearchText("");
+        setItemSearchText('');
         loadData();
       } else {
-        alert("Error: " + res.error);
+        alert('Error: ' + res.error);
       }
     }
   };
@@ -104,42 +102,42 @@ export default function Purchases({ currentUser }) {
   // Filter items for lookup and catalog view
   const filteredLookupItems = items.filter(
     (i) =>
-      (i.name || "").toLowerCase().includes(itemSearchText.toLowerCase()) ||
-      (i.code || "").toLowerCase().includes(itemSearchText.toLowerCase()),
+      (i.name || '').toLowerCase().includes(itemSearchText.toLowerCase()) ||
+      (i.code || '').toLowerCase().includes(itemSearchText.toLowerCase()),
   );
 
   const filteredCatalogItems = items.filter(
     (i) =>
-      (i.name || "").toLowerCase().includes(search.toLowerCase()) ||
-      (i.code || "").toLowerCase().includes(search.toLowerCase()) ||
-      (i.category || "").toLowerCase().includes(search.toLowerCase()),
+      (i.name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (i.code || '').toLowerCase().includes(search.toLowerCase()) ||
+      (i.category || '').toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
     <div
       style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "16px",
-        height: "calc(100vh - 80px)",
-        overflow: "hidden",
-        color: "#1e293b",
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        height: 'calc(100vh - 80px)',
+        overflow: 'hidden',
+        color: '#1e293b',
       }}
     >
       {/* HEADER BAR */}
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          background: "#fff",
-          padding: "12px 16px",
-          borderRadius: "8px",
-          border: "1px solid #e2e8f0",
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          background: '#fff',
+          padding: '12px 16px',
+          borderRadius: '8px',
+          border: '1px solid #e2e8f0',
         }}
       >
         <div>
-          <h3 style={{ margin: 0, color: "#1e293b" }}>
+          <h3 style={{ margin: 0, color: '#1e293b' }}>
             📦 Stock Purchases & GRN Intake
           </h3>
         </div>
@@ -147,26 +145,26 @@ export default function Purchases({ currentUser }) {
 
       {/* SPLIT WORKSPACE: FORM (LEFT) & CATALOG CARDS (RIGHT) */}
       <div
-        style={{ display: "flex", gap: "16px", flex: 1, overflow: "hidden" }}
+        style={{ display: 'flex', gap: '16px', flex: 1, overflow: 'hidden' }}
       >
         {/* LEFT FORM PANEL */}
         <div
           className="card"
           style={{
-            flex: "1",
-            background: "#ffffff",
-            borderRadius: "12px",
-            padding: "18px",
-            border: "1px solid #e2e8f0",
-            overflowY: "auto",
+            flex: '1',
+            background: '#ffffff',
+            borderRadius: '12px',
+            padding: '18px',
+            border: '1px solid #e2e8f0',
+            overflowY: 'auto',
           }}
         >
           <h4
             style={{
-              margin: "0 0 12px 0",
-              fontSize: "0.95rem",
-              fontWeight: "700",
-              color: "#0f172a",
+              margin: '0 0 12px 0',
+              fontSize: '0.95rem',
+              fontWeight: '700',
+              color: '#0f172a',
             }}
           >
             Log Stock Addition / GRN
@@ -174,36 +172,36 @@ export default function Purchases({ currentUser }) {
 
           <form
             onSubmit={handleRecordPurchase}
-            style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+            style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
           >
             {/* PURCHASE SOURCE TOGGLE */}
             <div>
               <label
                 style={{
-                  fontSize: "0.75rem",
-                  fontWeight: "700",
-                  color: "#475569",
-                  marginBottom: "4px",
-                  display: "block",
+                  fontSize: '0.75rem',
+                  fontWeight: '700',
+                  color: '#475569',
+                  marginBottom: '4px',
+                  display: 'block',
                 }}
               >
                 Purchase Source
               </label>
-              <div style={{ display: "flex", gap: "8px" }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   type="button"
                   className="btn"
                   style={{
                     flex: 1,
-                    padding: "6px",
-                    fontSize: "0.75rem",
+                    padding: '6px',
+                    fontSize: '0.75rem',
                     background:
-                      purchaseType === "REGISTERED" ? "#0284c7" : "#f1f5f9",
-                    color: purchaseType === "REGISTERED" ? "#fff" : "#475569",
-                    fontWeight: "bold",
-                    border: "1px solid #cbd5e0",
+                      purchaseType === 'REGISTERED' ? '#0284c7' : '#f1f5f9',
+                    color: purchaseType === 'REGISTERED' ? '#fff' : '#475569',
+                    fontWeight: 'bold',
+                    border: '1px solid #cbd5e0',
                   }}
-                  onClick={() => setPurchaseType("REGISTERED")}
+                  onClick={() => setPurchaseType('REGISTERED')}
                 >
                   Registered Supplier
                 </button>
@@ -212,28 +210,28 @@ export default function Purchases({ currentUser }) {
                   className="btn"
                   style={{
                     flex: 1,
-                    padding: "6px",
-                    fontSize: "0.75rem",
+                    padding: '6px',
+                    fontSize: '0.75rem',
                     background:
-                      purchaseType === "DIRECT" ? "#0284c7" : "#f1f5f9",
-                    color: purchaseType === "DIRECT" ? "#fff" : "#475569",
-                    fontWeight: "bold",
-                    border: "1px solid #cbd5e0",
+                      purchaseType === 'DIRECT' ? '#0284c7' : '#f1f5f9',
+                    color: purchaseType === 'DIRECT' ? '#fff' : '#475569',
+                    fontWeight: 'bold',
+                    border: '1px solid #cbd5e0',
                   }}
-                  onClick={() => setPurchaseType("DIRECT")}
+                  onClick={() => setPurchaseType('DIRECT')}
                 >
                   Direct / Custom Buy
                 </button>
               </div>
             </div>
 
-            {purchaseType === "REGISTERED" ? (
+            {purchaseType === 'REGISTERED' ? (
               <div>
                 <label
                   style={{
-                    fontSize: "0.75rem",
-                    fontWeight: "700",
-                    color: "#475569",
+                    fontSize: '0.75rem',
+                    fontWeight: '700',
+                    color: '#475569',
                   }}
                 >
                   Select Wholesaler
@@ -244,13 +242,13 @@ export default function Purchases({ currentUser }) {
                   onChange={(e) =>
                     setPurchase({ ...purchase, supplier_id: e.target.value })
                   }
-                  style={{ padding: "8px", fontSize: "0.8rem" }}
+                  style={{ padding: '8px', fontSize: '0.8rem' }}
                   required
                 >
                   <option value="">-- Choose Wholesaler --</option>
                   {suppliers.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name} ({s.company || "Direct"})
+                      {s.name} ({s.company || 'Direct'})
                     </option>
                   ))}
                 </select>
@@ -259,9 +257,9 @@ export default function Purchases({ currentUser }) {
               <div>
                 <label
                   style={{
-                    fontSize: "0.75rem",
-                    fontWeight: "700",
-                    color: "#475569",
+                    fontSize: '0.75rem',
+                    fontWeight: '700',
+                    color: '#475569',
                   }}
                 >
                   Custom Vendor / Market Name (Optional)
@@ -277,7 +275,7 @@ export default function Purchases({ currentUser }) {
                     })
                   }
                   placeholder="e.g. Wholesale Market"
-                  style={{ padding: "8px", fontSize: "0.8rem" }}
+                  style={{ padding: '8px', fontSize: '0.8rem' }}
                 />
               </div>
             )}
@@ -286,34 +284,34 @@ export default function Purchases({ currentUser }) {
             <div>
               <label
                 style={{
-                  fontSize: "0.75rem",
-                  fontWeight: "700",
-                  color: "#475569",
-                  marginBottom: "4px",
-                  display: "block",
+                  fontSize: '0.75rem',
+                  fontWeight: '700',
+                  color: '#475569',
+                  marginBottom: '4px',
+                  display: 'block',
                 }}
               >
                 Payment Mode
               </label>
-              <div style={{ display: "flex", gap: "8px" }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   type="button"
                   className="btn"
                   style={{
                     flex: 1,
-                    padding: "6px",
-                    fontSize: "0.75rem",
+                    padding: '6px',
+                    fontSize: '0.75rem',
                     background:
-                      purchase.payment_type === "CREDIT"
-                        ? "#0d5c75"
-                        : "#f1f5f9",
+                      purchase.payment_type === 'CREDIT'
+                        ? '#0d5c75'
+                        : '#f1f5f9',
                     color:
-                      purchase.payment_type === "CREDIT" ? "#fff" : "#475569",
-                    fontWeight: "bold",
-                    border: "1px solid #cbd5e0",
+                      purchase.payment_type === 'CREDIT' ? '#fff' : '#475569',
+                    fontWeight: 'bold',
+                    border: '1px solid #cbd5e0',
                   }}
                   onClick={() =>
-                    setPurchase({ ...purchase, payment_type: "CREDIT" })
+                    setPurchase({ ...purchase, payment_type: 'CREDIT' })
                   }
                 >
                   Credit Purchase (Khata)
@@ -323,17 +321,17 @@ export default function Purchases({ currentUser }) {
                   className="btn"
                   style={{
                     flex: 1,
-                    padding: "6px",
-                    fontSize: "0.75rem",
+                    padding: '6px',
+                    fontSize: '0.75rem',
                     background:
-                      purchase.payment_type === "CASH" ? "#059669" : "#f1f5f9",
+                      purchase.payment_type === 'CASH' ? '#059669' : '#f1f5f9',
                     color:
-                      purchase.payment_type === "CASH" ? "#fff" : "#475569",
-                    fontWeight: "bold",
-                    border: "1px solid #cbd5e0",
+                      purchase.payment_type === 'CASH' ? '#fff' : '#475569',
+                    fontWeight: 'bold',
+                    border: '1px solid #cbd5e0',
                   }}
                   onClick={() =>
-                    setPurchase({ ...purchase, payment_type: "CASH" })
+                    setPurchase({ ...purchase, payment_type: 'CASH' })
                   }
                 >
                   Cash Purchase (Paid)
@@ -343,17 +341,17 @@ export default function Purchases({ currentUser }) {
 
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "10px",
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '10px',
               }}
             >
               <div>
                 <label
                   style={{
-                    fontSize: "0.75rem",
-                    fontWeight: "700",
-                    color: "#475569",
+                    fontSize: '0.75rem',
+                    fontWeight: '700',
+                    color: '#475569',
                   }}
                 >
                   Bill / Invoice No.
@@ -365,16 +363,16 @@ export default function Purchases({ currentUser }) {
                   onChange={(e) =>
                     setPurchase({ ...purchase, invoice_no: e.target.value })
                   }
-                  style={{ padding: "8px", fontSize: "0.8rem" }}
+                  style={{ padding: '8px', fontSize: '0.8rem' }}
                   required
                 />
               </div>
               <div>
                 <label
                   style={{
-                    fontSize: "0.75rem",
-                    fontWeight: "700",
-                    color: "#475569",
+                    fontSize: '0.75rem',
+                    fontWeight: '700',
+                    color: '#475569',
                   }}
                 >
                   Purchase Date
@@ -386,19 +384,19 @@ export default function Purchases({ currentUser }) {
                   onChange={(e) =>
                     setPurchase({ ...purchase, date: e.target.value })
                   }
-                  style={{ padding: "8px", fontSize: "0.8rem" }}
+                  style={{ padding: '8px', fontSize: '0.8rem' }}
                   required
                 />
               </div>
             </div>
 
             {/* SEARCHABLE ITEM LOOKUP INPUT */}
-            <div style={{ position: "relative" }} ref={dropdownRef}>
+            <div style={{ position: 'relative' }} ref={dropdownRef}>
               <label
                 style={{
-                  fontSize: "0.75rem",
-                  fontWeight: "700",
-                  color: "#475569",
+                  fontSize: '0.75rem',
+                  fontWeight: '700',
+                  color: '#475569',
                 }}
               >
                 Quick Lookup Item (Search by Name or SKU)
@@ -413,34 +411,34 @@ export default function Purchases({ currentUser }) {
                   setIsItemDropdownOpen(true);
                 }}
                 onFocus={() => setIsItemDropdownOpen(true)}
-                style={{ padding: "8px", fontSize: "0.8rem" }}
+                style={{ padding: '8px', fontSize: '0.8rem' }}
                 required
               />
 
               {isItemDropdownOpen && (
                 <div
                   style={{
-                    position: "absolute",
-                    top: "100%",
+                    position: 'absolute',
+                    top: '100%',
                     left: 0,
                     right: 0,
-                    maxHeight: "180px",
-                    overflowY: "auto",
-                    background: "#fff",
-                    border: "1px solid #cbd5e0",
-                    borderRadius: "6px",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                    maxHeight: '180px',
+                    overflowY: 'auto',
+                    background: '#fff',
+                    border: '1px solid #cbd5e0',
+                    borderRadius: '6px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                     zIndex: 999,
-                    marginTop: "2px",
+                    marginTop: '2px',
                   }}
                 >
                   {filteredLookupItems.length === 0 ? (
                     <div
                       style={{
-                        padding: "10px",
-                        fontSize: "0.78rem",
-                        color: "#94a3b8",
-                        textAlign: "center",
+                        padding: '10px',
+                        fontSize: '0.78rem',
+                        color: '#94a3b8',
+                        textAlign: 'center',
                       }}
                     >
                       No matching items found.
@@ -453,7 +451,7 @@ export default function Purchases({ currentUser }) {
                           setPurchase({
                             ...purchase,
                             item_id: i.id,
-                            unit_cost: i.avg_cost || "",
+                            unit_cost: i.avg_cost || '',
                           });
                           setItemSearchText(
                             `${i.name} (${i.code}) - Stock: ${i.stock_qty} ${i.unit}`,
@@ -461,30 +459,30 @@ export default function Purchases({ currentUser }) {
                           setIsItemDropdownOpen(false);
                         }}
                         style={{
-                          padding: "8px 10px",
-                          fontSize: "0.78rem",
-                          cursor: "pointer",
-                          borderBottom: "1px solid #f1f5f9",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
+                          padding: '8px 10px',
+                          fontSize: '0.78rem',
+                          cursor: 'pointer',
+                          borderBottom: '1px solid #f1f5f9',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
                         }}
                       >
-                        <span style={{ fontWeight: "bold", color: "#1e293b" }}>
-                          {i.name}{" "}
+                        <span style={{ fontWeight: 'bold', color: '#1e293b' }}>
+                          {i.name}{' '}
                           <span
-                            style={{ color: "#64748b", fontWeight: "normal" }}
+                            style={{ color: '#64748b', fontWeight: 'normal' }}
                           >
                             ({i.code})
                           </span>
                         </span>
                         <span
                           style={{
-                            fontSize: "0.7rem",
-                            color: "#0284c7",
-                            background: "#e0f2fe",
-                            padding: "2px 6px",
-                            borderRadius: "4px",
+                            fontSize: '0.7rem',
+                            color: '#0284c7',
+                            background: '#e0f2fe',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
                           }}
                         >
                           Stock: {i.stock_qty} {i.unit}
@@ -498,17 +496,17 @@ export default function Purchases({ currentUser }) {
 
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "10px",
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '10px',
               }}
             >
               <div>
                 <label
                   style={{
-                    fontSize: "0.75rem",
-                    fontWeight: "700",
-                    color: "#475569",
+                    fontSize: '0.75rem',
+                    fontWeight: '700',
+                    color: '#475569',
                   }}
                 >
                   Received Qty
@@ -521,16 +519,16 @@ export default function Purchases({ currentUser }) {
                     setPurchase({ ...purchase, qty_received: e.target.value })
                   }
                   placeholder="50"
-                  style={{ padding: "8px", fontSize: "0.8rem" }}
+                  style={{ padding: '8px', fontSize: '0.8rem' }}
                   required
                 />
               </div>
               <div>
                 <label
                   style={{
-                    fontSize: "0.75rem",
-                    fontWeight: "700",
-                    color: "#475569",
+                    fontSize: '0.75rem',
+                    fontWeight: '700',
+                    color: '#475569',
                   }}
                 >
                   Wholesale Unit Cost (Rs.)
@@ -543,7 +541,7 @@ export default function Purchases({ currentUser }) {
                     setPurchase({ ...purchase, unit_cost: e.target.value })
                   }
                   placeholder="1150"
-                  style={{ padding: "8px", fontSize: "0.8rem" }}
+                  style={{ padding: '8px', fontSize: '0.8rem' }}
                   required
                 />
               </div>
@@ -552,9 +550,9 @@ export default function Purchases({ currentUser }) {
             <div>
               <label
                 style={{
-                  fontSize: "0.75rem",
-                  fontWeight: "700",
-                  color: "#475569",
+                  fontSize: '0.75rem',
+                  fontWeight: '700',
+                  color: '#475569',
                 }}
               >
                 Estimated Total (Rs.)
@@ -568,11 +566,11 @@ export default function Purchases({ currentUser }) {
                 ).toLocaleString()}
                 disabled
                 style={{
-                  background: "#f8fafc",
-                  fontWeight: "bold",
-                  color: "#0284c7",
-                  padding: "8px",
-                  fontSize: "0.9rem",
+                  background: '#f8fafc',
+                  fontWeight: 'bold',
+                  color: '#0284c7',
+                  padding: '8px',
+                  fontSize: '0.9rem',
                 }}
               />
             </div>
@@ -581,11 +579,11 @@ export default function Purchases({ currentUser }) {
               type="submit"
               className="btn btn-primary"
               style={{
-                padding: "10px",
-                marginTop: "6px",
-                background: "#0284c7",
-                fontWeight: "bold",
-                fontSize: "0.85rem",
+                padding: '10px',
+                marginTop: '6px',
+                background: '#0284c7',
+                fontWeight: 'bold',
+                fontSize: '0.85rem',
               }}
             >
               Record Purchase
@@ -597,36 +595,36 @@ export default function Purchases({ currentUser }) {
         <div
           className="card"
           style={{
-            flex: "2.3",
-            background: "#f8fafc",
-            borderRadius: "12px",
-            padding: "18px",
-            border: "1px solid #e2e8f0",
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
+            flex: '2.3',
+            background: '#f8fafc',
+            borderRadius: '12px',
+            padding: '18px',
+            border: '1px solid #e2e8f0',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
           }}
         >
           <div
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "12px",
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '12px',
             }}
           >
             <h4
               style={{
                 margin: 0,
-                fontSize: "0.95rem",
-                fontWeight: "700",
-                color: "#0f172a",
+                fontSize: '0.95rem',
+                fontWeight: '700',
+                color: '#0f172a',
               }}
             >
               Inventory Catalog (Click to Restock)
             </h4>
 
-            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               <input
                 type="text"
                 className="input-field"
@@ -634,50 +632,50 @@ export default function Purchases({ currentUser }) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 style={{
-                  width: "220px",
+                  width: '220px',
                   margin: 0,
-                  padding: "6px 10px",
-                  fontSize: "0.78rem",
+                  padding: '6px 10px',
+                  fontSize: '0.78rem',
                 }}
               />
 
               <div
                 style={{
-                  display: "flex",
-                  gap: "4px",
-                  background: "#f1f5f9",
-                  padding: "3px",
-                  borderRadius: "6px",
-                  border: "1px solid #cbd5e0",
+                  display: 'flex',
+                  gap: '4px',
+                  background: '#f1f5f9',
+                  padding: '3px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e0',
                 }}
               >
                 <button
                   className="btn"
                   style={{
-                    padding: "4px 8px",
-                    fontSize: "0.7rem",
-                    background: viewMode === "GRID" ? "#0d5c75" : "transparent",
-                    color: viewMode === "GRID" ? "#fff" : "#334155",
-                    border: "none",
-                    fontWeight: "bold",
-                    borderRadius: "4px",
+                    padding: '4px 8px',
+                    fontSize: '0.7rem',
+                    background: viewMode === 'GRID' ? '#0d5c75' : 'transparent',
+                    color: viewMode === 'GRID' ? '#fff' : '#334155',
+                    border: 'none',
+                    fontWeight: 'bold',
+                    borderRadius: '4px',
                   }}
-                  onClick={() => setViewMode("GRID")}
+                  onClick={() => setViewMode('GRID')}
                 >
                   🔲 Grid
                 </button>
                 <button
                   className="btn"
                   style={{
-                    padding: "4px 8px",
-                    fontSize: "0.7rem",
-                    background: viewMode === "LIST" ? "#0d5c75" : "transparent",
-                    color: viewMode === "LIST" ? "#fff" : "#334155",
-                    border: "none",
-                    fontWeight: "bold",
-                    borderRadius: "4px",
+                    padding: '4px 8px',
+                    fontSize: '0.7rem',
+                    background: viewMode === 'LIST' ? '#0d5c75' : 'transparent',
+                    color: viewMode === 'LIST' ? '#fff' : '#334155',
+                    border: 'none',
+                    fontWeight: 'bold',
+                    borderRadius: '4px',
                   }}
-                  onClick={() => setViewMode("LIST")}
+                  onClick={() => setViewMode('LIST')}
                 >
                   📋 List
                 </button>
@@ -689,51 +687,51 @@ export default function Purchases({ currentUser }) {
           <div
             style={{
               flex: 1,
-              overflowY: "auto",
-              paddingRight: "4px",
+              overflowY: 'auto',
+              paddingRight: '4px',
             }}
           >
-            {viewMode === "GRID" ? (
+            {viewMode === 'GRID' ? (
               <div
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-                  gap: "12px",
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                  gap: '12px',
                 }}
               >
                 {filteredCatalogItems.map((item) => (
                   <div
                     key={item.id}
                     style={{
-                      background: "#fff",
-                      border: "1px solid #e2e8f0",
-                      borderRadius: "8px",
-                      padding: "12px",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                      gap: "10px",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+                      background: '#fff',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      padding: '12px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      gap: '10px',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                     }}
                   >
                     <div
                       style={{
-                        display: "flex",
-                        gap: "10px",
-                        alignItems: "center",
+                        display: 'flex',
+                        gap: '10px',
+                        alignItems: 'center',
                       }}
                     >
                       <div
                         style={{
-                          width: "50px",
-                          height: "50px",
-                          background: "#f8fafc",
-                          borderRadius: "6px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          border: "1px solid #cbd5e0",
-                          overflow: "hidden",
+                          width: '50px',
+                          height: '50px',
+                          background: '#f8fafc',
+                          borderRadius: '6px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: '1px solid #cbd5e0',
+                          overflow: 'hidden',
                           flexShrink: 0,
                         }}
                       >
@@ -742,38 +740,38 @@ export default function Purchases({ currentUser }) {
                             src={item.image_path}
                             alt={item.name}
                             style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "contain",
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'contain',
                             }}
                           />
                         ) : (
-                          <span style={{ fontSize: "1.2rem" }}>📦</span>
+                          <span style={{ fontSize: '1.2rem' }}>📦</span>
                         )}
                       </div>
 
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div
                           style={{
-                            fontWeight: "bold",
-                            fontSize: "0.8rem",
-                            color: "#1e293b",
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
+                            fontWeight: 'bold',
+                            fontSize: '0.8rem',
+                            color: '#1e293b',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
                           }}
                           title={item.name}
                         >
                           {item.name}
                         </div>
-                        <div style={{ fontSize: "0.68rem", color: "#64748b" }}>
+                        <div style={{ fontSize: '0.68rem', color: '#64748b' }}>
                           SKU: {item.code}
                         </div>
                         <div
                           style={{
-                            fontSize: "0.68rem",
-                            color: item.stock_qty <= 5 ? "#dc2626" : "#059669",
-                            fontWeight: "bold",
+                            fontSize: '0.68rem',
+                            color: item.stock_qty <= 5 ? '#dc2626' : '#059669',
+                            fontWeight: 'bold',
                           }}
                         >
                           Stock: {item.stock_qty} {item.unit}
@@ -783,37 +781,37 @@ export default function Purchases({ currentUser }) {
 
                     <div
                       style={{
-                        borderTop: "1px solid #e2e8f0",
-                        paddingTop: "6px",
-                        fontSize: "0.7rem",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        color: "#475569",
+                        borderTop: '1px solid #e2e8f0',
+                        paddingTop: '6px',
+                        fontSize: '0.7rem',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        color: '#475569',
                       }}
                     >
                       <span>Cost (WAC):</span>
                       <span
                         className="monospace"
-                        style={{ fontWeight: "bold" }}
+                        style={{ fontWeight: 'bold' }}
                       >
-                        Rs. {item.avg_cost?.toFixed(2) || "0.00"}
+                        Rs. {item.avg_cost?.toFixed(2) || '0.00'}
                       </span>
                     </div>
 
                     <button
                       className="btn btn-primary"
                       style={{
-                        padding: "6px",
-                        fontSize: "0.72rem",
-                        background: "#0284c7",
-                        fontWeight: "bold",
-                        width: "100%",
+                        padding: '6px',
+                        fontSize: '0.72rem',
+                        background: '#0284c7',
+                        fontWeight: 'bold',
+                        width: '100%',
                       }}
                       onClick={() => {
                         setPurchase({
                           ...purchase,
                           item_id: item.id,
-                          unit_cost: item.avg_cost || "",
+                          unit_cost: item.avg_cost || '',
                         });
                         setItemSearchText(
                           `${item.name} (${item.code}) - Stock: ${item.stock_qty} ${item.unit}`,
@@ -828,50 +826,50 @@ export default function Purchases({ currentUser }) {
             ) : (
               /* LIST VIEW */
               <div
-                style={{ display: "flex", flexDirection: "column", gap: "4px" }}
+                style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}
               >
                 <div
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 2fr 1fr 1fr 1fr",
-                    fontSize: "0.7rem",
-                    fontWeight: "bold",
-                    background: "#033c75",
-                    color: "#fff",
-                    padding: "8px 10px",
-                    borderRadius: "6px",
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 2fr 1fr 1fr 1fr',
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    background: '#033c75',
+                    color: '#fff',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
                   }}
                 >
                   <span>SKU</span>
                   <span>PRODUCT NAME</span>
-                  <span style={{ textAlign: "right" }}>STOCK QTY</span>
-                  <span style={{ textAlign: "right" }}>UNIT COST</span>
-                  <span style={{ textAlign: "center" }}>ACTION</span>
+                  <span style={{ textAlign: 'right' }}>STOCK QTY</span>
+                  <span style={{ textAlign: 'right' }}>UNIT COST</span>
+                  <span style={{ textAlign: 'center' }}>ACTION</span>
                 </div>
 
                 {filteredCatalogItems.map((item) => (
                   <div
                     key={item.id}
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 2fr 1fr 1fr 1fr",
-                      fontSize: "0.75rem",
-                      alignItems: "center",
-                      background: "#fff",
-                      padding: "8px 10px",
-                      borderBottom: "1px solid #f1f5f9",
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 2fr 1fr 1fr 1fr',
+                      fontSize: '0.75rem',
+                      alignItems: 'center',
+                      background: '#fff',
+                      padding: '8px 10px',
+                      borderBottom: '1px solid #f1f5f9',
                     }}
                   >
-                    <span className="monospace" style={{ color: "#64748b" }}>
+                    <span className="monospace" style={{ color: '#64748b' }}>
                       {item.code}
                     </span>
                     <span
                       style={{
-                        fontWeight: "bold",
-                        color: "#1e293b",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
+                        fontWeight: 'bold',
+                        color: '#1e293b',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
                       }}
                     >
                       {item.name}
@@ -879,30 +877,30 @@ export default function Purchases({ currentUser }) {
                     <span
                       className="monospace"
                       style={{
-                        textAlign: "right",
-                        fontWeight: "bold",
-                        color: item.stock_qty <= 5 ? "#dc2626" : "#059669",
+                        textAlign: 'right',
+                        fontWeight: 'bold',
+                        color: item.stock_qty <= 5 ? '#dc2626' : '#059669',
                       }}
                     >
                       {item.stock_qty} {item.unit}
                     </span>
-                    <span className="monospace" style={{ textAlign: "right" }}>
-                      Rs. {item.avg_cost?.toFixed(2) || "0.00"}
+                    <span className="monospace" style={{ textAlign: 'right' }}>
+                      Rs. {item.avg_cost?.toFixed(2) || '0.00'}
                     </span>
-                    <div style={{ textAlign: "center" }}>
+                    <div style={{ textAlign: 'center' }}>
                       <button
                         className="btn btn-primary"
                         style={{
-                          padding: "4px 10px",
-                          fontSize: "0.7rem",
-                          background: "#0284c7",
-                          fontWeight: "bold",
+                          padding: '4px 10px',
+                          fontSize: '0.7rem',
+                          background: '#0284c7',
+                          fontWeight: 'bold',
                         }}
                         onClick={() => {
                           setPurchase({
                             ...purchase,
                             item_id: item.id,
-                            unit_cost: item.avg_cost || "",
+                            unit_cost: item.avg_cost || '',
                           });
                           setItemSearchText(
                             `${item.name} (${item.code}) - Stock: ${item.stock_qty} ${item.unit}`,
@@ -920,10 +918,10 @@ export default function Purchases({ currentUser }) {
             {filteredCatalogItems.length === 0 && (
               <div
                 style={{
-                  textAlign: "center",
-                  color: "#94a3b8",
-                  padding: "40px 0",
-                  fontSize: "0.85rem",
+                  textAlign: 'center',
+                  color: '#94a3b8',
+                  padding: '40px 0',
+                  fontSize: '0.85rem',
                 }}
               >
                 No products found in inventory.

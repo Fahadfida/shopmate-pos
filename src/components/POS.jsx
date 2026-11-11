@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
-const getIpc = () =>
-  window.require ? window.require('electron').ipcRenderer : null;
+import { getIpc } from '../utils/ipc';
 
 export default function POS({ currentUser, showToast }) {
   const [items, setItems] = useState([]);
