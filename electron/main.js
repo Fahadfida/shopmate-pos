@@ -22,9 +22,10 @@ function createWindow() {
     minHeight: 600,
     title: 'ShopMate POS',
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      webSecurity: false,
+      preload: path.join(__dirname, 'preload.cjs'), // 👈 ADD THIS
+      contextIsolation: true, // 👈 CHANGE TO TRUE
+      nodeIntegration: false, // 👈 CHANGE TO FALSE
+      sandbox: false, // Keep false for now if better-sqlite3 acts up
     },
     autoHideMenuBar: true,
   });
