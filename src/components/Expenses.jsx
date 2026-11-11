@@ -1,13 +1,11 @@
-import React, { useState } from "react";
-
-const getIpc = () =>
-  window.require ? window.require("electron").ipcRenderer : null;
+import React, { useState } from 'react';
+import { getIpc } from '../utils/ipc';
 
 export default function Expenses({ currentUser }) {
   // Comprehensive 4x4 grid (16 essential business expense categories with SVG favicons)
   const expenseCategories = [
     {
-      name: "Rent / Store Lease",
+      name: 'Rent / Store Lease',
       icon: (
         <svg
           width="20"
@@ -25,7 +23,7 @@ export default function Expenses({ currentUser }) {
       ),
     },
     {
-      name: "Utilities (Electricity/Gas/Water)",
+      name: 'Utilities (Electricity/Gas/Water)',
       icon: (
         <svg
           width="20"
@@ -42,7 +40,7 @@ export default function Expenses({ currentUser }) {
       ),
     },
     {
-      name: "Internet & Telecom",
+      name: 'Internet & Telecom',
       icon: (
         <svg
           width="20"
@@ -62,7 +60,7 @@ export default function Expenses({ currentUser }) {
       ),
     },
     {
-      name: "Staff Salaries & Wages",
+      name: 'Staff Salaries & Wages',
       icon: (
         <svg
           width="20"
@@ -82,7 +80,7 @@ export default function Expenses({ currentUser }) {
       ),
     },
     {
-      name: "Shop Maintenance & Repairs",
+      name: 'Shop Maintenance & Repairs',
       icon: (
         <svg
           width="20"
@@ -99,7 +97,7 @@ export default function Expenses({ currentUser }) {
       ),
     },
     {
-      name: "Marketing & Advertising",
+      name: 'Marketing & Advertising',
       icon: (
         <svg
           width="20"
@@ -117,7 +115,7 @@ export default function Expenses({ currentUser }) {
       ),
     },
     {
-      name: "Transportation & Freight",
+      name: 'Transportation & Freight',
       icon: (
         <svg
           width="20"
@@ -137,7 +135,7 @@ export default function Expenses({ currentUser }) {
       ),
     },
     {
-      name: "Food & Refreshments",
+      name: 'Food & Refreshments',
       icon: (
         <svg
           width="20"
@@ -158,7 +156,7 @@ export default function Expenses({ currentUser }) {
       ),
     },
     {
-      name: "Taxes, Fees & Licenses",
+      name: 'Taxes, Fees & Licenses',
       icon: (
         <svg
           width="20"
@@ -179,7 +177,7 @@ export default function Expenses({ currentUser }) {
       ),
     },
     {
-      name: "Packaging & Stationery",
+      name: 'Packaging & Stationery',
       icon: (
         <svg
           width="20"
@@ -198,7 +196,7 @@ export default function Expenses({ currentUser }) {
       ),
     },
     {
-      name: "Software & Subscriptions",
+      name: 'Software & Subscriptions',
       icon: (
         <svg
           width="20"
@@ -217,7 +215,7 @@ export default function Expenses({ currentUser }) {
       ),
     },
     {
-      name: "Security & Insurance",
+      name: 'Security & Insurance',
       icon: (
         <svg
           width="20"
@@ -234,7 +232,7 @@ export default function Expenses({ currentUser }) {
       ),
     },
     {
-      name: "Legal & Professional",
+      name: 'Legal & Professional',
       icon: (
         <svg
           width="20"
@@ -252,7 +250,7 @@ export default function Expenses({ currentUser }) {
       ),
     },
     {
-      name: "Cleaning & Sanitation",
+      name: 'Cleaning & Sanitation',
       icon: (
         <svg
           width="20"
@@ -269,7 +267,7 @@ export default function Expenses({ currentUser }) {
       ),
     },
     {
-      name: "Travel & Fuel",
+      name: 'Travel & Fuel',
       icon: (
         <svg
           width="20"
@@ -287,7 +285,7 @@ export default function Expenses({ currentUser }) {
       ),
     },
     {
-      name: "Miscellaneous / Other",
+      name: 'Miscellaneous / Other',
       icon: (
         <svg
           width="20"
@@ -310,18 +308,18 @@ export default function Expenses({ currentUser }) {
   // Modal State for Quick Pop-up
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalForm, setModalForm] = useState({
-    category: "Rent / Store Lease",
-    amount: "",
+    category: 'Rent / Store Lease',
+    amount: '',
     date: new Date().toISOString().substring(0, 10),
-    description: "",
+    description: '',
   });
 
   const openQuickModal = (categoryName) => {
     setModalForm({
-      category: categoryName || "Rent / Store Lease",
-      amount: "",
+      category: categoryName || 'Rent / Store Lease',
+      amount: '',
       date: new Date().toISOString().substring(0, 10),
-      description: "",
+      description: '',
     });
     setIsModalOpen(true);
   };
@@ -330,10 +328,10 @@ export default function Expenses({ currentUser }) {
     e.preventDefault();
     const ipc = getIpc();
     const amt = parseFloat(modalForm.amount);
-    if (!amt || amt <= 0) return alert("Enter a valid expense amount.");
+    if (!amt || amt <= 0) return alert('Enter a valid expense amount.');
 
     if (ipc) {
-      const res = await ipc.invoke("add-expense", {
+      const res = await ipc.invoke('add-expense', {
         expense: modalForm,
         currentUser,
       });
@@ -341,7 +339,7 @@ export default function Expenses({ currentUser }) {
         setIsModalOpen(false);
         alert(`✅ Successfully recorded expense for ${modalForm.category}!`);
       } else {
-        alert("Error recording expense: " + res.error);
+        alert('Error recording expense: ' + res.error);
       }
     }
   };
@@ -349,34 +347,34 @@ export default function Expenses({ currentUser }) {
   return (
     <div
       style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "14px",
-        height: "calc(100vh - 90px)",
-        overflow: "hidden",
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '14px',
+        height: 'calc(100vh - 90px)',
+        overflow: 'hidden',
       }}
     >
       {/* HEADER BAR */}
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          background: "#fff",
-          padding: "14px 20px",
-          borderRadius: "10px",
-          border: "1px solid #e2e8f0",
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          background: '#fff',
+          padding: '14px 20px',
+          borderRadius: '10px',
+          border: '1px solid #e2e8f0',
         }}
       >
         <div>
-          <h3 style={{ margin: 0, color: "#1e293b", fontSize: "1.1rem" }}>
+          <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.1rem' }}>
             Expenses & Operating Cost
           </h3>
           <p
             style={{
-              margin: "2px 0 0 0",
-              fontSize: "0.75rem",
-              color: "#64748b",
+              margin: '2px 0 0 0',
+              fontSize: '0.75rem',
+              color: '#64748b',
             }}
           >
             Select any business category below to instantly log an expense.
@@ -387,13 +385,13 @@ export default function Expenses({ currentUser }) {
       {/* 🌟 4x4 GRID THUMBNAIL CARDS (16 Options) */}
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gridTemplateRows: "repeat(4, 1fr)",
-          gap: "12px",
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gridTemplateRows: 'repeat(4, 1fr)',
+          gap: '12px',
           flex: 1,
-          padding: "4px 0",
-          overflowY: "auto",
+          padding: '4px 0',
+          overflowY: 'auto',
         }}
       >
         {expenseCategories.map((cat, idx) => (
@@ -402,53 +400,53 @@ export default function Expenses({ currentUser }) {
             onClick={() => openQuickModal(cat.name)}
             className="card"
             style={{
-              background: "#fff",
-              padding: "16px",
-              borderRadius: "10px",
-              border: "1px solid #cbd5e1",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-              gap: "10px",
-              cursor: "pointer",
-              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.02)",
-              transition: "all 0.15s ease",
+              background: '#fff',
+              padding: '16px',
+              borderRadius: '10px',
+              border: '1px solid #cbd5e1',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '10px',
+              cursor: 'pointer',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.02)',
+              transition: 'all 0.15s ease',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = "#0d5c75";
-              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.borderColor = '#0d5c75';
+              e.currentTarget.style.transform = 'translateY(-2px)';
               e.currentTarget.style.boxShadow =
-                "0 6px 12px rgba(13, 92, 117, 0.08)";
-              e.currentTarget.style.background = "#f8fafc";
+                '0 6px 12px rgba(13, 92, 117, 0.08)';
+              e.currentTarget.style.background = '#f8fafc';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "#cbd5e1";
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "0 2px 4px rgba(0, 0, 0, 0.02)";
-              e.currentTarget.style.background = "#fff";
+              e.currentTarget.style.borderColor = '#cbd5e1';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.02)';
+              e.currentTarget.style.background = '#fff';
             }}
           >
             <div
               style={{
-                color: "#0d5c75",
-                padding: "8px",
-                background: "#e0f2fe",
-                borderRadius: "8px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                color: '#0d5c75',
+                padding: '8px',
+                background: '#e0f2fe',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
               {cat.icon}
             </div>
             <span
               style={{
-                fontSize: "0.82rem",
-                fontWeight: "700",
-                color: "#1e293b",
-                textAlign: "center",
-                lineHeight: "1.2",
+                fontSize: '0.82rem',
+                fontWeight: '700',
+                color: '#1e293b',
+                textAlign: 'center',
+                lineHeight: '1.2',
               }}
             >
               {cat.name}
@@ -463,30 +461,30 @@ export default function Expenses({ currentUser }) {
           <div
             className="card"
             style={{
-              width: "400px",
-              background: "#fff",
-              padding: "24px",
-              borderRadius: "12px",
+              width: '400px',
+              background: '#fff',
+              padding: '24px',
+              borderRadius: '12px',
             }}
           >
             <div
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "16px",
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '16px',
               }}
             >
-              <h3 style={{ margin: 0, fontSize: "1.05rem", color: "#0d5c75" }}>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#0d5c75' }}>
                 ⚡ Quick Log Expense
               </h3>
               <button
                 className="btn"
                 style={{
-                  background: "#e2e8f0",
-                  padding: "4px 10px",
-                  fontSize: "0.8rem",
-                  borderRadius: "6px",
+                  background: '#e2e8f0',
+                  padding: '4px 10px',
+                  fontSize: '0.8rem',
+                  borderRadius: '6px',
                 }}
                 onClick={() => setIsModalOpen(false)}
               >
@@ -496,14 +494,14 @@ export default function Expenses({ currentUser }) {
 
             <form
               onSubmit={handleModalSubmit}
-              style={{ display: "flex", flexDirection: "column", gap: "14px" }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
             >
               <div>
                 <label
                   style={{
-                    fontSize: "0.75rem",
-                    fontWeight: "bold",
-                    color: "#475569",
+                    fontSize: '0.75rem',
+                    fontWeight: 'bold',
+                    color: '#475569',
                   }}
                 >
                   Category
@@ -514,27 +512,27 @@ export default function Expenses({ currentUser }) {
                   value={modalForm.category}
                   disabled
                   style={{
-                    background: "#f8fafc",
-                    fontWeight: "bold",
-                    padding: "9px",
-                    fontSize: "0.82rem",
+                    background: '#f8fafc',
+                    fontWeight: 'bold',
+                    padding: '9px',
+                    fontSize: '0.82rem',
                   }}
                 />
               </div>
 
               <div
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "10px",
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '10px',
                 }}
               >
                 <div>
                   <label
                     style={{
-                      fontSize: "0.75rem",
-                      fontWeight: "bold",
-                      color: "#475569",
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold',
+                      color: '#475569',
                     }}
                   >
                     Amount (Rs.)*
@@ -548,7 +546,7 @@ export default function Expenses({ currentUser }) {
                       setModalForm({ ...modalForm, amount: e.target.value })
                     }
                     placeholder="1500"
-                    style={{ padding: "9px", fontSize: "0.85rem" }}
+                    style={{ padding: '9px', fontSize: '0.85rem' }}
                     autoFocus
                     required
                   />
@@ -556,9 +554,9 @@ export default function Expenses({ currentUser }) {
                 <div>
                   <label
                     style={{
-                      fontSize: "0.75rem",
-                      fontWeight: "bold",
-                      color: "#475569",
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold',
+                      color: '#475569',
                     }}
                   >
                     Date*
@@ -570,7 +568,7 @@ export default function Expenses({ currentUser }) {
                     onChange={(e) =>
                       setModalForm({ ...modalForm, date: e.target.value })
                     }
-                    style={{ padding: "9px", fontSize: "0.85rem" }}
+                    style={{ padding: '9px', fontSize: '0.85rem' }}
                     required
                   />
                 </div>
@@ -579,9 +577,9 @@ export default function Expenses({ currentUser }) {
               <div>
                 <label
                   style={{
-                    fontSize: "0.75rem",
-                    fontWeight: "bold",
-                    color: "#475569",
+                    fontSize: '0.75rem',
+                    fontWeight: 'bold',
+                    color: '#475569',
                   }}
                 >
                   Description / Notes (Optional)
@@ -594,21 +592,21 @@ export default function Expenses({ currentUser }) {
                     setModalForm({ ...modalForm, description: e.target.value })
                   }
                   placeholder="e.g. October bill note..."
-                  style={{ padding: "9px", fontSize: "0.82rem" }}
+                  style={{ padding: '9px', fontSize: '0.82rem' }}
                 />
               </div>
 
-              <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
                 <button
                   type="submit"
                   className="btn btn-primary"
                   style={{
                     flex: 1,
-                    background: "#0d5c75",
-                    fontWeight: "bold",
-                    padding: "11px",
-                    color: "#fff",
-                    borderRadius: "6px",
+                    background: '#0d5c75',
+                    fontWeight: 'bold',
+                    padding: '11px',
+                    color: '#fff',
+                    borderRadius: '6px',
                   }}
                 >
                   Save Expense
@@ -617,10 +615,10 @@ export default function Expenses({ currentUser }) {
                   type="button"
                   className="btn"
                   style={{
-                    background: "#cbd5e0",
-                    padding: "11px",
-                    borderRadius: "6px",
-                    fontWeight: "600",
+                    background: '#cbd5e0',
+                    padding: '11px',
+                    borderRadius: '6px',
+                    fontWeight: '600',
                   }}
                   onClick={() => setIsModalOpen(false)}
                 >

@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 
-const getIpc = () =>
-  window.require ? window.require("electron").ipcRenderer : null;
-
+import { getIpc } from '../utils/ipc';
 export default function SupplierLedger({ currentUser }) {
   // Directory & Data States
   const [suppliers, setSuppliers] = useState([]);
@@ -10,8 +8,8 @@ export default function SupplierLedger({ currentUser }) {
   const [ledgerEntries, setLedgerEntries] = useState([]);
 
   // Search & Filter States
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterMode, setFilterMode] = useState("active"); // 'all' | 'active' | 'archived' | 'due' | 'clear'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterMode, setFilterMode] = useState('active'); // 'all' | 'active' | 'archived' | 'due' | 'clear'
 
   // Modal Controls
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
@@ -21,19 +19,19 @@ export default function SupplierLedger({ currentUser }) {
   // Form States
   const [supplierForm, setSupplierForm] = useState({
     id: null,
-    name: "",
-    company: "",
-    phone: "",
-    address: "",
-    avatar: "",
+    name: '',
+    company: '',
+    phone: '',
+    address: '',
+    avatar: '',
     credit_limit: 0,
     opening_balance: 0,
   });
 
   const [paymentForm, setPaymentForm] = useState({
-    amount: "",
-    payment_method: "CASH",
-    notes: "",
+    amount: '',
+    payment_method: 'CASH',
+    notes: '',
   });
 
   // 1. Data Loaders
@@ -41,7 +39,7 @@ export default function SupplierLedger({ currentUser }) {
     const ipc = getIpc();
     if (ipc) {
       // Pass filter mode to fetch all records (including archived) for client sorting
-      const data = await ipc.invoke("get-suppliers", true);
+      const data = await ipc.invoke('get-suppliers', true);
       setSuppliers(data || []);
 
       if (selectedSupplier) {
@@ -62,7 +60,7 @@ export default function SupplierLedger({ currentUser }) {
   const loadLedger = async (supplierId) => {
     const ipc = getIpc();
     if (ipc) {
-      const entries = await ipc.invoke("get-supplier-ledger", supplierId);
+      const entries = await ipc.invoke('get-supplier-ledger', supplierId);
       setLedgerEntries(entries || []);
     }
   };
@@ -92,10 +90,10 @@ export default function SupplierLedger({ currentUser }) {
   const handleSaveSupplier = async (e) => {
     e.preventDefault();
     const ipc = getIpc();
-    if (!supplierForm.name.trim()) return alert("Supplier name is required.");
+    if (!supplierForm.name.trim()) return alert('Supplier name is required.');
 
     if (ipc) {
-      const handlerName = isEditing ? "update-supplier" : "add-supplier";
+      const handlerName = isEditing ? 'update-supplier' : 'add-supplier';
       const payload = isEditing
         ? { supplier: supplierForm, currentUser }
         : { supplier: supplierForm, currentUser };
@@ -115,11 +113,11 @@ export default function SupplierLedger({ currentUser }) {
   const resetSupplierForm = () => {
     setSupplierForm({
       id: null,
-      name: "",
-      company: "",
-      phone: "",
-      address: "",
-      avatar: "",
+      name: '',
+      company: '',
+      phone: '',
+      address: '',
+      avatar: '',
       credit_limit: 0,
       opening_balance: 0,
     });
@@ -130,11 +128,11 @@ export default function SupplierLedger({ currentUser }) {
     if (!selectedSupplier) return;
     setSupplierForm({
       id: selectedSupplier.id,
-      name: selectedSupplier.name || "",
-      company: selectedSupplier.company || "",
-      phone: selectedSupplier.phone || "",
-      address: selectedSupplier.address || "",
-      avatar: selectedSupplier.avatar || "",
+      name: selectedSupplier.name || '',
+      company: selectedSupplier.company || '',
+      phone: selectedSupplier.phone || '',
+      address: selectedSupplier.address || '',
+      avatar: selectedSupplier.avatar || '',
       credit_limit: selectedSupplier.credit_limit || 0,
       opening_balance: 0, // Disabled on edit
     });
@@ -147,17 +145,17 @@ export default function SupplierLedger({ currentUser }) {
     const target = supp || selectedSupplier;
     if (!target) return;
 
-    if (currentUser?.role !== "ADMIN") {
-      return alert("Access Denied: Manager (ADMIN) permissions required.");
+    if (currentUser?.role !== 'ADMIN') {
+      return alert('Access Denied: Manager (ADMIN) permissions required.');
     }
 
     if (target.balance > 0 && target.is_active === 1) {
       return alert(
-        "Cannot archive vendor while payable balance is due. Please settle balance first.",
+        'Cannot archive vendor while payable balance is due. Please settle balance first.',
       );
     }
 
-    const actionText = target.is_active === 1 ? "archive" : "reactivate";
+    const actionText = target.is_active === 1 ? 'archive' : 'reactivate';
     if (
       !window.confirm(
         `Are you sure you want to ${actionText} supplier "${target.name}"?`,
@@ -168,7 +166,7 @@ export default function SupplierLedger({ currentUser }) {
 
     const ipc = getIpc();
     if (ipc) {
-      const res = await ipc.invoke("toggle-archive-supplier", {
+      const res = await ipc.invoke('toggle-archive-supplier', {
         supplierId: target.id,
         is_active: target.is_active === 1 ? 0 : 1,
         currentUser,
@@ -191,10 +189,10 @@ export default function SupplierLedger({ currentUser }) {
     e.preventDefault();
     const ipc = getIpc();
     const amt = parseFloat(paymentForm.amount);
-    if (!amt || amt <= 0) return alert("Enter a valid payment amount.");
+    if (!amt || amt <= 0) return alert('Enter a valid payment amount.');
 
     if (ipc) {
-      const res = await ipc.invoke("record-supplier-payment", {
+      const res = await ipc.invoke('record-supplier-payment', {
         supplier_id: selectedSupplier.id,
         amount: amt,
         payment_method: paymentForm.payment_method,
@@ -204,7 +202,7 @@ export default function SupplierLedger({ currentUser }) {
 
       if (res.success) {
         setIsPaymentModalOpen(false);
-        setPaymentForm({ amount: "", payment_method: "CASH", notes: "" });
+        setPaymentForm({ amount: '', payment_method: 'CASH', notes: '' });
         loadSuppliers();
       } else {
         alert(`Payment Error: ${res.error}`);
@@ -222,13 +220,13 @@ export default function SupplierLedger({ currentUser }) {
         <tr>
           <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #334155;">${e.date}</td>
           <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #334155;">${e.description}</td>
-          <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: #059669; text-align: right;">${e.debit > 0 ? `Rs. ${e.debit.toLocaleString()}` : "-"}</td>
-          <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: #dc2626; text-align: right;">${e.credit > 0 ? `Rs. ${e.credit.toLocaleString()}` : "-"}</td>
+          <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: #059669; text-align: right;">${e.debit > 0 ? `Rs. ${e.debit.toLocaleString()}` : '-'}</td>
+          <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: #dc2626; text-align: right;">${e.credit > 0 ? `Rs. ${e.credit.toLocaleString()}` : '-'}</td>
           <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: #0f172a; text-align: right;">Rs. ${e.balance_after?.toLocaleString()}</td>
         </tr>
       `,
         )
-        .join("");
+        .join('');
 
       const html = `
         <!DOCTYPE html>
@@ -259,19 +257,19 @@ export default function SupplierLedger({ currentUser }) {
               </div>
               <div style="text-align: right;">
                 <p style="margin: 0; font-weight: bold; font-size: 13px;">Issued Date: ${new Date().toLocaleDateString()}</p>
-                <p style="margin: 2px 0 0 0; font-size: 11px; color: #64748b;">Status: ${selectedSupplier.is_active === 1 ? "Active Profile" : "Archived"}</p>
+                <p style="margin: 2px 0 0 0; font-size: 11px; color: #64748b;">Status: ${selectedSupplier.is_active === 1 ? 'Active Profile' : 'Archived'}</p>
               </div>
             </div>
 
             <div class="meta-box">
               <div>
                 <strong>Vendor Name:</strong> ${selectedSupplier.name}<br/>
-                <strong>Company / Agency:</strong> ${selectedSupplier.company || "N/A"}<br/>
+                <strong>Company / Agency:</strong> ${selectedSupplier.company || 'N/A'}<br/>
                 <strong>Credit Limit:</strong> Rs. ${selectedSupplier.credit_limit?.toLocaleString()}
               </div>
               <div>
-                <strong>Contact Phone:</strong> ${selectedSupplier.phone || "N/A"}<br/>
-                <strong>Address:</strong> ${selectedSupplier.address || "N/A"}
+                <strong>Contact Phone:</strong> ${selectedSupplier.phone || 'N/A'}<br/>
+                <strong>Address:</strong> ${selectedSupplier.address || 'N/A'}
               </div>
             </div>
 
@@ -298,7 +296,7 @@ export default function SupplierLedger({ currentUser }) {
         </html>
       `;
 
-      const res = await ipc.invoke("export-ledger-pdf", html);
+      const res = await ipc.invoke('export-ledger-pdf', html);
       if (res.success && !res.canceled) {
         alert(
           `✅ Corporate A4 Statement exported successfully:\n${res.filePath}`,
@@ -319,12 +317,12 @@ export default function SupplierLedger({ currentUser }) {
 
     if (!matchesSearch) return false;
 
-    if (filterMode === "active")
+    if (filterMode === 'active')
       return s.is_active === 1 || s.is_active === undefined;
-    if (filterMode === "archived") return s.is_active === 0;
-    if (filterMode === "due")
+    if (filterMode === 'archived') return s.is_active === 0;
+    if (filterMode === 'due')
       return s.balance > 0 && (s.is_active === 1 || s.is_active === undefined);
-    if (filterMode === "clear")
+    if (filterMode === 'clear')
       return s.balance <= 0 && (s.is_active === 1 || s.is_active === undefined);
     return true; // 'all'
   });
@@ -332,57 +330,57 @@ export default function SupplierLedger({ currentUser }) {
   return (
     <div
       style={{
-        display: "flex",
-        gap: "16px",
-        height: "calc(100vh - 90px)",
-        overflow: "hidden",
+        display: 'flex',
+        gap: '16px',
+        height: 'calc(100vh - 90px)',
+        overflow: 'hidden',
       }}
     >
       {/* 🚚 LEFT COLUMN: SUPPLIER DIRECTORY FEED */}
       <div
         className="card"
         style={{
-          flex: "1.1",
-          display: "flex",
-          flexDirection: "column",
-          gap: "10px",
-          padding: "14px",
-          background: "#fff",
-          borderRadius: "8px",
-          border: "1px solid #e2e8f0",
-          overflow: "hidden",
+          flex: '1.1',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+          padding: '14px',
+          background: '#fff',
+          borderRadius: '8px',
+          border: '1px solid #e2e8f0',
+          overflow: 'hidden',
         }}
       >
         {/* DIRECTORY HEADER & ADD ACTION */}
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
           }}
         >
           <div>
             <h4
               style={{
                 margin: 0,
-                color: "#0f172a",
-                fontSize: "0.95rem",
-                fontWeight: "bold",
+                color: '#0f172a',
+                fontSize: '0.95rem',
+                fontWeight: 'bold',
               }}
             >
               🚚 Supplier Directory
             </h4>
-            <span style={{ fontSize: "0.68rem", color: "#64748b" }}>
+            <span style={{ fontSize: '0.68rem', color: '#64748b' }}>
               Showing {filteredSuppliers.length} records
             </span>
           </div>
           <button
             className="btn btn-primary"
             style={{
-              fontSize: "0.72rem",
-              padding: "6px 12px",
-              background: "#0d5c75",
-              fontWeight: "bold",
+              fontSize: '0.72rem',
+              padding: '6px 12px',
+              background: '#0d5c75',
+              fontWeight: 'bold',
             }}
             onClick={() => {
               resetSupplierForm();
@@ -396,36 +394,36 @@ export default function SupplierLedger({ currentUser }) {
         {/* BREADCRUMB FILTER PILLS */}
         <div
           style={{
-            display: "flex",
-            gap: "4px",
-            background: "#f1f5f9",
-            padding: "4px",
-            borderRadius: "6px",
+            display: 'flex',
+            gap: '4px',
+            background: '#f1f5f9',
+            padding: '4px',
+            borderRadius: '6px',
           }}
         >
           {[
-            { id: "active", label: "Active" },
-            { id: "due", label: "Balance Due" },
-            { id: "clear", label: "Clear" },
-            { id: "archived", label: "Archived" },
-            { id: "all", label: "All" },
+            { id: 'active', label: 'Active' },
+            { id: 'due', label: 'Balance Due' },
+            { id: 'clear', label: 'Clear' },
+            { id: 'archived', label: 'Archived' },
+            { id: 'all', label: 'All' },
           ].map((pill) => (
             <button
               key={pill.id}
               className="btn"
               style={{
                 flex: 1,
-                fontSize: "0.65rem",
-                padding: "4px 2px",
-                border: "none",
-                borderRadius: "4px",
-                fontWeight: filterMode === pill.id ? "bold" : "normal",
-                background: filterMode === pill.id ? "#fff" : "transparent",
-                color: filterMode === pill.id ? "#0d5c75" : "#64748b",
+                fontSize: '0.65rem',
+                padding: '4px 2px',
+                border: 'none',
+                borderRadius: '4px',
+                fontWeight: filterMode === pill.id ? 'bold' : 'normal',
+                background: filterMode === pill.id ? '#fff' : 'transparent',
+                color: filterMode === pill.id ? '#0d5c75' : '#64748b',
                 boxShadow:
                   filterMode === pill.id
-                    ? "0 1px 2px rgba(0,0,0,0.05)"
-                    : "none",
+                    ? '0 1px 2px rgba(0,0,0,0.05)'
+                    : 'none',
               }}
               onClick={() => setFilterMode(pill.id)}
             >
@@ -441,26 +439,26 @@ export default function SupplierLedger({ currentUser }) {
           placeholder="🔍 Search name, company, phone..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ margin: 0, padding: "7px 10px", fontSize: "0.75rem" }}
+          style={{ margin: 0, padding: '7px 10px', fontSize: '0.75rem' }}
         />
 
         {/* SUPPLIER DIRECTORY LIST */}
         <div
           style={{
-            overflowY: "auto",
-            display: "flex",
-            flexDirection: "column",
-            gap: "6px",
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
             flex: 1,
           }}
         >
           {filteredSuppliers.length === 0 ? (
             <div
               style={{
-                textAlign: "center",
-                color: "#94a3b8",
-                padding: "30px 0",
-                fontSize: "0.75rem",
+                textAlign: 'center',
+                color: '#94a3b8',
+                padding: '30px 0',
+                fontSize: '0.75rem',
               }}
             >
               No matching supplier records found.
@@ -476,20 +474,20 @@ export default function SupplierLedger({ currentUser }) {
                   key={supp.id}
                   onClick={() => selectSupplier(supp)}
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    padding: "10px",
-                    borderRadius: "6px",
-                    cursor: "pointer",
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
                     background: isSelected
-                      ? "#e0f2fe"
+                      ? '#e0f2fe'
                       : isArchived
-                        ? "#f8fafc"
-                        : "#fff",
+                        ? '#f8fafc'
+                        : '#fff',
                     border: isSelected
-                      ? "1px solid #0284c7"
-                      : "1px solid #f1f5f9",
+                      ? '1px solid #0284c7'
+                      : '1px solid #f1f5f9',
                     opacity: isArchived ? 0.7 : 1,
                   }}
                 >
@@ -499,25 +497,25 @@ export default function SupplierLedger({ currentUser }) {
                       src={supp.avatar}
                       alt={supp.name}
                       style={{
-                        width: "36px",
-                        height: "36px",
-                        borderRadius: "50%",
-                        objectFit: "cover",
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
                       }}
                     />
                   ) : (
                     <div
                       style={{
-                        width: "36px",
-                        height: "36px",
-                        borderRadius: "50%",
-                        background: isArchived ? "#94a3b8" : "#f59e0b",
-                        color: "#fff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: "bold",
-                        fontSize: "0.8rem",
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        background: isArchived ? '#94a3b8' : '#f59e0b',
+                        color: '#fff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 'bold',
+                        fontSize: '0.8rem',
                         flexShrink: 0,
                       }}
                     >
@@ -528,39 +526,39 @@ export default function SupplierLedger({ currentUser }) {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div
                       style={{
-                        fontWeight: "bold",
-                        fontSize: "0.8rem",
-                        color: "#1e293b",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
+                        fontWeight: 'bold',
+                        fontSize: '0.8rem',
+                        color: '#1e293b',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
                       }}
                     >
-                      {supp.name}{" "}
+                      {supp.name}{' '}
                       {isArchived && (
-                        <span style={{ fontSize: "0.65rem", color: "#d97706" }}>
+                        <span style={{ fontSize: '0.65rem', color: '#d97706' }}>
                           (Archived)
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: "0.68rem", color: "#64748b" }}>
-                      {supp.company || supp.phone || "No Agency Info"}
+                    <div style={{ fontSize: '0.68rem', color: '#64748b' }}>
+                      {supp.company || supp.phone || 'No Agency Info'}
                     </div>
                   </div>
 
-                  <div style={{ textAlign: "right" }}>
+                  <div style={{ textAlign: 'right' }}>
                     <div
                       className="monospace"
                       style={{
-                        fontSize: "0.82rem",
-                        fontWeight: "bold",
-                        color: hasPayable ? "#dc2626" : "#059669",
+                        fontSize: '0.82rem',
+                        fontWeight: 'bold',
+                        color: hasPayable ? '#dc2626' : '#059669',
                       }}
                     >
                       Rs. {supp.balance?.toLocaleString()}
                     </div>
-                    <div style={{ fontSize: "0.6rem", color: "#64748b" }}>
-                      {hasPayable ? "Payable" : "Clear"}
+                    <div style={{ fontSize: '0.6rem', color: '#64748b' }}>
+                      {hasPayable ? 'Payable' : 'Clear'}
                     </div>
                   </div>
                 </div>
@@ -574,15 +572,15 @@ export default function SupplierLedger({ currentUser }) {
       <div
         className="card"
         style={{
-          flex: "2.3",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          padding: "16px",
-          background: "#fff",
-          borderRadius: "8px",
-          border: "1px solid #e2e8f0",
-          overflow: "hidden",
+          flex: '2.3',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: '16px',
+          background: '#fff',
+          borderRadius: '8px',
+          border: '1px solid #e2e8f0',
+          overflow: 'hidden',
         }}
       >
         {selectedSupplier ? (
@@ -590,45 +588,45 @@ export default function SupplierLedger({ currentUser }) {
             {/* VENDOR HEADER & ACTIONS TOOLBAR */}
             <div
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                borderBottom: "1px solid #e2e8f0",
-                paddingBottom: "10px",
-                marginBottom: "10px",
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                borderBottom: '1px solid #e2e8f0',
+                paddingBottom: '10px',
+                marginBottom: '10px',
               }}
             >
               <div
-                style={{ display: "flex", alignItems: "center", gap: "12px" }}
+                style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
               >
                 {selectedSupplier.avatar ? (
                   <img
                     src={selectedSupplier.avatar}
                     alt={selectedSupplier.name}
                     style={{
-                      width: "44px",
-                      height: "44px",
-                      borderRadius: "50%",
-                      objectFit: "cover",
-                      border: "2px solid #0d5c75",
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '2px solid #0d5c75',
                     }}
                   />
                 ) : (
                   <div
                     style={{
-                      width: "44px",
-                      height: "44px",
-                      borderRadius: "50%",
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '50%',
                       background:
                         selectedSupplier.is_active === 0
-                          ? "#94a3b8"
-                          : "#f59e0b",
-                      color: "#fff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: "bold",
-                      fontSize: "1rem",
+                          ? '#94a3b8'
+                          : '#f59e0b',
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 'bold',
+                      fontSize: '1rem',
                     }}
                   >
                     {selectedSupplier.name.substring(0, 2).toUpperCase()}
@@ -636,28 +634,28 @@ export default function SupplierLedger({ currentUser }) {
                 )}
                 <div>
                   <h3
-                    style={{ margin: 0, color: "#1e293b", fontSize: "1.05rem" }}
+                    style={{ margin: 0, color: '#1e293b', fontSize: '1.05rem' }}
                   >
                     {selectedSupplier.name}
                   </h3>
-                  <div style={{ fontSize: "0.72rem", color: "#64748b" }}>
-                    Company:{" "}
-                    <strong>{selectedSupplier.company || "N/A"}</strong> |
-                    Phone: <strong>{selectedSupplier.phone || "N/A"}</strong>
+                  <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                    Company:{' '}
+                    <strong>{selectedSupplier.company || 'N/A'}</strong> |
+                    Phone: <strong>{selectedSupplier.phone || 'N/A'}</strong>
                   </div>
                 </div>
               </div>
 
               {/* ACTION TOOLBAR PILLS */}
-              <div style={{ display: "flex", gap: "6px" }}>
+              <div style={{ display: 'flex', gap: '6px' }}>
                 <button
                   className="btn btn-success"
                   style={{
-                    fontSize: "0.72rem",
-                    padding: "6px 12px",
-                    background: "#10b981",
-                    color: "#fff",
-                    fontWeight: "bold",
+                    fontSize: '0.72rem',
+                    padding: '6px 12px',
+                    background: '#10b981',
+                    color: '#fff',
+                    fontWeight: 'bold',
                   }}
                   onClick={() => setIsPaymentModalOpen(true)}
                 >
@@ -666,12 +664,12 @@ export default function SupplierLedger({ currentUser }) {
                 <button
                   className="btn"
                   style={{
-                    fontSize: "0.72rem",
-                    padding: "6px 10px",
-                    background: "#e0f2fe",
-                    color: "#0369a1",
-                    fontWeight: "bold",
-                    border: "none",
+                    fontSize: '0.72rem',
+                    padding: '6px 10px',
+                    background: '#e0f2fe',
+                    color: '#0369a1',
+                    fontWeight: 'bold',
+                    border: 'none',
                   }}
                   onClick={openEditModal}
                 >
@@ -680,10 +678,10 @@ export default function SupplierLedger({ currentUser }) {
                 <button
                   className="btn btn-primary"
                   style={{
-                    fontSize: "0.72rem",
-                    padding: "6px 10px",
-                    background: "#0d5c75",
-                    color: "#fff",
+                    fontSize: '0.72rem',
+                    padding: '6px 10px',
+                    background: '#0d5c75',
+                    color: '#fff',
                   }}
                   onClick={handleExportA4PDF}
                 >
@@ -691,9 +689,9 @@ export default function SupplierLedger({ currentUser }) {
                 </button>
 
                 {/* ARCHIVE / REACTIVATE BUTTON WITH PAYABLE LOCK TOOLTIP GUARD */}
-                {currentUser?.role === "ADMIN" && (
+                {currentUser?.role === 'ADMIN' && (
                   <div
-                    style={{ position: "relative", display: "inline-block" }}
+                    style={{ position: 'relative', display: 'inline-block' }}
                   >
                     <button
                       className="btn"
@@ -704,39 +702,39 @@ export default function SupplierLedger({ currentUser }) {
                       title={
                         selectedSupplier.balance > 0 &&
                         selectedSupplier.is_active === 1
-                          ? "Cannot archive vendor while payable balance is due."
-                          : "Archive or Reactivate Supplier Profile"
+                          ? 'Cannot archive vendor while payable balance is due.'
+                          : 'Archive or Reactivate Supplier Profile'
                       }
                       style={{
-                        fontSize: "0.72rem",
-                        padding: "6px 10px",
+                        fontSize: '0.72rem',
+                        padding: '6px 10px',
                         background:
                           selectedSupplier.balance > 0 &&
                           selectedSupplier.is_active === 1
-                            ? "#f1f5f9"
+                            ? '#f1f5f9'
                             : selectedSupplier.is_active === 1
-                              ? "#fef3c7"
-                              : "#dcfce7",
+                              ? '#fef3c7'
+                              : '#dcfce7',
                         color:
                           selectedSupplier.balance > 0 &&
                           selectedSupplier.is_active === 1
-                            ? "#94a3b8"
+                            ? '#94a3b8'
                             : selectedSupplier.is_active === 1
-                              ? "#d97706"
-                              : "#15803d",
-                        fontWeight: "bold",
-                        border: "none",
+                              ? '#d97706'
+                              : '#15803d',
+                        fontWeight: 'bold',
+                        border: 'none',
                         cursor:
                           selectedSupplier.balance > 0 &&
                           selectedSupplier.is_active === 1
-                            ? "not-allowed"
-                            : "pointer",
+                            ? 'not-allowed'
+                            : 'pointer',
                       }}
                       onClick={() => handleToggleArchive(selectedSupplier)}
                     >
                       {selectedSupplier.is_active === 1
-                        ? "📦 Archive"
-                        : "🔄 Reactivate"}
+                        ? '📦 Archive'
+                        : '🔄 Reactivate'}
                     </button>
                   </div>
                 )}
@@ -747,38 +745,38 @@ export default function SupplierLedger({ currentUser }) {
             <div
               style={{
                 flex: 1,
-                overflowY: "auto",
-                display: "flex",
-                flexDirection: "column",
-                gap: "4px",
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
               }}
             >
               <div
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "1.2fr 2fr 1fr 1fr 1.1fr",
-                  fontSize: "0.7rem",
-                  fontWeight: "bold",
-                  background: "navy",
-                  padding: "8px",
-                  borderRadius: "4px",
-                  borderBottom: "1px solid #cbd5e0",
+                  display: 'grid',
+                  gridTemplateColumns: '1.2fr 2fr 1fr 1fr 1.1fr',
+                  fontSize: '0.7rem',
+                  fontWeight: 'bold',
+                  background: 'navy',
+                  padding: '8px',
+                  borderRadius: '4px',
+                  borderBottom: '1px solid #cbd5e0',
                 }}
               >
                 <span>TIMESTAMP</span>
                 <span>DESCRIPTION / REFERENCE</span>
-                <span style={{ textAlign: "right" }}>PAID (-)</span>
-                <span style={{ textAlign: "right" }}>CREDIT (+)</span>
-                <span style={{ textAlign: "right" }}>BALANCE DUE</span>
+                <span style={{ textAlign: 'right' }}>PAID (-)</span>
+                <span style={{ textAlign: 'right' }}>CREDIT (+)</span>
+                <span style={{ textAlign: 'right' }}>BALANCE DUE</span>
               </div>
 
               {ledgerEntries.length === 0 ? (
                 <div
                   style={{
-                    textAlign: "center",
-                    color: "#94a3b8",
-                    padding: "40px 0",
-                    fontSize: "0.75rem",
+                    textAlign: 'center',
+                    color: '#94a3b8',
+                    padding: '40px 0',
+                    fontSize: '0.75rem',
                   }}
                 >
                   No ledger transaction records found for this vendor.
@@ -788,51 +786,51 @@ export default function SupplierLedger({ currentUser }) {
                   <div
                     key={entry.id}
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: "1.2fr 2fr 1fr 1fr 1.1fr",
-                      fontSize: "0.74rem",
-                      alignItems: "center",
-                      background: "#fff",
-                      padding: "7px 8px",
-                      borderBottom: "1px solid #f1f5f9",
+                      display: 'grid',
+                      gridTemplateColumns: '1.2fr 2fr 1fr 1fr 1.1fr',
+                      fontSize: '0.74rem',
+                      alignItems: 'center',
+                      background: '#fff',
+                      padding: '7px 8px',
+                      borderBottom: '1px solid #f1f5f9',
                     }}
                   >
-                    <span style={{ fontSize: "0.68rem", color: "#64748b" }}>
+                    <span style={{ fontSize: '0.68rem', color: '#64748b' }}>
                       {entry.date}
                     </span>
-                    <span style={{ color: "#334155" }}>
+                    <span style={{ color: '#334155' }}>
                       {entry.description}
                     </span>
                     <span
                       className="monospace"
                       style={{
-                        textAlign: "right",
-                        color: entry.debit > 0 ? "#059669" : "#94a3b8",
-                        fontWeight: entry.debit > 0 ? "bold" : "normal",
+                        textAlign: 'right',
+                        color: entry.debit > 0 ? '#059669' : '#94a3b8',
+                        fontWeight: entry.debit > 0 ? 'bold' : 'normal',
                       }}
                     >
                       {entry.debit > 0
                         ? `Rs. ${entry.debit.toLocaleString()}`
-                        : "—"}
+                        : '—'}
                     </span>
                     <span
                       className="monospace"
                       style={{
-                        textAlign: "right",
-                        color: entry.credit > 0 ? "#dc2626" : "#94a3b8",
-                        fontWeight: entry.credit > 0 ? "bold" : "normal",
+                        textAlign: 'right',
+                        color: entry.credit > 0 ? '#dc2626' : '#94a3b8',
+                        fontWeight: entry.credit > 0 ? 'bold' : 'normal',
                       }}
                     >
                       {entry.credit > 0
                         ? `Rs. ${entry.credit.toLocaleString()}`
-                        : "—"}
+                        : '—'}
                     </span>
                     <span
                       className="monospace"
                       style={{
-                        textAlign: "right",
-                        fontWeight: "bold",
-                        color: "#0d5c75",
+                        textAlign: 'right',
+                        fontWeight: 'bold',
+                        color: '#0d5c75',
                       }}
                     >
                       Rs. {entry.balance_after?.toLocaleString()}
@@ -845,30 +843,30 @@ export default function SupplierLedger({ currentUser }) {
             {/* STATEMENT FOOTER SUMMARY */}
             <div
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                borderTop: "2px solid #e2e8f0",
-                paddingTop: "10px",
-                marginTop: "8px",
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                borderTop: '2px solid #e2e8f0',
+                paddingTop: '10px',
+                marginTop: '8px',
               }}
             >
-              <span style={{ fontSize: "0.72rem", color: "#64748b" }}>
-                Supplier ID: #{selectedSupplier.id} | Address:{" "}
-                {selectedSupplier.address || "N/A"}
+              <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                Supplier ID: #{selectedSupplier.id} | Address:{' '}
+                {selectedSupplier.address || 'N/A'}
               </span>
               <div
                 style={{
-                  fontSize: "0.95rem",
-                  fontWeight: "bold",
-                  color: "#1e293b",
+                  fontSize: '0.95rem',
+                  fontWeight: 'bold',
+                  color: '#1e293b',
                 }}
               >
-                Total Payable Balance:{" "}
+                Total Payable Balance:{' '}
                 <span
                   className="monospace"
                   style={{
-                    color: selectedSupplier.balance > 0 ? "#dc2626" : "#059669",
+                    color: selectedSupplier.balance > 0 ? '#dc2626' : '#059669',
                   }}
                 >
                   Rs. {selectedSupplier.balance?.toLocaleString()}
@@ -878,7 +876,7 @@ export default function SupplierLedger({ currentUser }) {
           </>
         ) : (
           <div
-            style={{ textAlign: "center", color: "#a0aec0", margin: "auto" }}
+            style={{ textAlign: 'center', color: '#a0aec0', margin: 'auto' }}
           >
             <h4>
               👈 Select a supplier profile from the directory to view payables
@@ -898,31 +896,31 @@ export default function SupplierLedger({ currentUser }) {
           <div
             className="card"
             style={{
-              width: "420px",
-              background: "#fff",
-              padding: "20px",
-              borderRadius: "8px",
+              width: '420px',
+              background: '#fff',
+              padding: '20px',
+              borderRadius: '8px',
             }}
           >
-            <h3 style={{ margin: "0 0 12px 0", color: "#0d5c75" }}>
+            <h3 style={{ margin: '0 0 12px 0', color: '#0d5c75' }}>
               {isEditing
-                ? "✏️ Edit Supplier Profile"
-                : "+ Register New Supplier"}
+                ? '✏️ Edit Supplier Profile'
+                : '+ Register New Supplier'}
             </h3>
 
             <form
               onSubmit={handleSaveSupplier}
-              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
             >
               {/* AVATAR PREVIEW & UPLOADER */}
               <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  background: "#f8fafc",
-                  padding: "8px",
-                  borderRadius: "6px",
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  background: '#f8fafc',
+                  padding: '8px',
+                  borderRadius: '6px',
                 }}
               >
                 {supplierForm.avatar ? (
@@ -930,24 +928,24 @@ export default function SupplierLedger({ currentUser }) {
                     src={supplierForm.avatar}
                     alt="Preview"
                     style={{
-                      width: "44px",
-                      height: "44px",
-                      borderRadius: "50%",
-                      objectFit: "cover",
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
                     }}
                   />
                 ) : (
                   <div
                     style={{
-                      width: "44px",
-                      height: "44px",
-                      borderRadius: "50%",
-                      background: "#cbd5e1",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "0.7rem",
-                      color: "#475569",
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '50%',
+                      background: '#cbd5e1',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.7rem',
+                      color: '#475569',
                     }}
                   >
                     No Pic
@@ -956,9 +954,9 @@ export default function SupplierLedger({ currentUser }) {
                 <div>
                   <label
                     style={{
-                      fontSize: "0.7rem",
-                      fontWeight: "bold",
-                      color: "#475569",
+                      fontSize: '0.7rem',
+                      fontWeight: 'bold',
+                      color: '#475569',
                     }}
                   >
                     Profile Picture / Badge
@@ -967,7 +965,7 @@ export default function SupplierLedger({ currentUser }) {
                     type="file"
                     accept="image/*"
                     onChange={handleAvatarChange}
-                    style={{ fontSize: "0.7rem", marginTop: "2px" }}
+                    style={{ fontSize: '0.7rem', marginTop: '2px' }}
                   />
                 </div>
               </div>
@@ -985,9 +983,9 @@ export default function SupplierLedger({ currentUser }) {
 
               <div
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "8px",
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '8px',
                 }}
               >
                 <input
@@ -1025,13 +1023,13 @@ export default function SupplierLedger({ currentUser }) {
 
               <div
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "8px",
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '8px',
                 }}
               >
                 <div>
-                  <label style={{ fontSize: "0.68rem", color: "#64748b" }}>
+                  <label style={{ fontSize: '0.68rem', color: '#64748b' }}>
                     Credit Limit (Rs.)
                   </label>
                   <input
@@ -1048,7 +1046,7 @@ export default function SupplierLedger({ currentUser }) {
                 </div>
                 {!isEditing && (
                   <div>
-                    <label style={{ fontSize: "0.68rem", color: "#64748b" }}>
+                    <label style={{ fontSize: '0.68rem', color: '#64748b' }}>
                       Opening Debt (Rs.)
                     </label>
                     <input
@@ -1066,18 +1064,18 @@ export default function SupplierLedger({ currentUser }) {
                 )}
               </div>
 
-              <div style={{ display: "flex", gap: "8px", marginTop: "10px" }}>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  style={{ flex: 1, background: "#0d5c75", fontWeight: "bold" }}
+                  style={{ flex: 1, background: '#0d5c75', fontWeight: 'bold' }}
                 >
-                  {isEditing ? "Update Profile" : "Save Supplier"}
+                  {isEditing ? 'Update Profile' : 'Save Supplier'}
                 </button>
                 <button
                   type="button"
                   className="btn"
-                  style={{ background: "#cbd5e0" }}
+                  style={{ background: '#cbd5e0' }}
                   onClick={() => setIsAddEditModalOpen(false)}
                 >
                   Cancel
@@ -1094,21 +1092,21 @@ export default function SupplierLedger({ currentUser }) {
           <div
             className="card"
             style={{
-              width: "380px",
-              background: "#fff",
-              padding: "18px",
-              borderRadius: "8px",
+              width: '380px',
+              background: '#fff',
+              padding: '18px',
+              borderRadius: '8px',
             }}
           >
-            <h3 style={{ margin: "0 0 10px 0", color: "#10b981" }}>
+            <h3 style={{ margin: '0 0 10px 0', color: '#10b981' }}>
               💵 Pay Supplier / Vendor
             </h3>
             <form
               onSubmit={handleRecordPayment}
-              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
             >
               <div>
-                <label style={{ fontSize: "0.7rem", color: "#64748b" }}>
+                <label style={{ fontSize: '0.7rem', color: '#64748b' }}>
                   Payment Amount (Rs.)
                 </label>
                 <input
@@ -1125,7 +1123,7 @@ export default function SupplierLedger({ currentUser }) {
               </div>
 
               <div>
-                <label style={{ fontSize: "0.7rem", color: "#64748b" }}>
+                <label style={{ fontSize: '0.7rem', color: '#64748b' }}>
                   Payment Method
                 </label>
                 <select
@@ -1154,15 +1152,15 @@ export default function SupplierLedger({ currentUser }) {
                 placeholder="Reference Notes / Cheque #"
               />
 
-              <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                 <button
                   type="submit"
                   className="btn btn-success"
                   style={{
                     flex: 1,
-                    background: "#10b981",
-                    color: "#fff",
-                    fontWeight: "bold",
+                    background: '#10b981',
+                    color: '#fff',
+                    fontWeight: 'bold',
                   }}
                 >
                   Confirm Payment
@@ -1170,7 +1168,7 @@ export default function SupplierLedger({ currentUser }) {
                 <button
                   type="button"
                   className="btn"
-                  style={{ background: "#cbd5e0" }}
+                  style={{ background: '#cbd5e0' }}
                   onClick={() => setIsPaymentModalOpen(false)}
                 >
                   Cancel

@@ -1,41 +1,39 @@
-import React, { useState, useEffect } from "react";
-import logoImage from "../assets/logo.png";
+import React, { useState, useEffect } from 'react';
+import logoImage from '../assets/logo.png';
 
-const getIpc = () =>
-  window.require ? window.require("electron").ipcRenderer : null;
-
+import { getIpc } from '../utils/ipc';
 export default function Settings({ currentUser }) {
-  const [activeSubTab, setActiveSubTab] = useState("shop");
+  const [activeSubTab, setActiveSubTab] = useState('shop');
   const [settings, setSettings] = useState({
-    shop_name: "",
-    shop_address: "",
-    shop_phone: "",
-    shop_logo: "",
-    sku_format: "CAT_SEQ",
-    cloud_provider: "NONE",
+    shop_name: '',
+    shop_address: '',
+    shop_phone: '',
+    shop_logo: '',
+    sku_format: 'CAT_SEQ',
+    cloud_provider: 'NONE',
     cloud_sync_enabled: false,
-    last_sync_time: "Never",
+    last_sync_time: 'Never',
   });
 
-  const [saveStatus, setSaveStatus] = useState("");
-  const [backupStatus, setBackupStatus] = useState("");
+  const [saveStatus, setSaveStatus] = useState('');
+  const [backupStatus, setBackupStatus] = useState('');
 
   // --- ADMIN USER & PASSWORD MANAGEMENT STATES ---
   const [users, setUsers] = useState([]);
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [passwordStatus, setPasswordStatus] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordStatus, setPasswordStatus] = useState('');
 
   const loadSettingsAndUsers = async () => {
     const ipc = getIpc();
     if (ipc) {
-      const data = await ipc.invoke("get-settings");
+      const data = await ipc.invoke('get-settings');
       if (data) {
         setSettings((prev) => ({ ...prev, ...data }));
       }
 
-      if (currentUser?.role?.toUpperCase() === "ADMIN") {
-        const fetchedUsers = await ipc.invoke("get-users");
+      if (currentUser?.role?.toUpperCase() === 'ADMIN') {
+        const fetchedUsers = await ipc.invoke('get-users');
         setUsers(fetchedUsers || []);
       }
     }
@@ -49,12 +47,12 @@ export default function Settings({ currentUser }) {
     e.preventDefault();
     const ipc = getIpc();
     if (ipc) {
-      const res = await ipc.invoke("save-settings", settings);
+      const res = await ipc.invoke('save-settings', settings);
       if (res && res.success) {
-        setSaveStatus("✅ Settings saved successfully!");
-        setTimeout(() => setSaveStatus(""), 3000);
+        setSaveStatus('✅ Settings saved successfully!');
+        setTimeout(() => setSaveStatus(''), 3000);
       } else {
-        alert("Error: " + (res?.error || "Unknown error"));
+        alert('Error: ' + (res?.error || 'Unknown error'));
       }
     }
   };
@@ -73,31 +71,31 @@ export default function Settings({ currentUser }) {
   // --- PASSWORD UPDATE HANDLER (ADMIN ONLY) ---
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
-    if (currentUser?.role?.toUpperCase() !== "ADMIN") {
+    if (currentUser?.role?.toUpperCase() !== 'ADMIN') {
       return alert(
-        "Unauthorized: Only Admin accounts can change user passwords.",
+        'Unauthorized: Only Admin accounts can change user passwords.',
       );
     }
-    if (!selectedUserId) return alert("Please select a user operator.");
+    if (!selectedUserId) return alert('Please select a user operator.');
     if (!newPassword || newPassword.length < 4) {
-      return alert("Password must be at least 4 characters long.");
+      return alert('Password must be at least 4 characters long.');
     }
 
     const ipc = getIpc();
     if (ipc) {
-      const res = await ipc.invoke("update-user-password", {
+      const res = await ipc.invoke('update-user-password', {
         userId: parseInt(selectedUserId),
         newPassword,
         currentUser,
       });
 
       if (res && res.success) {
-        setPasswordStatus("✅ Operator password updated successfully!");
-        setNewPassword("");
-        setSelectedUserId("");
-        setTimeout(() => setPasswordStatus(""), 4000);
+        setPasswordStatus('✅ Operator password updated successfully!');
+        setNewPassword('');
+        setSelectedUserId('');
+        setTimeout(() => setPasswordStatus(''), 4000);
       } else {
-        alert("Failed to update password: " + (res?.error || "Unknown error"));
+        alert('Failed to update password: ' + (res?.error || 'Unknown error'));
       }
     }
   };
@@ -106,40 +104,40 @@ export default function Settings({ currentUser }) {
   const handleExportBackup = async () => {
     const ipc = getIpc();
     if (ipc) {
-      setBackupStatus("⏳ Generating backup file...");
-      const res = await ipc.invoke("export-database-backup");
+      setBackupStatus('⏳ Generating backup file...');
+      const res = await ipc.invoke('export-database-backup');
       if (res && res.success) {
-        setBackupStatus("✅ Backup saved successfully to: " + res.filePath);
+        setBackupStatus('✅ Backup saved successfully to: ' + res.filePath);
       } else if (res && res.canceled) {
-        setBackupStatus("");
+        setBackupStatus('');
       } else {
-        setBackupStatus("❌ Backup failed: " + (res?.error || "Unknown error"));
+        setBackupStatus('❌ Backup failed: ' + (res?.error || 'Unknown error'));
       }
     } else {
-      alert("Backup feature requires Electron desktop environment.");
+      alert('Backup feature requires Electron desktop environment.');
     }
   };
 
   const handleRestoreBackup = async () => {
     const confirmed = window.confirm(
-      "⚠️ WARNING: Restoring a database backup will overwrite all current sales, inventory, and khata records with the backup file data. Are you sure you want to proceed?",
+      '⚠️ WARNING: Restoring a database backup will overwrite all current sales, inventory, and khata records with the backup file data. Are you sure you want to proceed?',
     );
     if (!confirmed) return;
 
     const ipc = getIpc();
     if (ipc) {
-      setBackupStatus("⏳ Restoring database...");
-      const res = await ipc.invoke("restore-database-backup");
+      setBackupStatus('⏳ Restoring database...');
+      const res = await ipc.invoke('restore-database-backup');
       if (res && res.success) {
         alert(
-          "✅ Database restored successfully! The application will now reload.",
+          '✅ Database restored successfully! The application will now reload.',
         );
         window.location.reload();
       } else if (res && res.canceled) {
-        setBackupStatus("");
+        setBackupStatus('');
       } else {
         setBackupStatus(
-          "❌ Restore failed: " + (res?.error || "Unknown error"),
+          '❌ Restore failed: ' + (res?.error || 'Unknown error'),
         );
       }
     }
@@ -148,7 +146,7 @@ export default function Settings({ currentUser }) {
   const handleCloudConnect = async (provider) => {
     const ipc = getIpc();
     if (ipc) {
-      const res = await ipc.invoke("link-cloud-account", provider);
+      const res = await ipc.invoke('link-cloud-account', provider);
       if (res && res.success) {
         setSettings((prev) => ({
           ...prev,
@@ -156,7 +154,7 @@ export default function Settings({ currentUser }) {
           cloud_sync_enabled: true,
         }));
       } else {
-        alert("Failed to open browser: " + (res?.error || "Unknown error"));
+        alert('Failed to open browser: ' + (res?.error || 'Unknown error'));
       }
     }
   };
@@ -164,20 +162,20 @@ export default function Settings({ currentUser }) {
   const handleCloudDisconnect = () => {
     setSettings((prev) => ({
       ...prev,
-      cloud_provider: "NONE",
+      cloud_provider: 'NONE',
       cloud_sync_enabled: false,
     }));
-    alert("🔌 Cloud sync disconnected.");
+    alert('🔌 Cloud sync disconnected.');
   };
 
   return (
     <div
       style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "16px",
-        height: "calc(100vh - 100px)",
-        overflow: "hidden",
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        height: 'calc(100vh - 100px)',
+        overflow: 'hidden',
       }}
     >
       <div className="page-title">⚙️ Settings & System Administration</div>
@@ -185,29 +183,29 @@ export default function Settings({ currentUser }) {
       {/* Modern Pill Sub-Tab Navigation */}
       <div
         style={{
-          display: "flex",
-          gap: "8px",
-          flexWrap: "wrap",
-          background: "#ffffff",
-          padding: "8px",
-          borderRadius: "10px",
-          border: "1px solid #e2e8f0",
+          display: 'flex',
+          gap: '8px',
+          flexWrap: 'wrap',
+          background: '#ffffff',
+          padding: '8px',
+          borderRadius: '10px',
+          border: '1px solid #e2e8f0',
         }}
       >
         <button
           type="button"
-          className={"btn " + (activeSubTab === "shop" ? "btn-primary" : "")}
+          className={'btn ' + (activeSubTab === 'shop' ? 'btn-primary' : '')}
           style={{
-            background: activeSubTab === "shop" ? "#1b75bc" : "transparent",
-            color: activeSubTab === "shop" ? "#fff" : "#475569",
-            fontSize: "0.78rem",
-            border: "none",
-            borderRadius: "6px",
-            fontWeight: "700",
-            padding: "8px 14px",
-            cursor: "pointer",
+            background: activeSubTab === 'shop' ? '#1b75bc' : 'transparent',
+            color: activeSubTab === 'shop' ? '#fff' : '#475569',
+            fontSize: '0.78rem',
+            border: 'none',
+            borderRadius: '6px',
+            fontWeight: '700',
+            padding: '8px 14px',
+            cursor: 'pointer',
           }}
-          onClick={() => setActiveSubTab("shop")}
+          onClick={() => setActiveSubTab('shop')}
         >
           🏬 Shop Info & SKU
         </button>
@@ -215,88 +213,88 @@ export default function Settings({ currentUser }) {
         <button
           type="button"
           className={
-            "btn " + (activeSubTab === "security" ? "btn-primary" : "")
+            'btn ' + (activeSubTab === 'security' ? 'btn-primary' : '')
           }
           style={{
-            background: activeSubTab === "security" ? "#1b75bc" : "transparent",
-            color: activeSubTab === "security" ? "#fff" : "#475569",
-            fontSize: "0.78rem",
-            border: "none",
-            borderRadius: "6px",
-            fontWeight: "700",
-            padding: "8px 14px",
-            cursor: "pointer",
+            background: activeSubTab === 'security' ? '#1b75bc' : 'transparent',
+            color: activeSubTab === 'security' ? '#fff' : '#475569',
+            fontSize: '0.78rem',
+            border: 'none',
+            borderRadius: '6px',
+            fontWeight: '700',
+            padding: '8px 14px',
+            cursor: 'pointer',
           }}
-          onClick={() => setActiveSubTab("security")}
+          onClick={() => setActiveSubTab('security')}
         >
-          🔒 Security & Passwords{" "}
-          {currentUser?.role?.toUpperCase() !== "ADMIN" && "(Admin Only)"}
+          🔒 Security & Passwords{' '}
+          {currentUser?.role?.toUpperCase() !== 'ADMIN' && '(Admin Only)'}
         </button>
 
         <button
           type="button"
-          className={"btn " + (activeSubTab === "backup" ? "btn-primary" : "")}
+          className={'btn ' + (activeSubTab === 'backup' ? 'btn-primary' : '')}
           style={{
-            background: activeSubTab === "backup" ? "#1b75bc" : "transparent",
-            color: activeSubTab === "backup" ? "#fff" : "#475569",
-            fontSize: "0.78rem",
-            border: "none",
-            borderRadius: "6px",
-            fontWeight: "700",
-            padding: "8px 14px",
-            cursor: "pointer",
+            background: activeSubTab === 'backup' ? '#1b75bc' : 'transparent',
+            color: activeSubTab === 'backup' ? '#fff' : '#475569',
+            fontSize: '0.78rem',
+            border: 'none',
+            borderRadius: '6px',
+            fontWeight: '700',
+            padding: '8px 14px',
+            cursor: 'pointer',
           }}
-          onClick={() => setActiveSubTab("backup")}
+          onClick={() => setActiveSubTab('backup')}
         >
           💾 Backup
         </button>
 
         <button
           type="button"
-          className={"btn " + (activeSubTab === "about" ? "btn-primary" : "")}
+          className={'btn ' + (activeSubTab === 'about' ? 'btn-primary' : '')}
           style={{
-            background: activeSubTab === "about" ? "#1b75bc" : "transparent",
-            color: activeSubTab === "about" ? "#fff" : "#475569",
-            fontSize: "0.78rem",
-            border: "none",
-            borderRadius: "6px",
-            fontWeight: "700",
-            padding: "8px 14px",
-            cursor: "pointer",
+            background: activeSubTab === 'about' ? '#1b75bc' : 'transparent',
+            color: activeSubTab === 'about' ? '#fff' : '#475569',
+            fontSize: '0.78rem',
+            border: 'none',
+            borderRadius: '6px',
+            fontWeight: '700',
+            padding: '8px 14px',
+            cursor: 'pointer',
           }}
-          onClick={() => setActiveSubTab("about")}
+          onClick={() => setActiveSubTab('about')}
         >
           ℹ️ About & Support
         </button>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", paddingBottom: "20px" }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '20px' }}>
         {/* SHOP INFO SUB-TAB */}
-        {activeSubTab === "shop" && (
+        {activeSubTab === 'shop' && (
           <div
             className="card"
             style={{
-              maxWidth: "680px",
-              background: "#fff",
-              padding: "24px",
-              borderRadius: "12px",
-              border: "1px solid #e2e8f0",
+              maxWidth: '680px',
+              background: '#fff',
+              padding: '24px',
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
             }}
           >
             <h4
               style={{
-                margin: "0 0 4px 0",
-                color: "#1e293b",
-                fontWeight: "800",
+                margin: '0 0 4px 0',
+                color: '#1e293b',
+                fontWeight: '800',
               }}
             >
               Custom Receipt Headers & SKU Configuration
             </h4>
             <p
               style={{
-                fontSize: "0.78rem",
-                color: "#64748b",
-                marginBottom: "16px",
+                fontSize: '0.78rem',
+                color: '#64748b',
+                marginBottom: '16px',
               }}
             >
               These details will automatically display on all 80mm thermal
@@ -306,14 +304,14 @@ export default function Settings({ currentUser }) {
             {saveStatus && (
               <div
                 style={{
-                  background: "#f0fdf4",
-                  color: "#15803d",
-                  padding: "10px 14px",
-                  borderRadius: "8px",
-                  fontSize: "0.8rem",
-                  marginBottom: "14px",
-                  border: "1px solid #bbf7d0",
-                  fontWeight: "600",
+                  background: '#f0fdf4',
+                  color: '#15803d',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  fontSize: '0.8rem',
+                  marginBottom: '14px',
+                  border: '1px solid #bbf7d0',
+                  fontWeight: '600',
                 }}
               >
                 {saveStatus}
@@ -322,14 +320,14 @@ export default function Settings({ currentUser }) {
 
             <form
               onSubmit={handleSave}
-              style={{ display: "flex", flexDirection: "column", gap: "14px" }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
             >
               <div>
                 <label
                   style={{
-                    fontSize: "0.78rem",
-                    fontWeight: "700",
-                    color: "#334155",
+                    fontSize: '0.78rem',
+                    fontWeight: '700',
+                    color: '#334155',
                   }}
                 >
                   Shop / Business Name
@@ -337,7 +335,7 @@ export default function Settings({ currentUser }) {
                 <input
                   type="text"
                   className="input-field"
-                  value={settings.shop_name || ""}
+                  value={settings.shop_name || ''}
                   onChange={(e) =>
                     setSettings({ ...settings, shop_name: e.target.value })
                   }
@@ -349,9 +347,9 @@ export default function Settings({ currentUser }) {
               <div>
                 <label
                   style={{
-                    fontSize: "0.78rem",
-                    fontWeight: "700",
-                    color: "#334155",
+                    fontSize: '0.78rem',
+                    fontWeight: '700',
+                    color: '#334155',
                   }}
                 >
                   Shop Physical Address
@@ -359,7 +357,7 @@ export default function Settings({ currentUser }) {
                 <textarea
                   className="input-field"
                   rows="2"
-                  value={settings.shop_address || ""}
+                  value={settings.shop_address || ''}
                   onChange={(e) =>
                     setSettings({ ...settings, shop_address: e.target.value })
                   }
@@ -370,9 +368,9 @@ export default function Settings({ currentUser }) {
               <div>
                 <label
                   style={{
-                    fontSize: "0.78rem",
-                    fontWeight: "700",
-                    color: "#334155",
+                    fontSize: '0.78rem',
+                    fontWeight: '700',
+                    color: '#334155',
                   }}
                 >
                   Contact Phone / Helpline
@@ -380,7 +378,7 @@ export default function Settings({ currentUser }) {
                 <input
                   type="text"
                   className="input-field"
-                  value={settings.shop_phone || ""}
+                  value={settings.shop_phone || ''}
                   onChange={(e) =>
                     setSettings({ ...settings, shop_phone: e.target.value })
                   }
@@ -391,16 +389,16 @@ export default function Settings({ currentUser }) {
               <div>
                 <label
                   style={{
-                    fontSize: "0.78rem",
-                    fontWeight: "700",
-                    color: "#334155",
+                    fontSize: '0.78rem',
+                    fontWeight: '700',
+                    color: '#334155',
                   }}
                 >
                   Automated SKU Generation Format
                 </label>
                 <select
                   className="input-field"
-                  value={settings.sku_format || "CAT_SEQ"}
+                  value={settings.sku_format || 'CAT_SEQ'}
                   onChange={(e) =>
                     setSettings({ ...settings, sku_format: e.target.value })
                   }
@@ -423,9 +421,9 @@ export default function Settings({ currentUser }) {
               <div>
                 <label
                   style={{
-                    fontSize: "0.78rem",
-                    fontWeight: "700",
-                    color: "#334155",
+                    fontSize: '0.78rem',
+                    fontWeight: '700',
+                    color: '#334155',
                   }}
                 >
                   Shop Logo (Displays on Receipt)
@@ -434,17 +432,17 @@ export default function Settings({ currentUser }) {
                   type="file"
                   accept="image/*"
                   onChange={handleLogoUpload}
-                  style={{ marginTop: "6px", fontSize: "0.8rem" }}
+                  style={{ marginTop: '6px', fontSize: '0.8rem' }}
                 />
                 {settings.shop_logo && (
-                  <div style={{ marginTop: "10px" }}>
+                  <div style={{ marginTop: '10px' }}>
                     <img
                       src={settings.shop_logo}
                       alt="Shop Logo"
                       style={{
-                        maxHeight: "55px",
-                        borderRadius: "6px",
-                        border: "1px solid #cbd5e0",
+                        maxHeight: '55px',
+                        borderRadius: '6px',
+                        border: '1px solid #cbd5e0',
                       }}
                     />
                   </div>
@@ -454,7 +452,7 @@ export default function Settings({ currentUser }) {
               <button
                 type="submit"
                 className="btn btn-primary"
-                style={{ padding: "11px", marginTop: "8px", fontWeight: "700" }}
+                style={{ padding: '11px', marginTop: '8px', fontWeight: '700' }}
               >
                 💾 Save Shop Branding Settings
               </button>
@@ -463,47 +461,47 @@ export default function Settings({ currentUser }) {
         )}
 
         {/* ADMIN SECURITY & PASSWORD MANAGEMENT SUB-TAB */}
-        {activeSubTab === "security" && (
+        {activeSubTab === 'security' && (
           <div
             className="card"
             style={{
-              maxWidth: "680px",
-              background: "#fff",
-              padding: "24px",
-              borderRadius: "12px",
-              border: "1px solid #e2e8f0",
+              maxWidth: '680px',
+              background: '#fff',
+              padding: '24px',
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
             }}
           >
             <h4
               style={{
-                margin: "0 0 4px 0",
-                color: "#1e293b",
-                fontWeight: "800",
+                margin: '0 0 4px 0',
+                color: '#1e293b',
+                fontWeight: '800',
               }}
             >
               🔒 Admin Password & Operator Security
             </h4>
             <p
               style={{
-                fontSize: "0.78rem",
-                color: "#64748b",
-                marginBottom: "16px",
+                fontSize: '0.78rem',
+                color: '#64748b',
+                marginBottom: '16px',
               }}
             >
               Securely update operator credentials and manager passwords. Strict
               RBAC enforcement is active.
             </p>
 
-            {currentUser?.role?.toUpperCase() !== "ADMIN" ? (
+            {currentUser?.role?.toUpperCase() !== 'ADMIN' ? (
               <div
                 style={{
-                  background: "#fef2f2",
-                  color: "#991b1b",
-                  padding: "14px",
-                  borderRadius: "8px",
-                  fontSize: "0.85rem",
-                  border: "1px solid #fecaca",
-                  fontWeight: "bold",
+                  background: '#fef2f2',
+                  color: '#991b1b',
+                  padding: '14px',
+                  borderRadius: '8px',
+                  fontSize: '0.85rem',
+                  border: '1px solid #fecaca',
+                  fontWeight: 'bold',
                 }}
               >
                 ⛔ Access Denied: Only Manager (ADMIN) accounts can access
@@ -514,14 +512,14 @@ export default function Settings({ currentUser }) {
                 {passwordStatus && (
                   <div
                     style={{
-                      background: "#f0fdf4",
-                      color: "#15803d",
-                      padding: "10px 14px",
-                      borderRadius: "8px",
-                      fontSize: "0.8rem",
-                      marginBottom: "14px",
-                      border: "1px solid #bbf7d0",
-                      fontWeight: "600",
+                      background: '#f0fdf4',
+                      color: '#15803d',
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      fontSize: '0.8rem',
+                      marginBottom: '14px',
+                      border: '1px solid #bbf7d0',
+                      fontWeight: '600',
                     }}
                   >
                     {passwordStatus}
@@ -531,17 +529,17 @@ export default function Settings({ currentUser }) {
                 <form
                   onSubmit={handleUpdatePassword}
                   style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "14px",
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '14px',
                   }}
                 >
                   <div>
                     <label
                       style={{
-                        fontSize: "0.78rem",
-                        fontWeight: "700",
-                        color: "#334155",
+                        fontSize: '0.78rem',
+                        fontWeight: '700',
+                        color: '#334155',
                       }}
                     >
                       Select Operator Account
@@ -564,9 +562,9 @@ export default function Settings({ currentUser }) {
                   <div>
                     <label
                       style={{
-                        fontSize: "0.78rem",
-                        fontWeight: "700",
-                        color: "#334155",
+                        fontSize: '0.78rem',
+                        fontWeight: '700',
+                        color: '#334155',
                       }}
                     >
                       New Secure Password
@@ -585,10 +583,10 @@ export default function Settings({ currentUser }) {
                     type="submit"
                     className="btn btn-primary"
                     style={{
-                      padding: "11px",
-                      marginTop: "8px",
-                      background: "#0d5c75",
-                      fontWeight: "700",
+                      padding: '11px',
+                      marginTop: '8px',
+                      background: '#0d5c75',
+                      fontWeight: '700',
                     }}
                   >
                     🔐 Update Operator Password
@@ -600,38 +598,38 @@ export default function Settings({ currentUser }) {
         )}
 
         {/* DATABASE BACKUP & CLOUD SYNC SUB-TAB */}
-        {activeSubTab === "backup" && (
+        {activeSubTab === 'backup' && (
           <div
             style={{
-              maxWidth: "680px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "16px",
+              maxWidth: '680px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
             }}
           >
             <div
               className="card"
               style={{
-                background: "#fff",
-                padding: "24px",
-                borderRadius: "12px",
-                border: "1px solid #e2e8f0",
+                background: '#fff',
+                padding: '24px',
+                borderRadius: '12px',
+                border: '1px solid #e2e8f0',
               }}
             >
               <h4
                 style={{
-                  margin: "0 0 6px 0",
-                  color: "#1e293b",
-                  fontWeight: "800",
+                  margin: '0 0 6px 0',
+                  color: '#1e293b',
+                  fontWeight: '800',
                 }}
               >
                 💾 Local Database Backup & Recovery
               </h4>
               <p
                 style={{
-                  fontSize: "0.78rem",
-                  color: "#64748b",
-                  marginBottom: "16px",
+                  fontSize: '0.78rem',
+                  color: '#64748b',
+                  marginBottom: '16px',
                 }}
               >
                 Safeguard your business records. Export a complete copy of your
@@ -642,14 +640,14 @@ export default function Settings({ currentUser }) {
               {backupStatus && (
                 <div
                   style={{
-                    background: "#f8fafc",
-                    color: "#0f172a",
-                    padding: "10px 14px",
-                    borderRadius: "8px",
-                    fontSize: "0.8rem",
-                    marginBottom: "14px",
-                    border: "1px solid #cbd5e0",
-                    fontWeight: "600",
+                    background: '#f8fafc',
+                    color: '#0f172a',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    fontSize: '0.8rem',
+                    marginBottom: '14px',
+                    border: '1px solid #cbd5e0',
+                    fontWeight: '600',
                   }}
                 >
                   {backupStatus}
@@ -658,19 +656,19 @@ export default function Settings({ currentUser }) {
 
               <div
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "12px",
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '12px',
                 }}
               >
                 <button
                   type="button"
                   className="btn btn-primary"
                   style={{
-                    padding: "12px",
-                    fontWeight: "700",
-                    fontSize: "0.8rem",
-                    cursor: "pointer",
+                    padding: '12px',
+                    fontWeight: '700',
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
                   }}
                   onClick={handleExportBackup}
                 >
@@ -680,14 +678,14 @@ export default function Settings({ currentUser }) {
                   type="button"
                   className="btn"
                   style={{
-                    padding: "12px",
-                    background: "#fee2e2",
-                    color: "#dc2626",
-                    fontWeight: "700",
-                    fontSize: "0.8rem",
-                    border: "none",
-                    borderRadius: "8px",
-                    cursor: "pointer",
+                    padding: '12px',
+                    background: '#fee2e2',
+                    color: '#dc2626',
+                    fontWeight: '700',
+                    fontSize: '0.8rem',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
                   }}
                   onClick={handleRestoreBackup}
                 >
@@ -882,44 +880,44 @@ export default function Settings({ currentUser }) {
         )}
 
         {/* ABOUT SUB-TAB */}
-        {activeSubTab === "about" && (
+        {activeSubTab === 'about' && (
           <div
             className="card"
             style={{
-              maxWidth: "680px",
-              background: "#fff",
-              padding: "24px",
-              borderRadius: "12px",
-              border: "1px solid #e2e8f0",
+              maxWidth: '680px',
+              background: '#fff',
+              padding: '24px',
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
             }}
           >
             <h4
               style={{
-                margin: "0 0 6px 0",
-                color: "#1b75bc",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                fontWeight: "800",
+                margin: '0 0 6px 0',
+                color: '#1b75bc',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontWeight: '800',
               }}
             >
               <img
                 src={logoImage}
                 alt="ShopMate Logo"
                 style={{
-                  width: "22px",
-                  height: "22px",
-                  objectFit: "contain",
-                  borderRadius: "4px",
+                  width: '22px',
+                  height: '22px',
+                  objectFit: 'contain',
+                  borderRadius: '4px',
                 }}
               />
               About ShopMate Desktop POS
             </h4>
             <p
               style={{
-                fontSize: "0.8rem",
-                color: "#555",
-                marginBottom: "16px",
+                fontSize: '0.8rem',
+                color: '#555',
+                marginBottom: '16px',
               }}
             >
               ShopMate is an enterprise-grade, offline-first Windows POS & Khata
@@ -929,26 +927,26 @@ export default function Settings({ currentUser }) {
 
             <div
               style={{
-                background: "#f8fafc",
-                padding: "16px",
-                borderRadius: "8px",
-                border: "1px solid #e2e8f0",
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-                color: "#000",
+                background: '#f8fafc',
+                padding: '16px',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+                color: '#000',
               }}
             >
-              <h5 style={{ margin: 0, color: "#1b75bc", fontWeight: "700" }}>
+              <h5 style={{ margin: 0, color: '#1b75bc', fontWeight: '700' }}>
                 Support & Developer Contact
               </h5>
-              <div style={{ fontSize: "0.8rem" }}>
+              <div style={{ fontSize: '0.8rem' }}>
                 <strong>Email:</strong> fahadfida400@gmail.com
               </div>
-              <div style={{ fontSize: "0.8rem" }}>
+              <div style={{ fontSize: '0.8rem' }}>
                 <strong>💬 WhatsApp:</strong> +92 331 546 9223
               </div>
-              <div style={{ fontSize: "0.8rem" }}>
+              <div style={{ fontSize: '0.8rem' }}>
                 <strong>💻 System Version:</strong> v1.0.0 (Offline Desktop WAL
                 Edition)
               </div>

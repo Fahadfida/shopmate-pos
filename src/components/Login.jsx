@@ -1,31 +1,30 @@
-import React, { useState } from "react";
-import bgImage from "../assets/login-bg.jpg"; // Import your background image asset
-import logoImage from "../assets/logo.png";
-const getIpc = () =>
-  window.require ? window.require("electron").ipcRenderer : null;
+import React, { useState } from 'react';
+import bgImage from '../assets/login-bg.jpg'; // Import your background image asset
+import logoImage from '../assets/logo.png';
+import { getIpc } from '../utils/ipc';
 
 export default function Login({ onLoginSuccess }) {
   const [loginForm, setLoginForm] = useState({
-    username: "Manager",
-    pin: "1234",
+    username: 'Manager',
+    pin: '1234',
   });
-  const [loginError, setLoginError] = useState("");
+  const [loginError, setLoginError] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoginError("");
+    setLoginError('');
     const ipc = getIpc();
 
     if (!ipc) {
       onLoginSuccess({
         id: 1,
         username: loginForm.username,
-        role: loginForm.username === "Manager" ? "ADMIN" : "CASHIER",
+        role: loginForm.username === 'Manager' ? 'ADMIN' : 'CASHIER',
       });
       return;
     }
 
-    const res = await ipc.invoke("login", loginForm);
+    const res = await ipc.invoke('login', loginForm);
     if (res.success) {
       onLoginSuccess(res.user);
     } else {
@@ -36,51 +35,51 @@ export default function Login({ onLoginSuccess }) {
   return (
     <div
       style={{
-        display: "flex",
-        height: "100vh",
-        width: "100vw",
-        justifyContent: "center",
-        alignItems: "center",
+        display: 'flex',
+        height: '100vh',
+        width: '100vw',
+        justifyContent: 'center',
+        alignItems: 'center',
         backgroundImage: `linear-gradient(rgba(26, 35, 50, 0.75), rgba(26, 35, 50, 0.85)), url(${bgImage})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
       }}
     >
       <div
         className="card"
         style={{
-          width: "360px",
-          padding: "28px",
-          background: "rgba(255, 255, 255, 0.95)",
-          backdropFilter: "blur(10px)",
-          boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
-          borderRadius: "12px",
+          width: '360px',
+          padding: '28px',
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+          borderRadius: '12px',
         }}
       >
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "10px",
-            marginBottom: "8px",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            marginBottom: '8px',
           }}
         >
           <img
             src={logoImage}
             alt="ShopMate Logo"
             style={{
-              width: "36px",
-              height: "36px",
-              objectFit: "contain",
-              borderRadius: "4px",
+              width: '36px',
+              height: '36px',
+              objectFit: 'contain',
+              borderRadius: '4px',
             }}
           />
           <h2
             style={{
               margin: 0,
-              color: "#0d5c75",
-              fontSize: "1.5rem",
+              color: '#0d5c75',
+              fontSize: '1.5rem',
             }}
           >
             ShopMate POS
@@ -88,10 +87,10 @@ export default function Login({ onLoginSuccess }) {
         </div>
         <p
           style={{
-            textAlign: "center",
-            fontSize: "0.85rem",
-            color: "#555",
-            marginBottom: "20px",
+            textAlign: 'center',
+            fontSize: '0.85rem',
+            color: '#555',
+            marginBottom: '20px',
           }}
         >
           Sign in to access counter & accounts
@@ -100,12 +99,12 @@ export default function Login({ onLoginSuccess }) {
         {loginError && (
           <div
             style={{
-              background: "#fde8e8",
-              color: "#e53935",
-              padding: "8px",
-              fontSize: "0.8rem",
-              borderRadius: "4px",
-              marginBottom: "12px",
+              background: '#fde8e8',
+              color: '#e53935',
+              padding: '8px',
+              fontSize: '0.8rem',
+              borderRadius: '4px',
+              marginBottom: '12px',
             }}
           >
             {loginError}
@@ -114,11 +113,11 @@ export default function Login({ onLoginSuccess }) {
 
         <form
           onSubmit={handleLogin}
-          style={{ display: "flex", flexDirection: "column", gap: "14px" }}
+          style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
         >
           <div>
             <label
-              style={{ fontSize: "0.8rem", fontWeight: "bold", color: "#333" }}
+              style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#333' }}
             >
               Username / Account
             </label>
@@ -135,7 +134,7 @@ export default function Login({ onLoginSuccess }) {
           </div>
           <div>
             <label
-              style={{ fontSize: "0.8rem", fontWeight: "bold", color: "#333" }}
+              style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#333' }}
             >
               PIN Code
             </label>
@@ -153,17 +152,17 @@ export default function Login({ onLoginSuccess }) {
           <button
             type="submit"
             className="btn btn-primary"
-            style={{ marginTop: "8px", padding: "10px", fontWeight: "bold" }}
+            style={{ marginTop: '8px', padding: '10px', fontWeight: 'bold' }}
           >
             Sign In to ShopMate
           </button>
         </form>
         <div
           style={{
-            fontSize: "0.75rem",
-            color: "#666",
-            textAlign: "center",
-            marginTop: "16px",
+            fontSize: '0.75rem',
+            color: '#666',
+            textAlign: 'center',
+            marginTop: '16px',
           }}
         >
           Default PINs: Admin (1234) | Cashier (0000)
