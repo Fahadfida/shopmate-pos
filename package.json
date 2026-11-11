@@ -1,0 +1,61 @@
+{
+  "name": "ShopMate",
+  "type": "module",
+  "version": "2.0.1",
+  "description": "ShopMate Enterprise Retail POS & Khata System",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k \"npm run dev:vite\" \"npm run dev:electron\"",
+    "dev:vite": "vite",
+    "dev:electron": "wait-on tcp:5173 && cross-env NODE_ENV=development electron .",
+    "build": "vite build",
+    "pack:linux": "electron-builder --linux",
+    "dist": "npm run build && electron-builder",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "build": {
+    "appId": "com.shopmate.pos",
+    "productName": "ShopMate",
+    "directories": {
+      "output": "dist_electron"
+    },
+    "asar": true,
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json",
+      "public_key.pem"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Office;Finance;"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "shortcutName": "ShopMate"
+    }
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "node-machine-id": "^1.1.12"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6",
+    "cross-env": "^10.1.0",
+    "electron": "^45.1.0",
+    "electron-builder": "^26.18.0",
+    "wait-on": "^9.5.1"
+  }
+}

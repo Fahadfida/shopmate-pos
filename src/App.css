@@ -1,0 +1,344 @@
+/* ==========================================
+   🌸 SHOPMATE: JAPANESE ANIME ART THEME
+   ========================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+
+:root {
+  --sidebar-bg: #152b45; /* Deep evening sky navy */
+  --sidebar-active: #1b75bc; /* Vibrant vending-machine blue */
+  --bg-main: #f3f7fa; /* Crisp sky-washed neutral canvas */
+  --card-bg: #ffffff;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --primary-btn: #1b75bc;
+  --primary-hover: #145d94;
+  --success-color: #10b981;
+  --danger-color: #ef4444;
+  --warning-color: #f59e0b;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family:
+    "Plus Jakarta Sans",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  overflow: hidden;
+  height: 100vh;
+}
+
+/* App Shell Layout */
+.shopmate-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Sidebar Drawer - Japanese Art Palette */
+.shopmate-sidebar {
+  width: 250px;
+  background-color: var(--sidebar-bg);
+  color: #fefbfb;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 4px 0 15px rgba(21, 43, 69, 0.15);
+}
+
+.sidebar-header {
+  padding: 22px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar-header h2 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: #ffffff;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 10px;
+  gap: 6px;
+  flex: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-item:hover {
+  background-color: rgba(27, 117, 188, 0.15);
+  color: #ffffff;
+}
+
+.nav-item.active {
+  background-color: var(--sidebar-active);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(27, 117, 188, 0.35);
+}
+
+.user-profile-badge {
+  padding: 14px 18px;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Main Content Area */
+.shopmate-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 28px;
+  background-color: var(--bg-main);
+}
+
+.page-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  letter-spacing: -0.3px;
+}
+
+/* Form Cards & Inputs */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
+  transition: box-shadow 0.2s ease;
+}
+
+.input-field {
+  width: 100%;
+  padding: 9px 14px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  margin-top: 4px;
+  background-color: #fff;
+  color: var(--text-main);
+  transition: all 0.15s ease;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--primary-btn);
+  box-shadow: 0 0 0 4px rgba(27, 117, 188, 0.12);
+}
+
+/* Buttons - Clean Apple/Anime Rounded Pill Style */
+.btn {
+  padding: 9px 18px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s ease;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background-color: var(--primary-btn);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(27, 117, 188, 0.25);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  box-shadow: 0 4px 12px rgba(27, 117, 188, 0.35);
+}
+
+.btn-success {
+  background-color: var(--success-color);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+}
+
+.btn-danger {
+  background-color: var(--danger-color);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+}
+
+/* Data Tables */
+.table-container {
+  overflow-x: auto;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.88rem;
+}
+
+.data-table th {
+  background-color: #f8fafc;
+  padding: 12px 16px;
+  border-bottom: 2px solid var(--border-color);
+  font-weight: 700;
+  color: #475569;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.data-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.monospace {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  letter-spacing: -0.3px;
+}
+
+/* ==========================================
+   🖨️ THERMAL PRINTER & MODAL STYLES
+   ========================================== */
+
+@keyframes animeModalPop {
+  0% {
+    transform: scale(0.94);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.receipt-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.receipt-paper {
+  width: 320px;
+  background: #ffffff;
+  padding: 24px;
+  font-family: "Courier New", Courier, monospace;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.35);
+  border-radius: 12px;
+  border-top: 8px solid var(--sidebar-bg);
+  animation: animeModalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Receipt Line Elements */
+.receipt-divider {
+  border-bottom: 1px dashed #cbd5e1;
+  margin: 12px 0;
+}
+
+.receipt-item-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.receipt-barcode {
+  height: 36px;
+  background: repeating-linear-gradient(
+    90deg,
+    #000 0px,
+    #000 2px,
+    #fff 2px,
+    #fff 4px,
+    #000 4px,
+    #000 7px,
+    #fff 7px,
+    #fff 9px
+  );
+  margin: 14px auto 6px auto;
+  width: 85%;
+}
+
+@media print {
+  .shopmate-sidebar,
+  .shopmate-content > *:not(.receipt-modal-backdrop),
+  .receipt-actions-row {
+    display: none !important;
+  }
+  .receipt-modal-backdrop {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: transparent !important;
+    display: block !important;
+    z-index: 999999 !important;
+  }
+  .receipt-paper {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 80mm !important;
+    margin: 0 !important;
+    padding: 4mm !important;
+    box-shadow: none !important;
+    border-top: none !important;
+    animation: none !important;
+  }
+}
