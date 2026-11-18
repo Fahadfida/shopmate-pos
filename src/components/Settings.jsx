@@ -2,186 +2,152 @@ import React, { useState, useEffect } from 'react';
 import logoImage from '../assets/logo.png';
 import { getIpc } from '../utils/ipc';
 
-// --- SVG ICONS ---
+// ─────────────────────────────────────────────────────────────
+// Icons (Lucide 16px/18px 1.5 stroke)
+// ─────────────────────────────────────────────────────────────
+const iconBase = {
+  width: 18,
+  height: 18,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.5,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+};
+
 const StoreIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-    <polyline points="9 22 9 12 15 12 15 22"></polyline>
-  </svg>
-);
-const ShieldIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-  </svg>
-);
-const DatabaseIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
-    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
-    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
-  </svg>
-);
-const InfoIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="10"></circle>
-    <line x1="12" y1="16" x2="12" y2="12"></line>
-    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-  </svg>
-);
-const PaletteIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="13.5" cy="6.5" r=".5"></circle>
-    <circle cx="17.5" cy="10.5" r=".5"></circle>
-    <circle cx="8.5" cy="7.5" r=".5"></circle>
-    <circle cx="6.5" cy="12.5" r=".5"></circle>
-    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path>
-  </svg>
-);
-const SunIcon = () => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="5"></circle>
-    <line x1="12" y1="1" x2="12" y2="3"></line>
-    <line x1="12" y1="21" x2="12" y2="23"></line>
-    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-    <line x1="1" y1="12" x2="3" y2="12"></line>
-    <line x1="21" y1="12" x2="23" y2="12"></line>
-    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-  </svg>
-);
-const MoonIcon = () => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-  </svg>
-);
-const UploadIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-    <polyline points="17 8 12 3 7 8"></polyline>
-    <line x1="12" y1="3" x2="12" y2="15"></line>
-  </svg>
-);
-const DownloadIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-    <polyline points="7 10 12 15 17 10"></polyline>
-    <line x1="12" y1="15" x2="12" y2="3"></line>
-  </svg>
-);
-const SaveIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-    <polyline points="17 21 17 13 7 13 7 21"></polyline>
-    <polyline points="7 3 7 8 15 8"></polyline>
-  </svg>
-);
-const LockIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+  <svg {...iconBase}>
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <polyline points="9 22 9 12 15 12 15 22" />
   </svg>
 );
 
+const ShieldIcon = () => (
+  <svg {...iconBase}>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+  </svg>
+);
+
+const DatabaseIcon = () => (
+  <svg {...iconBase}>
+    <ellipse cx="12" cy="5" rx="9" ry="3" />
+    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+  </svg>
+);
+
+const InfoIcon = () => (
+  <svg {...iconBase}>
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="16" x2="12" y2="12" />
+    <line x1="12" y1="8" x2="12.01" y2="8" />
+  </svg>
+);
+
+const PaletteIcon = () => (
+  <svg {...iconBase}>
+    <circle cx="13.5" cy="6.5" r=".5" />
+    <circle cx="17.5" cy="10.5" r=".5" />
+    <circle cx="8.5" cy="7.5" r=".5" />
+    <circle cx="6.5" cy="12.5" r=".5" />
+    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
+  </svg>
+);
+
+const SunIcon = () => (
+  <svg {...iconBase} width={22} height={22}>
+    <circle cx="12" cy="12" r="5" />
+    <line x1="12" y1="1" x2="12" y2="3" />
+    <line x1="12" y1="21" x2="12" y2="23" />
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+    <line x1="1" y1="12" x2="3" y2="12" />
+    <line x1="21" y1="12" x2="23" y2="12" />
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+  </svg>
+);
+
+const MoonIcon = () => (
+  <svg {...iconBase} width={22} height={22}>
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+  </svg>
+);
+
+const UploadIcon = () => (
+  <svg {...iconBase} width={16} height={16}>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="17 8 12 3 7 8" />
+    <line x1="12" y1="3" x2="12" y2="15" />
+  </svg>
+);
+
+const DownloadIcon = () => (
+  <svg {...iconBase} width={16} height={16}>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </svg>
+);
+
+const SaveIcon = () => (
+  <svg {...iconBase} width={16} height={16}>
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+    <polyline points="17 21 17 13 7 13 7 21" />
+    <polyline points="7 3 7 8 15 8" />
+  </svg>
+);
+
+const LockIcon = () => (
+  <svg {...iconBase}>
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+
+const RefreshIcon = () => (
+  <svg {...iconBase} width={16} height={16}>
+    <polyline points="23 4 23 10 17 10" />
+    <polyline points="1 20 1 14 7 14" />
+    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+  </svg>
+);
+
+// ─────────────────────────────────────────────────────────────
+// Reusable Primitives
+// ─────────────────────────────────────────────────────────────
+const Field = ({ label, children }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+    <label
+      style={{
+        fontSize: '0.75rem',
+        fontWeight: 500,
+        color: 'var(--ink-fg-2)',
+        letterSpacing: '0.01em',
+      }}
+    >
+      {label}
+    </label>
+    {children}
+  </div>
+);
+
+const inputStyle = {
+  padding: '9px 12px',
+  borderRadius: '6px',
+  border: '1px solid var(--ink-3)',
+  background: 'var(--ink-0)',
+  color: 'var(--ink-fg)',
+  fontSize: '0.85rem',
+  width: '100%',
+  outline: 'none',
+  fontFamily: 'inherit',
+};
+
+// ─────────────────────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────────────────────
 export default function Settings({ currentUser }) {
   const [activeTab, setActiveTab] = useState('shop');
 
@@ -204,14 +170,12 @@ export default function Settings({ currentUser }) {
   const [newPassword, setNewPassword] = useState('');
   const [passwordStatus, setPasswordStatus] = useState('');
 
-  // 👇 THESE ARE NOW SAFELY INSIDE THE COMPONENT 👇
   const [updateStatus, setUpdateStatus] = useState(''); // '', 'checking', 'available', 'up-to-date', 'error'
   const [updateInfo, setUpdateInfo] = useState({
     version: '',
     currentVersion: '',
   });
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
-  // 👆 ------------------------------------------ 👆
 
   const loadSettingsAndUsers = async () => {
     const ipc = getIpc();
@@ -281,7 +245,7 @@ export default function Settings({ currentUser }) {
     if (ipc) {
       const res = await ipc.invoke('save-settings', settings);
       if (res && res.success) {
-        setSaveStatus('Settings saved successfully!');
+        setSaveStatus('Settings saved successfully.');
         setTimeout(() => setSaveStatus(''), 3000);
       } else {
         alert('Error: ' + (res?.error || 'Unknown error'));
@@ -315,7 +279,7 @@ export default function Settings({ currentUser }) {
         currentUser,
       });
       if (res && res.success) {
-        setPasswordStatus('Operator password updated successfully!');
+        setPasswordStatus('Operator password updated successfully.');
         setNewPassword('');
         setSelectedUserId('');
         setTimeout(() => setPasswordStatus(''), 4000);
@@ -359,49 +323,53 @@ export default function Settings({ currentUser }) {
     }
   };
 
+  const tabs = [
+    { id: 'shop', label: 'Shop Info & SKU', icon: StoreIcon },
+    { id: 'theme', label: 'Appearance', icon: PaletteIcon },
+    { id: 'security', label: 'Security & Passwords', icon: ShieldIcon },
+    { id: 'backup', label: 'Backup & Recovery', icon: DatabaseIcon },
+    { id: 'about', label: 'About & Support', icon: InfoIcon },
+  ];
+
   return (
     <div
       style={{
         display: 'flex',
-        gap: '24px',
+        gap: '20px',
         flex: 1,
         height: '100%',
         fontFamily: "'Inter', sans-serif",
+        color: 'var(--ink-fg)',
       }}
     >
       {/* LEFT SIDEBAR NAVIGATION */}
       <div
         style={{
-          width: '260px',
+          width: '240px',
           flexShrink: 0,
-          background: 'var(--bg-card)',
+          background: 'var(--ink-0)',
           borderRadius: '10px',
-          border: '1.5px solid var(--border-color)',
-          padding: '16px',
+          border: '1px solid var(--ink-3)',
+          padding: '12px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '6px',
+          gap: '4px',
         }}
       >
         <h3
           style={{
-            margin: '0 0 16px 8px',
-            color: 'var(--text-primary)',
-            fontSize: '1.05rem',
+            margin: '8px 0 12px 10px',
+            color: 'var(--ink-fg)',
+            fontSize: '0.8rem',
             fontFamily: "'Plus Jakarta Sans', sans-serif",
-            fontWeight: '800',
+            fontWeight: 700,
             textTransform: 'uppercase',
+            letterSpacing: '0.05em',
           }}
         >
           Settings
         </h3>
-        {[
-          { id: 'shop', label: 'Shop Info & SKU', icon: StoreIcon },
-          { id: 'theme', label: 'Appearance', icon: PaletteIcon },
-          { id: 'security', label: 'Security & Passwords', icon: ShieldIcon },
-          { id: 'backup', label: 'Backup & Recovery', icon: DatabaseIcon },
-          { id: 'about', label: 'About & Support', icon: InfoIcon },
-        ].map((tab) => {
+        {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (
@@ -411,25 +379,28 @@ export default function Settings({ currentUser }) {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
-                padding: '12px 16px',
-                borderRadius: '8px',
+                gap: '10px',
+                padding: '10px 12px',
+                borderRadius: '6px',
                 border: 'none',
-                background: isActive ? 'var(--info-bg)' : 'transparent',
-                color: isActive ? 'var(--info)' : 'var(--text-secondary)',
-                fontWeight: isActive ? '700' : '600',
-                fontSize: '0.85rem',
+                background: isActive ? 'var(--ink-1)' : 'transparent',
+                color: isActive ? 'var(--ink-fg)' : 'var(--ink-fg-2)',
+                fontWeight: isActive ? 600 : 500,
+                fontSize: '0.82rem',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease',
+                textAlign: 'left',
+                width: '100%',
+                transition: 'background 120ms ease, color 120ms ease',
               }}
             >
-              <div
+              <span
                 style={{
-                  color: isActive ? 'var(--info)' : 'var(--text-secondary)',
+                  color: isActive ? 'var(--brand-primary)' : 'var(--ink-fg-3)',
+                  display: 'flex',
                 }}
               >
                 <Icon />
-              </div>
+              </span>
               {tab.label}
             </button>
           );
@@ -443,9 +414,9 @@ export default function Settings({ currentUser }) {
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          background: 'var(--bg-card)',
+          background: 'var(--ink-0)',
           borderRadius: '10px',
-          border: '1.5px solid var(--border-color)',
+          border: '1px solid var(--ink-3)',
         }}
       >
         {/* SHOP INFO TAB */}
@@ -454,19 +425,20 @@ export default function Settings({ currentUser }) {
             onSubmit={handleSave}
             style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
           >
-            <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '28px' }}>
               <div
                 style={{
-                  marginBottom: '24px',
-                  borderBottom: '1px solid var(--border-color)',
-                  paddingBottom: '16px',
+                  marginBottom: '20px',
+                  borderBottom: '1px solid var(--ink-3)',
+                  paddingBottom: '14px',
                 }}
               >
                 <h4
                   style={{
                     margin: 0,
-                    color: 'var(--text-primary)',
-                    fontSize: '1.1rem',
+                    color: 'var(--ink-fg)',
+                    fontSize: '1rem',
+                    fontWeight: 600,
                     fontFamily: "'Plus Jakarta Sans', sans-serif",
                   }}
                 >
@@ -474,149 +446,91 @@ export default function Settings({ currentUser }) {
                 </h4>
                 <p
                   style={{
-                    margin: '4px 0 0 0',
-                    fontSize: '0.8rem',
-                    color: 'var(--text-secondary)',
+                    margin: '2px 0 0 0',
+                    fontSize: '0.75rem',
+                    color: 'var(--ink-fg-3)',
                   }}
                 >
                   These details will automatically display on all 80mm thermal
                   receipt prints.
                 </p>
               </div>
+
               {saveStatus && (
                 <div
                   style={{
-                    background: 'var(--success-bg)',
-                    color: 'var(--success)',
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    fontSize: '0.85rem',
-                    marginBottom: '20px',
-                    border: '1px solid var(--success)',
-                    fontWeight: '600',
+                    background: 'var(--ink-1)',
+                    color: 'var(--ink-success, #2e7d32)',
+                    padding: '10px 14px',
+                    borderRadius: '6px',
+                    fontSize: '0.82rem',
+                    marginBottom: '16px',
+                    border: '1px solid var(--ink-3)',
+                    fontWeight: 500,
                   }}
                 >
                   {saveStatus}
                 </div>
               )}
+
               <div
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr',
-                  gap: '20px',
+                  gap: '16px',
                 }}
               >
                 <div style={{ gridColumn: '1 / -1' }}>
-                  <label
-                    style={{
-                      fontSize: '0.8rem',
-                      fontWeight: '700',
-                      color: 'var(--text-primary)',
-                      marginBottom: '6px',
-                      display: 'block',
-                    }}
-                  >
-                    Business Name
-                  </label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    value={settings.shop_name || ''}
-                    onChange={(e) =>
-                      setSettings({ ...settings, shop_name: e.target.value })
-                    }
-                    placeholder="e.g. ShopMate Gaming & Tech"
-                    required
-                    style={{
-                      padding: '12px',
-                      borderRadius: '6px',
-                      width: '100%',
-                      fontSize: '0.9rem',
-                    }}
-                  />
+                  <Field label="Business Name">
+                    <input
+                      type="text"
+                      value={settings.shop_name || ''}
+                      onChange={(e) =>
+                        setSettings({ ...settings, shop_name: e.target.value })
+                      }
+                      placeholder="e.g. ShopMate Gaming & Tech"
+                      required
+                      style={inputStyle}
+                    />
+                  </Field>
                 </div>
+
                 <div style={{ gridColumn: '1 / -1' }}>
-                  <label
-                    style={{
-                      fontSize: '0.8rem',
-                      fontWeight: '700',
-                      color: 'var(--text-primary)',
-                      marginBottom: '6px',
-                      display: 'block',
-                    }}
-                  >
-                    Physical Address
-                  </label>
-                  <textarea
-                    className="input-field"
-                    rows="2"
-                    value={settings.shop_address || ''}
-                    onChange={(e) =>
-                      setSettings({ ...settings, shop_address: e.target.value })
-                    }
-                    placeholder="e.g. Shop #42, Main Plaza, Saddar Market"
-                    style={{
-                      padding: '12px',
-                      borderRadius: '6px',
-                      width: '100%',
-                      fontSize: '0.9rem',
-                      resize: 'vertical',
-                    }}
-                  />
+                  <Field label="Physical Address">
+                    <textarea
+                      rows="2"
+                      value={settings.shop_address || ''}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          shop_address: e.target.value,
+                        })
+                      }
+                      placeholder="e.g. Shop #42, Main Plaza, Saddar Market"
+                      style={{ ...inputStyle, resize: 'vertical' }}
+                    />
+                  </Field>
                 </div>
-                <div>
-                  <label
-                    style={{
-                      fontSize: '0.8rem',
-                      fontWeight: '700',
-                      color: 'var(--text-primary)',
-                      marginBottom: '6px',
-                      display: 'block',
-                    }}
-                  >
-                    Contact Phone / Helpline
-                  </label>
+
+                <Field label="Contact Phone / Helpline">
                   <input
                     type="text"
-                    className="input-field"
                     value={settings.shop_phone || ''}
                     onChange={(e) =>
                       setSettings({ ...settings, shop_phone: e.target.value })
                     }
                     placeholder="e.g. +92 300 1234567"
-                    style={{
-                      padding: '12px',
-                      borderRadius: '6px',
-                      width: '100%',
-                      fontSize: '0.9rem',
-                    }}
+                    style={inputStyle}
                   />
-                </div>
-                <div>
-                  <label
-                    style={{
-                      fontSize: '0.8rem',
-                      fontWeight: '700',
-                      color: 'var(--text-primary)',
-                      marginBottom: '6px',
-                      display: 'block',
-                    }}
-                  >
-                    Automated SKU Format
-                  </label>
+                </Field>
+
+                <Field label="Automated SKU Format">
                   <select
-                    className="input-field"
                     value={settings.sku_format || 'CAT_SEQ'}
                     onChange={(e) =>
                       setSettings({ ...settings, sku_format: e.target.value })
                     }
-                    style={{
-                      padding: '12px',
-                      borderRadius: '6px',
-                      width: '100%',
-                      fontSize: '0.9rem',
-                      cursor: 'pointer',
-                    }}
+                    style={{ ...inputStyle, cursor: 'pointer' }}
                   >
                     <option value="CAT_SEQ">
                       Category Prefix + Sequential (e.g. ELE-0001)
@@ -631,75 +545,69 @@ export default function Settings({ currentUser }) {
                       Pure Numeric (e.g. 1001, 1002)
                     </option>
                   </select>
-                </div>
+                </Field>
+
                 <div style={{ gridColumn: '1 / -1' }}>
-                  <label
-                    style={{
-                      fontSize: '0.8rem',
-                      fontWeight: '700',
-                      color: 'var(--text-primary)',
-                      marginBottom: '6px',
-                      display: 'block',
-                    }}
-                  >
-                    Shop Logo
-                  </label>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '16px',
-                      background: 'var(--bg-hover)',
-                      padding: '16px',
-                      borderRadius: '8px',
-                      border: '1px dashed var(--border-strong)',
-                    }}
-                  >
-                    {settings.shop_logo ? (
-                      <img
-                        src={settings.shop_logo}
-                        alt="Logo"
+                  <Field label="Shop Logo">
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '14px',
+                        background: 'var(--ink-1)',
+                        padding: '12px',
+                        borderRadius: '6px',
+                        border: '1px dashed var(--ink-3)',
+                      }}
+                    >
+                      {settings.shop_logo ? (
+                        <img
+                          src={settings.shop_logo}
+                          alt="Logo"
+                          style={{
+                            height: '40px',
+                            borderRadius: '4px',
+                            border: '1px solid var(--ink-3)',
+                            background: 'var(--ink-0)',
+                            objectFit: 'contain',
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            background: 'var(--ink-2)',
+                            borderRadius: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--ink-fg-3)',
+                          }}
+                        >
+                          <StoreIcon />
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
                         style={{
-                          height: '48px',
-                          borderRadius: '6px',
-                          border: '1px solid var(--border-color)',
-                          background: 'var(--bg-card)',
+                          fontSize: '0.8rem',
+                          color: 'var(--ink-fg-2)',
                         }}
                       />
-                    ) : (
-                      <div
-                        style={{
-                          width: '48px',
-                          height: '48px',
-                          background: 'var(--border-color)',
-                          borderRadius: '6px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: 'var(--text-secondary)',
-                        }}
-                      >
-                        <StoreIcon />
-                      </div>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoUpload}
-                      style={{
-                        fontSize: '0.85rem',
-                        color: 'var(--text-secondary)',
-                      }}
-                    />
-                  </div>
+                    </div>
+                  </Field>
                 </div>
               </div>
             </div>
+
             <div
               style={{
-                padding: '20px 32px',
-                borderTop: '1px solid var(--border-color)',
-                background: 'var(--bg-hover)',
+                padding: '16px 28px',
+                borderTop: '1px solid var(--ink-3)',
+                background: 'var(--ink-1)',
                 borderRadius: '0 0 10px 10px',
                 display: 'flex',
                 justifyContent: 'flex-end',
@@ -707,19 +615,18 @@ export default function Settings({ currentUser }) {
             >
               <button
                 type="submit"
-                className="btn btn-primary"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  padding: '12px 24px',
+                  gap: '6px',
+                  padding: '9px 18px',
                   background: 'var(--brand-primary)',
-                  color: '#fff',
+                  color: '#ffffff',
                   borderRadius: '6px',
-                  fontWeight: '700',
+                  fontWeight: 500,
                   border: 'none',
                   cursor: 'pointer',
-                  fontSize: '0.9rem',
+                  fontSize: '0.85rem',
                 }}
               >
                 <SaveIcon /> Save Shop Branding
@@ -733,19 +640,20 @@ export default function Settings({ currentUser }) {
           <div
             style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
           >
-            <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '28px' }}>
               <div
                 style={{
-                  marginBottom: '24px',
-                  borderBottom: '1px solid var(--border-color)',
-                  paddingBottom: '16px',
+                  marginBottom: '20px',
+                  borderBottom: '1px solid var(--ink-3)',
+                  paddingBottom: '14px',
                 }}
               >
                 <h4
                   style={{
                     margin: 0,
-                    color: 'var(--text-primary)',
-                    fontSize: '1.1rem',
+                    color: 'var(--ink-fg)',
+                    fontSize: '1rem',
+                    fontWeight: 600,
                     fontFamily: "'Plus Jakarta Sans', sans-serif",
                   }}
                 >
@@ -753,162 +661,113 @@ export default function Settings({ currentUser }) {
                 </h4>
                 <p
                   style={{
-                    margin: '4px 0 0 0',
-                    fontSize: '0.8rem',
-                    color: 'var(--text-secondary)',
+                    margin: '2px 0 0 0',
+                    fontSize: '0.75rem',
+                    color: 'var(--ink-fg-3)',
                   }}
                 >
                   Customize how ShopMate looks on your screen. Your preference
                   is saved automatically.
                 </p>
               </div>
+
               <div
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr',
-                  gap: '24px',
+                  gap: '16px',
                 }}
               >
-                <div
-                  onClick={() => handleThemeChange('light')}
-                  style={{
-                    cursor: 'pointer',
-                    background:
-                      currentTheme === 'light'
-                        ? 'var(--info-bg)'
-                        : 'var(--bg-hover)',
-                    border:
-                      currentTheme === 'light'
-                        ? '2px solid var(--info)'
-                        : '2px solid var(--border-color)',
-                    borderRadius: '12px',
-                    padding: '24px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '16px',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  <div
-                    style={{
-                      background:
-                        currentTheme === 'light'
-                          ? 'var(--info)'
-                          : 'var(--text-secondary)',
-                      color: '#fff',
-                      padding: '16px',
-                      borderRadius: '50%',
-                    }}
-                  >
-                    <SunIcon />
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <h5
+                {[
+                  {
+                    id: 'light',
+                    label: 'Light Mode',
+                    desc: 'Clean, bright, and professional. Best for daytime use.',
+                    icon: SunIcon,
+                  },
+                  {
+                    id: 'dark',
+                    label: 'Dark Mode',
+                    desc: 'Sleek and easy on the eyes. Best for late-night shifts.',
+                    icon: MoonIcon,
+                  },
+                ].map((t) => {
+                  const Icon = t.icon;
+                  const isSelected = currentTheme === t.id;
+                  return (
+                    <div
+                      key={t.id}
+                      onClick={() => handleThemeChange(t.id)}
                       style={{
-                        margin: 0,
-                        fontSize: '1rem',
-                        color: 'var(--text-primary)',
-                        fontWeight: '800',
+                        cursor: 'pointer',
+                        background: isSelected
+                          ? 'var(--ink-1)'
+                          : 'var(--ink-0)',
+                        border: isSelected
+                          ? '1.5px solid var(--brand-primary)'
+                          : '1px solid var(--ink-3)',
+                        borderRadius: '10px',
+                        padding: '20px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '12px',
+                        textAlign: 'center',
+                        transition: 'all 120ms ease',
                       }}
                     >
-                      Light Mode
-                    </h5>
-                    <p
-                      style={{
-                        margin: '4px 0 0 0',
-                        fontSize: '0.75rem',
-                        color: 'var(--text-secondary)',
-                      }}
-                    >
-                      Clean, bright, and professional. Best for daytime use.
-                    </p>
-                  </div>
-                  {currentTheme === 'light' && (
-                    <span
-                      style={{
-                        background: 'var(--info)',
-                        color: '#fff',
-                        fontSize: '0.7rem',
-                        fontWeight: 'bold',
-                        padding: '4px 10px',
-                        borderRadius: '20px',
-                      }}
-                    >
-                      Active
-                    </span>
-                  )}
-                </div>
-                <div
-                  onClick={() => handleThemeChange('dark')}
-                  style={{
-                    cursor: 'pointer',
-                    background:
-                      currentTheme === 'dark'
-                        ? 'var(--info-bg)'
-                        : 'var(--bg-hover)',
-                    border:
-                      currentTheme === 'dark'
-                        ? '2px solid var(--info)'
-                        : '2px solid var(--border-color)',
-                    borderRadius: '12px',
-                    padding: '24px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '16px',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  <div
-                    style={{
-                      background:
-                        currentTheme === 'dark'
-                          ? 'var(--info)'
-                          : 'var(--text-secondary)',
-                      color: '#fff',
-                      padding: '16px',
-                      borderRadius: '50%',
-                    }}
-                  >
-                    <MoonIcon />
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <h5
-                      style={{
-                        margin: 0,
-                        fontSize: '1rem',
-                        color: 'var(--text-primary)',
-                        fontWeight: '800',
-                      }}
-                    >
-                      Dark Mode
-                    </h5>
-                    <p
-                      style={{
-                        margin: '4px 0 0 0',
-                        fontSize: '0.75rem',
-                        color: 'var(--text-secondary)',
-                      }}
-                    >
-                      Sleek and easy on the eyes. Best for late-night shifts.
-                    </p>
-                  </div>
-                  {currentTheme === 'dark' && (
-                    <span
-                      style={{
-                        background: 'var(--info)',
-                        color: '#fff',
-                        fontSize: '0.7rem',
-                        fontWeight: 'bold',
-                        padding: '4px 10px',
-                        borderRadius: '20px',
-                      }}
-                    >
-                      Active
-                    </span>
-                  )}
-                </div>
+                      <div
+                        style={{
+                          background: isSelected
+                            ? 'var(--brand-primary)'
+                            : 'var(--ink-2)',
+                          color: isSelected ? '#ffffff' : 'var(--ink-fg-2)',
+                          padding: '12px',
+                          borderRadius: '50%',
+                          display: 'flex',
+                        }}
+                      >
+                        <Icon />
+                      </div>
+                      <div>
+                        <h5
+                          style={{
+                            margin: 0,
+                            fontSize: '0.9rem',
+                            color: 'var(--ink-fg)',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {t.label}
+                        </h5>
+                        <p
+                          style={{
+                            margin: '4px 0 0 0',
+                            fontSize: '0.75rem',
+                            color: 'var(--ink-fg-3)',
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          {t.desc}
+                        </p>
+                      </div>
+                      {isSelected && (
+                        <span
+                          style={{
+                            background: 'var(--brand-primary)',
+                            color: '#ffffff',
+                            fontSize: '0.68rem',
+                            fontWeight: 600,
+                            padding: '2px 8px',
+                            borderRadius: '10px',
+                          }}
+                        >
+                          Active
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -920,19 +779,20 @@ export default function Settings({ currentUser }) {
             onSubmit={handleUpdatePassword}
             style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
           >
-            <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '28px' }}>
               <div
                 style={{
-                  marginBottom: '24px',
-                  borderBottom: '1px solid var(--border-color)',
-                  paddingBottom: '16px',
+                  marginBottom: '20px',
+                  borderBottom: '1px solid var(--ink-3)',
+                  paddingBottom: '14px',
                 }}
               >
                 <h4
                   style={{
                     margin: 0,
-                    color: 'var(--text-primary)',
-                    fontSize: '1.1rem',
+                    color: 'var(--ink-fg)',
+                    fontSize: '1rem',
+                    fontWeight: 600,
                     fontFamily: "'Plus Jakarta Sans', sans-serif",
                   }}
                 >
@@ -940,24 +800,25 @@ export default function Settings({ currentUser }) {
                 </h4>
                 <p
                   style={{
-                    margin: '4px 0 0 0',
-                    fontSize: '0.8rem',
-                    color: 'var(--text-secondary)',
+                    margin: '2px 0 0 0',
+                    fontSize: '0.75rem',
+                    color: 'var(--ink-fg-3)',
                   }}
                 >
                   Securely update operator credentials and manager passwords.
                 </p>
               </div>
+
               {currentUser?.role?.toUpperCase() !== 'ADMIN' ? (
                 <div
                   style={{
-                    background: 'var(--danger-bg)',
-                    color: 'var(--danger)',
-                    padding: '20px',
+                    background: 'var(--ink-1)',
+                    color: 'var(--ink-danger, #d32f2f)',
+                    padding: '16px',
                     borderRadius: '8px',
-                    fontSize: '0.9rem',
-                    border: '1px solid var(--danger)',
-                    fontWeight: '600',
+                    fontSize: '0.85rem',
+                    border: '1px solid var(--ink-3)',
+                    fontWeight: 500,
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
@@ -971,50 +832,34 @@ export default function Settings({ currentUser }) {
                   {passwordStatus && (
                     <div
                       style={{
-                        background: 'var(--success-bg)',
-                        color: 'var(--success)',
-                        padding: '12px 16px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        marginBottom: '20px',
-                        border: '1px solid var(--success)',
-                        fontWeight: '600',
+                        background: 'var(--ink-1)',
+                        color: 'var(--ink-success, #2e7d32)',
+                        padding: '10px 14px',
+                        borderRadius: '6px',
+                        fontSize: '0.82rem',
+                        marginBottom: '16px',
+                        border: '1px solid var(--ink-3)',
+                        fontWeight: 500,
                       }}
                     >
                       {passwordStatus}
                     </div>
                   )}
+
                   <div
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '20px',
+                      gap: '16px',
+                      maxWidth: '400px',
                     }}
                   >
-                    <div>
-                      <label
-                        style={{
-                          fontSize: '0.8rem',
-                          fontWeight: '700',
-                          color: 'var(--text-primary)',
-                          marginBottom: '6px',
-                          display: 'block',
-                        }}
-                      >
-                        Select Operator Account
-                      </label>
+                    <Field label="Select Operator Account">
                       <select
-                        className="input-field"
                         value={selectedUserId}
                         onChange={(e) => setSelectedUserId(e.target.value)}
                         required
-                        style={{
-                          padding: '12px',
-                          borderRadius: '6px',
-                          width: '100%',
-                          fontSize: '0.9rem',
-                          cursor: 'pointer',
-                        }}
+                        style={{ ...inputStyle, cursor: 'pointer' }}
                       >
                         <option value="">-- Choose Staff Operator --</option>
                         {users.map((u) => (
@@ -1023,44 +868,29 @@ export default function Settings({ currentUser }) {
                           </option>
                         ))}
                       </select>
-                    </div>
-                    <div>
-                      <label
-                        style={{
-                          fontSize: '0.8rem',
-                          fontWeight: '700',
-                          color: 'var(--text-primary)',
-                          marginBottom: '6px',
-                          display: 'block',
-                        }}
-                      >
-                        New Secure Password
-                      </label>
+                    </Field>
+
+                    <Field label="New Secure Password">
                       <input
                         type="password"
-                        className="input-field"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="Enter new password (min 4 chars)"
                         required
-                        style={{
-                          padding: '12px',
-                          borderRadius: '6px',
-                          width: '100%',
-                          fontSize: '0.9rem',
-                        }}
+                        style={inputStyle}
                       />
-                    </div>
+                    </Field>
                   </div>
                 </>
               )}
             </div>
+
             {currentUser?.role?.toUpperCase() === 'ADMIN' && (
               <div
                 style={{
-                  padding: '20px 32px',
-                  borderTop: '1px solid var(--border-color)',
-                  background: 'var(--bg-hover)',
+                  padding: '16px 28px',
+                  borderTop: '1px solid var(--ink-3)',
+                  background: 'var(--ink-1)',
                   borderRadius: '0 0 10px 10px',
                   display: 'flex',
                   justifyContent: 'flex-end',
@@ -1068,19 +898,18 @@ export default function Settings({ currentUser }) {
               >
                 <button
                   type="submit"
-                  className="btn btn-primary"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
-                    padding: '12px 24px',
+                    gap: '6px',
+                    padding: '9px 18px',
                     background: 'var(--brand-primary)',
-                    color: '#fff',
+                    color: '#ffffff',
                     borderRadius: '6px',
-                    fontWeight: '700',
+                    fontWeight: 500,
                     border: 'none',
                     cursor: 'pointer',
-                    fontSize: '0.9rem',
+                    fontSize: '0.85rem',
                   }}
                 >
                   <ShieldIcon /> Update Operator Password
@@ -1095,19 +924,20 @@ export default function Settings({ currentUser }) {
           <div
             style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
           >
-            <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '28px' }}>
               <div
                 style={{
-                  marginBottom: '24px',
-                  borderBottom: '1px solid var(--border-color)',
-                  paddingBottom: '16px',
+                  marginBottom: '20px',
+                  borderBottom: '1px solid var(--ink-3)',
+                  paddingBottom: '14px',
                 }}
               >
                 <h4
                   style={{
                     margin: 0,
-                    color: 'var(--text-primary)',
-                    fontSize: '1.1rem',
+                    color: 'var(--ink-fg)',
+                    fontSize: '1rem',
+                    fontWeight: 600,
                     fontFamily: "'Plus Jakarta Sans', sans-serif",
                   }}
                 >
@@ -1115,44 +945,46 @@ export default function Settings({ currentUser }) {
                 </h4>
                 <p
                   style={{
-                    margin: '4px 0 0 0',
-                    fontSize: '0.8rem',
-                    color: 'var(--text-secondary)',
+                    margin: '2px 0 0 0',
+                    fontSize: '0.75rem',
+                    color: 'var(--ink-fg-3)',
                   }}
                 >
                   Safeguard your business records. Export a complete copy of
                   your database or restore from a previous archive.
                 </p>
               </div>
+
               {backupStatus && (
                 <div
                   style={{
-                    background: 'var(--bg-hover)',
-                    color: 'var(--text-primary)',
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    fontSize: '0.85rem',
-                    marginBottom: '20px',
-                    border: '1px solid var(--border-strong)',
-                    fontWeight: '600',
+                    background: 'var(--ink-1)',
+                    color: 'var(--ink-fg)',
+                    padding: '10px 14px',
+                    borderRadius: '6px',
+                    fontSize: '0.82rem',
+                    marginBottom: '16px',
+                    border: '1px solid var(--ink-3)',
+                    fontWeight: 500,
                   }}
                 >
                   {backupStatus}
                 </div>
               )}
+
               <div
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr',
-                  gap: '20px',
+                  gap: '16px',
                 }}
               >
                 <div
                   style={{
-                    background: 'var(--info-bg)',
-                    padding: '24px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--info)',
+                    background: 'var(--ink-1)',
+                    padding: '20px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--ink-3)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '12px',
@@ -1160,15 +992,15 @@ export default function Settings({ currentUser }) {
                 >
                   <div
                     style={{
-                      color: 'var(--info)',
-                      background: 'var(--bg-card)',
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '8px',
+                      color: 'var(--brand-primary)',
+                      background: 'var(--ink-0)',
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '6px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                      border: '1px solid var(--ink-3)',
                     }}
                   >
                     <DownloadIcon />
@@ -1177,19 +1009,19 @@ export default function Settings({ currentUser }) {
                     <h5
                       style={{
                         margin: 0,
-                        color: 'var(--text-primary)',
-                        fontSize: '0.95rem',
-                        fontWeight: '800',
+                        color: 'var(--ink-fg)',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
                       }}
                     >
                       Export Backup
                     </h5>
                     <p
                       style={{
-                        margin: '4px 0 0 0',
+                        margin: '2px 0 0 0',
                         fontSize: '0.75rem',
-                        color: 'var(--text-secondary)',
-                        lineHeight: '1.4',
+                        color: 'var(--ink-fg-3)',
+                        lineHeight: 1.4,
                       }}
                     >
                       Download a complete copy of your SQLite database file.
@@ -1200,11 +1032,11 @@ export default function Settings({ currentUser }) {
                     onClick={handleExportBackup}
                     style={{
                       marginTop: 'auto',
-                      padding: '10px',
-                      background: 'var(--info)',
-                      color: '#fff',
-                      fontWeight: '700',
-                      fontSize: '0.85rem',
+                      padding: '8px 12px',
+                      background: 'var(--brand-primary)',
+                      color: '#ffffff',
+                      fontWeight: 500,
+                      fontSize: '0.8rem',
                       border: 'none',
                       borderRadius: '6px',
                       cursor: 'pointer',
@@ -1213,12 +1045,13 @@ export default function Settings({ currentUser }) {
                     Download .sqlite File
                   </button>
                 </div>
+
                 <div
                   style={{
-                    background: 'var(--danger-bg)',
-                    padding: '24px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--danger)',
+                    background: 'var(--ink-1)',
+                    padding: '20px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--ink-3)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '12px',
@@ -1226,15 +1059,15 @@ export default function Settings({ currentUser }) {
                 >
                   <div
                     style={{
-                      color: 'var(--danger)',
-                      background: 'var(--bg-card)',
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '8px',
+                      color: 'var(--ink-danger, #d32f2f)',
+                      background: 'var(--ink-0)',
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '6px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                      border: '1px solid var(--ink-3)',
                     }}
                   >
                     <UploadIcon />
@@ -1243,19 +1076,19 @@ export default function Settings({ currentUser }) {
                     <h5
                       style={{
                         margin: 0,
-                        color: 'var(--text-primary)',
-                        fontSize: '0.95rem',
-                        fontWeight: '800',
+                        color: 'var(--ink-fg)',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
                       }}
                     >
                       Restore Data
                     </h5>
                     <p
                       style={{
-                        margin: '4px 0 0 0',
+                        margin: '2px 0 0 0',
                         fontSize: '0.75rem',
-                        color: 'var(--text-secondary)',
-                        lineHeight: '1.4',
+                        color: 'var(--ink-fg-3)',
+                        lineHeight: 1.4,
                       }}
                     >
                       Overwrite current data with a backup file. Use with
@@ -1267,11 +1100,11 @@ export default function Settings({ currentUser }) {
                     onClick={handleRestoreBackup}
                     style={{
                       marginTop: 'auto',
-                      padding: '10px',
-                      background: 'var(--danger)',
-                      color: '#fff',
-                      fontWeight: '700',
-                      fontSize: '0.85rem',
+                      padding: '8px 12px',
+                      background: 'var(--ink-danger, #d32f2f)',
+                      color: '#ffffff',
+                      fontWeight: 500,
+                      fontSize: '0.8rem',
                       border: 'none',
                       borderRadius: '6px',
                       cursor: 'pointer',
@@ -1290,36 +1123,37 @@ export default function Settings({ currentUser }) {
           <div
             style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
           >
-            <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '28px' }}>
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '16px',
-                  marginBottom: '24px',
-                  borderBottom: '1px solid var(--border-color)',
-                  paddingBottom: '16px',
+                  gap: '14px',
+                  marginBottom: '20px',
+                  borderBottom: '1px solid var(--ink-3)',
+                  paddingBottom: '14px',
                 }}
               >
                 <img
                   src={logoImage}
                   alt="ShopMate Logo"
                   style={{
-                    width: '48px',
-                    height: '48px',
+                    width: '42px',
+                    height: '42px',
                     objectFit: 'contain',
-                    borderRadius: '10px',
-                    background: 'var(--bg-hover)',
+                    borderRadius: '8px',
+                    background: 'var(--ink-1)',
                     padding: '6px',
-                    border: '1px solid var(--border-color)',
+                    border: '1px solid var(--ink-3)',
                   }}
                 />
                 <div>
                   <h4
                     style={{
                       margin: 0,
-                      color: 'var(--text-primary)',
-                      fontSize: '1.1rem',
+                      color: 'var(--ink-fg)',
+                      fontSize: '1rem',
+                      fontWeight: 600,
                       fontFamily: "'Plus Jakarta Sans', sans-serif",
                     }}
                   >
@@ -1329,8 +1163,8 @@ export default function Settings({ currentUser }) {
                     style={{
                       margin: '2px 0 0 0',
                       fontSize: '0.75rem',
-                      color: 'var(--text-secondary)',
-                      fontWeight: '600',
+                      color: 'var(--ink-fg-3)',
+                      fontWeight: 500,
                     }}
                   >
                     Version {updateInfo.currentVersion || '1.1.0'} (Offline
@@ -1338,12 +1172,13 @@ export default function Settings({ currentUser }) {
                   </p>
                 </div>
               </div>
+
               <p
                 style={{
-                  fontSize: '0.85rem',
-                  color: 'var(--text-secondary)',
-                  lineHeight: '1.6',
-                  marginBottom: '24px',
+                  fontSize: '0.82rem',
+                  color: 'var(--ink-fg-2)',
+                  lineHeight: 1.6,
+                  marginBottom: '20px',
                 }}
               >
                 ShopMate is an enterprise-grade, offline-first Windows POS &
@@ -1353,14 +1188,14 @@ export default function Settings({ currentUser }) {
 
               <div
                 style={{
-                  background: 'var(--bg-hover)',
-                  padding: '24px',
-                  borderRadius: '10px',
-                  border: '1px solid var(--border-color)',
+                  background: 'var(--ink-1)',
+                  padding: '20px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--ink-3)',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '16px',
-                  marginBottom: '20px',
+                  gap: '12px',
+                  marginBottom: '16px',
                 }}
               >
                 <div
@@ -1374,19 +1209,20 @@ export default function Settings({ currentUser }) {
                     <h5
                       style={{
                         margin: 0,
-                        color: 'var(--text-primary)',
-                        fontSize: '0.95rem',
-                        fontWeight: '800',
+                        color: 'var(--ink-fg)',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
                         textTransform: 'uppercase',
+                        letterSpacing: '0.03em',
                       }}
                     >
                       Software Updates
                     </h5>
                     <p
                       style={{
-                        margin: '4px 0 0 0',
-                        fontSize: '0.8rem',
-                        color: 'var(--text-secondary)',
+                        margin: '2px 0 0 0',
+                        fontSize: '0.75rem',
+                        color: 'var(--ink-fg-3)',
                       }}
                     >
                       Check for the latest features and security patches.
@@ -1395,72 +1231,41 @@ export default function Settings({ currentUser }) {
                   <button
                     onClick={handleCheckUpdates}
                     disabled={updateStatus === 'checking'}
-                    className="btn btn-primary"
                     style={{
-                      padding: '10px 20px',
-                      fontSize: '0.85rem',
+                      padding: '8px 16px',
+                      fontSize: '0.8rem',
+                      fontWeight: 500,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px',
+                      gap: '6px',
+                      background: 'var(--brand-primary)',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '6px',
                       opacity: updateStatus === 'checking' ? 0.7 : 1,
                       cursor: updateStatus === 'checking' ? 'wait' : 'pointer',
                     }}
                   >
-                    {updateStatus === 'checking' ? (
-                      <>
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          style={{ animation: 'spin 1s linear infinite' }}
-                        >
-                          <polyline points="23 4 23 10 17 10"></polyline>
-                          <polyline points="1 20 1 14 7 14"></polyline>
-                          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                        </svg>
-                        Checking...
-                      </>
-                    ) : (
-                      <>
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <polyline points="23 4 23 10 17 10"></polyline>
-                          <polyline points="1 20 1 14 7 14"></polyline>
-                          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                        </svg>
-                        Check for Updates
-                      </>
-                    )}
+                    <RefreshIcon />
+                    {updateStatus === 'checking'
+                      ? 'Checking...'
+                      : 'Check for Updates'}
                   </button>
                 </div>
+
                 {updateStatus === 'up-to-date' && (
                   <div
                     style={{
-                      background: 'var(--success-bg)',
-                      color: 'var(--success)',
-                      padding: '12px 16px',
-                      borderRadius: '8px',
-                      fontSize: '0.85rem',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
+                      background: 'var(--ink-0)',
+                      color: 'var(--ink-success, #2e7d32)',
+                      padding: '10px 12px',
+                      borderRadius: '6px',
+                      fontSize: '0.8rem',
+                      fontWeight: 500,
+                      border: '1px solid var(--ink-3)',
                     }}
                   >
-                    ✅ You are on the latest version (v
+                    ✓ You are on the latest version (v
                     {updateInfo.currentVersion}).
                   </div>
                 )}
@@ -1468,45 +1273,42 @@ export default function Settings({ currentUser }) {
 
               <div
                 style={{
-                  background: 'var(--bg-hover)',
-                  padding: '24px',
-                  borderRadius: '10px',
-                  border: '1px solid var(--border-color)',
+                  background: 'var(--ink-1)',
+                  padding: '20px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--ink-3)',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '16px',
+                  gap: '10px',
                 }}
               >
                 <h5
                   style={{
                     margin: 0,
                     color: 'var(--brand-primary)',
-                    fontSize: '0.95rem',
-                    fontWeight: '800',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
                     textTransform: 'uppercase',
+                    letterSpacing: '0.03em',
                   }}
                 >
                   Support & Developer Contact
                 </h5>
                 <div
                   style={{
-                    fontSize: '0.85rem',
-                    color: 'var(--text-primary)',
+                    fontSize: '0.82rem',
+                    color: 'var(--ink-fg)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '8px',
+                    gap: '4px',
                   }}
                 >
                   <div>
-                    <strong style={{ color: 'var(--text-secondary)' }}>
-                      Email:
-                    </strong>{' '}
+                    <span style={{ color: 'var(--ink-fg-3)' }}>Email:</span>{' '}
                     fahadfida400@gmail.com
                   </div>
                   <div>
-                    <strong style={{ color: 'var(--text-secondary)' }}>
-                      WhatsApp:
-                    </strong>{' '}
+                    <span style={{ color: 'var(--ink-fg-3)' }}>WhatsApp:</span>{' '}
                     +92 331 546 9223
                   </div>
                 </div>
@@ -1518,63 +1320,52 @@ export default function Settings({ currentUser }) {
         {/* UPDATE CONFIRM MODAL */}
         {isUpdateModalOpen && (
           <div
-            className="receipt-modal-backdrop"
             style={{
               position: 'fixed',
               inset: 0,
-              background: 'rgba(15, 23, 42, 0.6)',
+              background: 'rgba(0, 0, 0, 0.55)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               zIndex: 9999,
+              padding: '16px',
             }}
           >
             <div
               style={{
-                background: 'var(--bg-card)',
-                borderRadius: '12px',
-                width: '400px',
-                padding: '28px',
-                border: '1px solid var(--border-color)',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+                background: 'var(--ink-0)',
+                borderRadius: '10px',
+                width: '380px',
+                padding: '24px',
+                border: '1px solid var(--ink-3)',
               }}
             >
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '12px',
-                  marginBottom: '16px',
+                  gap: '10px',
+                  marginBottom: '12px',
                 }}
               >
                 <div
                   style={{
-                    background: 'var(--info-bg)',
-                    color: 'var(--info)',
-                    padding: '12px',
+                    background: 'var(--ink-1)',
+                    color: 'var(--brand-primary)',
+                    padding: '10px',
                     borderRadius: '50%',
+                    border: '1px solid var(--ink-3)',
+                    display: 'flex',
                   }}
                 >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                  </svg>
+                  <DownloadIcon />
                 </div>
                 <h3
                   style={{
                     margin: 0,
-                    color: 'var(--text-primary)',
-                    fontSize: '1.1rem',
+                    color: 'var(--ink-fg)',
+                    fontSize: '1rem',
+                    fontWeight: 600,
                     fontFamily: "'Plus Jakarta Sans', sans-serif",
                   }}
                 >
@@ -1583,10 +1374,10 @@ export default function Settings({ currentUser }) {
               </div>
               <p
                 style={{
-                  fontSize: '0.9rem',
-                  color: 'var(--text-secondary)',
-                  lineHeight: '1.5',
-                  marginBottom: '24px',
+                  fontSize: '0.85rem',
+                  color: 'var(--ink-fg-2)',
+                  lineHeight: 1.5,
+                  marginBottom: '20px',
                 }}
               >
                 ShopMate <strong>v{updateInfo.version}</strong> is available!
@@ -1595,22 +1386,34 @@ export default function Settings({ currentUser }) {
                 <br />
                 Do you want to download and install the update now?
               </p>
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   onClick={handleStartUpdate}
-                  className="btn btn-primary"
-                  style={{ flex: 1, padding: '12px', fontSize: '0.9rem' }}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    fontSize: '0.82rem',
+                    background: 'var(--brand-primary)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                  }}
                 >
                   Yes, Update Now
                 </button>
                 <button
                   onClick={() => setIsUpdateModalOpen(false)}
-                  className="btn"
                   style={{
-                    padding: '12px 20px',
-                    background: 'var(--bg-hover)',
-                    color: 'var(--text-primary)',
-                    border: '1px solid var(--border-color)',
+                    padding: '10px 16px',
+                    fontSize: '0.82rem',
+                    background: 'var(--ink-1)',
+                    color: 'var(--ink-fg)',
+                    border: '1px solid var(--ink-3)',
+                    borderRadius: '6px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
                   }}
                 >
                   Later

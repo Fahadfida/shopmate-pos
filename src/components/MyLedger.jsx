@@ -1,29 +1,113 @@
 import React, { useState, useEffect } from 'react';
 import { getIpc } from '../utils/ipc';
 
-// --- CUSTOM TOAST COMPONENT ---
+// ─────────────────────────────────────────────────────────────
+// Icons (Lucide 16px/18px 1.5 stroke)
+// ─────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────
+// Icons (Lucide 16px 1.5 stroke)
+// ─────────────────────────────────────────────────────────────
+const iconBase = {
+  width: 16,
+  height: 16,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.5,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+};
+
+const UserIcon = () => (
+  <svg {...iconBase}>
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>
+);
+
+const CreditCardIcon = () => (
+  <svg {...iconBase}>
+    <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+    <line x1="1" y1="10" x2="23" y2="10" />
+  </svg>
+);
+
+const CalendarIcon = () => (
+  <svg {...iconBase}>
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+    <line x1="16" y1="2" x2="16" y2="6" />
+    <line x1="8" y1="2" x2="8" y2="6" />
+    <line x1="3" y1="10" x2="21" y2="10" />
+  </svg>
+);
+
+const ChevronDownIcon = () => (
+  <svg {...iconBase} width={14} height={14}>
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+);
+
+// const inputStyle = {
+//   padding: '9px 12px',
+//   borderRadius: '6px',
+//   border: '1px solid var(--ink-3)',
+//   background: 'var(--ink-0)',
+//   color: 'var(--ink-fg)',
+//   fontSize: '0.82rem',
+//   outline: 'none',
+//   fontFamily: 'inherit',
+//   cursor: 'pointer',
+// };
+// const iconBase = {
+//   width: 16,
+//   height: 16,
+//   viewBox: '0 0 24 24',
+//   fill: 'none',
+//   stroke: 'currentColor',
+//   strokeWidth: 1.5,
+//   strokeLinecap: 'round',
+//   strokeLinejoin: 'round',
+// };
+
+const SearchIcon = () => (
+  <svg {...iconBase}>
+    <circle cx="11" cy="11" r="8" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </svg>
+);
+
+const CloseIcon = () => (
+  <svg {...iconBase}>
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+const EditIcon = () => (
+  <svg {...iconBase}>
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg {...iconBase}>
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+  </svg>
+);
+
+// ─────────────────────────────────────────────────────────────
+// Toast Component
+// ─────────────────────────────────────────────────────────────
 const Toast = ({ message, type, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(onClose, 4000);
     return () => clearTimeout(timer);
   }, [onClose]);
 
-  const colors = {
-    success: {
-      bg: '#f0fdf4',
-      border: 'var(--success)',
-      text: '#065f46',
-      icon: '✅',
-    },
-    error: {
-      bg: '#fef2f2',
-      border: 'var(--danger)',
-      text: '#991b1b',
-      icon: '🚨',
-    },
-    info: { bg: '#eff6ff', border: 'var(--info)', text: '#1e40af', icon: 'ℹ️' },
-  };
-  const c = colors[type] || colors.info;
+  const isError = type === 'error';
 
   return (
     <div
@@ -31,46 +115,71 @@ const Toast = ({ message, type, onClose }) => {
         display: 'flex',
         alignItems: 'center',
         gap: '10px',
-        background: c.bg,
-        borderLeft: `4px solid ${c.border}`,
-        color: c.text,
+        background: 'var(--ink-0)',
+        border: '1px solid var(--ink-3)',
+        borderLeft: `4px solid ${isError ? 'var(--ink-danger)' : 'var(--ink-success)'}`,
+        color: 'var(--ink-fg)',
         padding: '12px 16px',
-        borderRadius: '6px',
+        borderRadius: '8px',
         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
         minWidth: '280px',
-        fontWeight: '600',
-        fontSize: '0.85rem',
-        animation: 'slideIn 0.3s ease-out',
+        fontWeight: 500,
+        fontSize: '0.82rem',
       }}
     >
-      <span>{c.icon}</span>
       <span style={{ flex: 1 }}>{message}</span>
       <button
         onClick={onClose}
+        aria-label="Dismiss"
         style={{
           background: 'transparent',
           border: 'none',
           cursor: 'pointer',
-          color: c.text,
-          fontWeight: 'bold',
+          color: 'var(--ink-fg-2)',
+          display: 'flex',
+          padding: 0,
         }}
       >
-        ✕
+        <CloseIcon />
       </button>
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          height: '3px',
-          background: c.border,
-          animation: 'shrink 4s linear forwards',
-        }}
-      />
     </div>
   );
 };
 
+// ─────────────────────────────────────────────────────────────
+// Primitives
+// ─────────────────────────────────────────────────────────────
+const Field = ({ label, children }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+    <label
+      style={{
+        fontSize: '0.75rem',
+        fontWeight: 500,
+        color: 'var(--ink-fg-2)',
+        letterSpacing: '0.01em',
+      }}
+    >
+      {label}
+    </label>
+    {children}
+  </div>
+);
+
+const inputStyle = {
+  padding: '9px 12px',
+  borderRadius: '6px',
+  border: '1px solid var(--ink-3)',
+  background: 'var(--ink-0)',
+  color: 'var(--ink-fg)',
+  fontSize: '0.85rem',
+  width: '100%',
+  outline: 'none',
+  fontFamily: 'inherit',
+};
+
+// ─────────────────────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────────────────────
 export default function FinancialLedger({ currentUser }) {
   const [ledgerData, setLedgerData] = useState({
     expenses: [],
@@ -327,10 +436,11 @@ export default function FinancialLedger({ currentUser }) {
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
-        flex: 1, // 👈 ADD THIS
-        height: '100%',
+        flex: 1,
+        height: 'calc(100vh - 90px)',
+        overflow: 'hidden',
         fontFamily: "'Inter', sans-serif",
-        position: 'relative',
+        color: 'var(--ink-fg)',
       }}
     >
       {/* TOAST CONTAINER */}
@@ -354,57 +464,60 @@ export default function FinancialLedger({ currentUser }) {
           />
         ))}
       </div>
-
       {/* HEADER */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          background: 'var(--ink-0)',
+          padding: '16px 20px',
+          borderRadius: '10px',
+          border: '1px solid var(--ink-3)',
         }}
       >
         <div>
           <h3
             style={{
               margin: 0,
-              color: 'var(--text-primary)',
+              color: 'var(--ink-fg)',
               fontSize: '1.05rem',
               fontFamily: "'Plus Jakarta Sans', sans-serif",
-              fontWeight: '800',
-              textTransform: 'uppercase',
+              fontWeight: 600,
+              letterSpacing: '-0.01em',
             }}
           >
             Ledger ( Profit & Loss )
           </h3>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              background: '#e0f2fe',
+              background: 'var(--ink-1)',
               padding: '6px 12px',
               borderRadius: '6px',
               fontSize: '0.75rem',
-              color: 'var(--text-primary)',
-              fontWeight: 'bold',
-              border: '1px solid #bae6fd',
+              color: 'var(--ink-fg)',
+              fontWeight: 500,
+              border: '1px solid var(--ink-3)',
             }}
           >
             <span>👤 On Duty:</span>
-            <span style={{ textTransform: 'uppercase' }}>
+            <span style={{ textTransform: 'uppercase', fontWeight: 600 }}>
               {currentUser?.username || 'Manager'} (
               {currentUser?.role || 'ADMIN'})
             </span>
           </div>
           <button
             style={{
-              fontSize: '0.75rem',
-              padding: '8px 14px',
+              fontSize: '0.78rem',
+              padding: '7px 14px',
               background: 'var(--brand-primary)',
               color: '#fff',
-              fontWeight: 'bold',
+              fontWeight: 500,
               borderRadius: '6px',
               border: 'none',
               cursor: 'pointer',
@@ -415,182 +528,6 @@ export default function FinancialLedger({ currentUser }) {
           </button>
         </div>
       </div>
-
-      {/* 5-COLUMN KPI SUMMARY CARDS */}
-      {/* <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(5, 1fr)',
-          gap: '12px',
-        }}
-      >
-        <div
-          className="card"
-          style={{
-            padding: '16px',
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            border: '1.5px solid var(--info)',
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontSize: '0.7rem',
-              fontWeight: '700',
-              color: 'var(--info)',
-              textTransform: 'uppercase',
-            }}
-          >
-            Total Retail Sales
-          </p>
-          <div
-            className="monospace"
-            style={{
-              fontSize: '1.3rem',
-              fontWeight: '900',
-              color: 'var(--text-primary)',
-              marginTop: '6px',
-              fontFamily: "'JetBrains Mono', monospace",
-            }}
-          >
-            Rs. {summary.totalSales?.toLocaleString()}
-          </div>
-        </div>
-        <div
-          className="card"
-          style={{
-            padding: '16px',
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            border: '1.5px solid var(--danger)',
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontSize: '0.7rem',
-              fontWeight: '700',
-              color: 'var(--danger)',
-              textTransform: 'uppercase',
-            }}
-          >
-            Operating Expenses
-          </p>
-          <div
-            className="monospace"
-            style={{
-              fontSize: '1.3rem',
-              fontWeight: '900',
-              color: 'var(--text-primary)',
-              marginTop: '6px',
-              fontFamily: "'JetBrains Mono', monospace",
-            }}
-          >
-            Rs. {summary.totalExpenses?.toLocaleString()}
-          </div>
-        </div>
-        <div
-          className="card"
-          style={{
-            padding: '16px',
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            border: '1.5px solid #d97706',
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontSize: '0.7rem',
-              fontWeight: '700',
-              color: '#d97706',
-              textTransform: 'uppercase',
-            }}
-          >
-            Total Purchases (GRN)
-          </p>
-          <div
-            className="monospace"
-            style={{
-              fontSize: '1.3rem',
-              fontWeight: '900',
-              color: 'var(--text-primary)',
-              marginTop: '6px',
-              fontFamily: "'JetBrains Mono', monospace",
-            }}
-          >
-            Rs. {summary.totalPurchases?.toLocaleString()}
-          </div>
-        </div>
-        <div
-          className="card"
-          style={{
-            padding: '16px',
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            border: '1.5px solid #ea580c',
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontSize: '0.7rem',
-              fontWeight: '700',
-              color: '#ea580c',
-              textTransform: 'uppercase',
-            }}
-          >
-            Supplier Payables
-          </p>
-          <div
-            className="monospace"
-            style={{
-              fontSize: '1.3rem',
-              fontWeight: '900',
-              color: 'var(--text-primary)',
-              marginTop: '6px',
-              fontFamily: "'JetBrains Mono', monospace",
-            }}
-          >
-            Rs. {totalSupplierPayables?.toLocaleString()}
-          </div>
-        </div>
-        <div
-          className="card"
-          style={{
-            padding: '16px',
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            border: `1.5px solid ${summary.netCashFlow >= 0 ? 'var(--success)' : 'var(--danger)'}`,
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontSize: '0.7rem',
-              fontWeight: '700',
-              color: summary.netCashFlow >= 0 ? 'var(--success)' : 'var(--danger)',
-              textTransform: 'uppercase',
-            }}
-          >
-            Net Cash Flow
-          </p>
-          <div
-            className="monospace"
-            style={{
-              fontSize: '1.3rem',
-              fontWeight: '900',
-              color: summary.netCashFlow >= 0 ? 'var(--success)' : 'var(--danger)',
-              marginTop: '6px',
-              fontFamily: "'JetBrains Mono', monospace",
-            }}
-          >
-            Rs. {summary.netCashFlow?.toLocaleString()}
-          </div>
-        </div>
-      </div> */}
-
       {/* 5-COLUMN KPI SUMMARY CARDS */}
       <div
         style={{
@@ -601,12 +538,11 @@ export default function FinancialLedger({ currentUser }) {
       >
         {/* TOTAL RETAIL SALES */}
         <div
-          className="card"
           style={{
             padding: '16px',
-            background: 'var(--bg-card)',
+            background: 'var(--ink-0)',
             borderRadius: '10px',
-            border: '1.5px solid var(--info)',
+            border: '1px solid var(--ink-3)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -617,33 +553,31 @@ export default function FinancialLedger({ currentUser }) {
               style={{
                 margin: 0,
                 fontSize: '0.7rem',
-                fontWeight: '700',
-                color: 'var(--info)',
+                fontWeight: 600,
+                color: 'var(--brand-primary)',
                 textTransform: 'uppercase',
+                letterSpacing: '0.03em',
               }}
             >
               Total Retail Sales
             </p>
             <div
-              className="monospace"
+              className="monospace tabular"
               style={{
-                fontSize: '1.3rem',
-                fontWeight: '900',
-                color: 'var(--text-primary)',
+                fontSize: '1.25rem',
+                fontWeight: 600,
+                color: 'var(--ink-fg)',
                 marginTop: '6px',
-                fontFamily: "'JetBrains Mono', monospace",
               }}
             >
-              Rs. {summary.totalSales?.toLocaleString()}
+              Rs. {Number(summary.totalSales || 0).toLocaleString()}
             </div>
           </div>
           <div
             style={{
-              fontSize: '0.65rem',
-              color: 'var(--text-secondary)',
+              fontSize: '0.68rem',
+              color: 'var(--ink-fg-3)',
               marginTop: '8px',
-              fontFamily: "'JetBrains Mono', monospace",
-              fontWeight: '600',
             }}
           >
             Sum of all Sale Invoices
@@ -652,12 +586,11 @@ export default function FinancialLedger({ currentUser }) {
 
         {/* OPERATING EXPENSES */}
         <div
-          className="card"
           style={{
             padding: '16px',
-            background: 'var(--bg-card)',
+            background: 'var(--ink-0)',
             borderRadius: '10px',
-            border: '1.5px solid var(--danger)',
+            border: '1px solid var(--ink-3)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -668,33 +601,31 @@ export default function FinancialLedger({ currentUser }) {
               style={{
                 margin: 0,
                 fontSize: '0.7rem',
-                fontWeight: '700',
-                color: 'var(--danger)',
+                fontWeight: 600,
+                color: 'var(--ink-danger)',
                 textTransform: 'uppercase',
+                letterSpacing: '0.03em',
               }}
             >
               Operating Expenses
             </p>
             <div
-              className="monospace"
+              className="monospace tabular"
               style={{
-                fontSize: '1.3rem',
-                fontWeight: '900',
-                color: 'var(--text-primary)',
+                fontSize: '1.25rem',
+                fontWeight: 600,
+                color: 'var(--ink-fg)',
                 marginTop: '6px',
-                fontFamily: "'JetBrains Mono', monospace",
               }}
             >
-              Rs. {summary.totalExpenses?.toLocaleString()}
+              Rs. {Number(summary.totalExpenses || 0).toLocaleString()}
             </div>
           </div>
           <div
             style={{
-              fontSize: '0.65rem',
-              color: 'var(--text-secondary)',
+              fontSize: '0.68rem',
+              color: 'var(--ink-fg-3)',
               marginTop: '8px',
-              fontFamily: "'JetBrains Mono', monospace",
-              fontWeight: '600',
             }}
           >
             Sum of all Expenses logged
@@ -703,12 +634,11 @@ export default function FinancialLedger({ currentUser }) {
 
         {/* TOTAL PURCHASES */}
         <div
-          className="card"
           style={{
             padding: '16px',
-            background: 'var(--bg-card)',
+            background: 'var(--ink-0)',
             borderRadius: '10px',
-            border: '1.5px solid #d97706',
+            border: '1px solid var(--ink-3)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -719,33 +649,31 @@ export default function FinancialLedger({ currentUser }) {
               style={{
                 margin: 0,
                 fontSize: '0.7rem',
-                fontWeight: '700',
-                color: '#d97706',
+                fontWeight: 600,
+                color: 'var(--ink-fg-2)',
                 textTransform: 'uppercase',
+                letterSpacing: '0.03em',
               }}
             >
               Total Purchases (GRN)
             </p>
             <div
-              className="monospace"
+              className="monospace tabular"
               style={{
-                fontSize: '1.3rem',
-                fontWeight: '900',
-                color: 'var(--text-primary)',
+                fontSize: '1.25rem',
+                fontWeight: 600,
+                color: 'var(--ink-fg)',
                 marginTop: '6px',
-                fontFamily: "'JetBrains Mono', monospace",
               }}
             >
-              Rs. {summary.totalPurchases?.toLocaleString()}
+              Rs. {Number(summary.totalPurchases || 0).toLocaleString()}
             </div>
           </div>
           <div
             style={{
-              fontSize: '0.65rem',
-              color: 'var(--text-secondary)',
+              fontSize: '0.68rem',
+              color: 'var(--ink-fg-3)',
               marginTop: '8px',
-              fontFamily: "'JetBrains Mono', monospace",
-              fontWeight: '600',
             }}
           >
             Sum of (Qty Received × Unit Cost)
@@ -754,12 +682,11 @@ export default function FinancialLedger({ currentUser }) {
 
         {/* SUPPLIER PAYABLES */}
         <div
-          className="card"
           style={{
             padding: '16px',
-            background: 'var(--bg-card)',
+            background: 'var(--ink-0)',
             borderRadius: '10px',
-            border: '1.5px solid #ea580c',
+            border: '1px solid var(--ink-3)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -770,33 +697,31 @@ export default function FinancialLedger({ currentUser }) {
               style={{
                 margin: 0,
                 fontSize: '0.7rem',
-                fontWeight: '700',
-                color: '#ea580c',
+                fontWeight: 600,
+                color: 'var(--ink-fg-2)',
                 textTransform: 'uppercase',
+                letterSpacing: '0.03em',
               }}
             >
               Supplier Payables
             </p>
             <div
-              className="monospace"
+              className="monospace tabular"
               style={{
-                fontSize: '1.3rem',
-                fontWeight: '900',
-                color: 'var(--text-primary)',
+                fontSize: '1.25rem',
+                fontWeight: 600,
+                color: 'var(--ink-fg)',
                 marginTop: '6px',
-                fontFamily: "'JetBrains Mono', monospace",
               }}
             >
-              Rs. {totalSupplierPayables?.toLocaleString()}
+              Rs. {Number(totalSupplierPayables || 0).toLocaleString()}
             </div>
           </div>
           <div
             style={{
-              fontSize: '0.65rem',
-              color: 'var(--text-secondary)',
+              fontSize: '0.68rem',
+              color: 'var(--ink-fg-3)',
               marginTop: '8px',
-              fontFamily: "'JetBrains Mono', monospace",
-              fontWeight: '600',
             }}
           >
             Sum of Supplier Balances
@@ -805,12 +730,11 @@ export default function FinancialLedger({ currentUser }) {
 
         {/* NET CASH FLOW */}
         <div
-          className="card"
           style={{
             padding: '16px',
-            background: 'var(--bg-card)',
+            background: 'var(--ink-0)',
             borderRadius: '10px',
-            border: `1.5px solid ${summary.netCashFlow >= 0 ? 'var(--success)' : 'var(--danger)'}`,
+            border: '1px solid var(--ink-3)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -821,80 +745,76 @@ export default function FinancialLedger({ currentUser }) {
               style={{
                 margin: 0,
                 fontSize: '0.7rem',
-                fontWeight: '700',
+                fontWeight: 600,
                 color:
-                  summary.netCashFlow >= 0 ? 'var(--success)' : 'var(--danger)',
+                  summary.netCashFlow >= 0
+                    ? 'var(--ink-success)'
+                    : 'var(--ink-danger)',
                 textTransform: 'uppercase',
+                letterSpacing: '0.03em',
               }}
             >
               Net Cash Flow
             </p>
             <div
-              className="monospace"
+              className="monospace tabular"
               style={{
-                fontSize: '1.3rem',
-                fontWeight: '900',
+                fontSize: '1.25rem',
+                fontWeight: 600,
                 color:
-                  summary.netCashFlow >= 0 ? 'var(--success)' : 'var(--danger)',
+                  summary.netCashFlow >= 0
+                    ? 'var(--ink-success)'
+                    : 'var(--ink-danger)',
                 marginTop: '6px',
-                fontFamily: "'JetBrains Mono', monospace",
               }}
             >
-              Rs. {summary.netCashFlow?.toLocaleString()}
+              Rs. {Number(summary.netCashFlow || 0).toLocaleString()}
             </div>
           </div>
           <div
             style={{
-              fontSize: '0.65rem',
-              color: 'var(--text-secondary)',
+              fontSize: '0.68rem',
+              color: 'var(--ink-fg-3)',
               marginTop: '8px',
-              fontFamily: "'JetBrains Mono', monospace",
-              fontWeight: '600',
             }}
           >
             Sales - Expenses
           </div>
         </div>
       </div>
-
       {/* FILTER TOOLBAR */}
       <div
         style={{
-          background: 'var(--bg-card)',
-          padding: '12px 16px',
+          background: 'var(--ink-0)',
+          padding: '16px 20px',
           borderRadius: '10px',
-          border: '1.5px solid var(--border-color)',
+          border: '1px solid var(--ink-3)',
           display: 'flex',
           flexWrap: 'wrap',
-          gap: '12px',
+          gap: '16px',
           alignItems: 'center',
           justifyContent: 'space-between',
         }}
       >
+        {/* Date Range Picker */}
         <div
           style={{
             display: 'flex',
-            gap: '8px',
-            flexWrap: 'wrap',
             alignItems: 'center',
+            gap: '10px',
+            background: 'var(--ink-1)',
+            padding: '8px 14px',
+            borderRadius: '8px',
+            border: '1px solid var(--ink-3)',
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: 'var(--bg-hover)',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              border: '1px solid var(--border-strong)',
-            }}
-          >
+          <CalendarIcon />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span
               style={{
-                fontSize: '0.75rem',
-                fontWeight: '700',
-                color: 'var(--text-primary)',
+                fontSize: '0.78rem',
+                fontWeight: 500,
+                color: 'var(--ink-fg-2)',
               }}
             >
               From:
@@ -905,17 +825,19 @@ export default function FinancialLedger({ currentUser }) {
               onChange={(e) => setStartDate(e.target.value)}
               style={{
                 border: 'none',
-                fontSize: '0.75rem',
+                fontSize: '0.78rem',
                 background: 'transparent',
-                color: '#475569',
+                color: startDate ? 'var(--ink-fg)' : 'var(--ink-fg-3)',
                 outline: 'none',
+                fontFamily: 'inherit',
+                cursor: 'pointer',
               }}
             />
             <span
               style={{
-                fontSize: '0.75rem',
-                fontWeight: '700',
-                color: 'var(--text-primary)',
+                fontSize: '0.78rem',
+                fontWeight: 500,
+                color: 'var(--ink-fg-2)',
                 marginLeft: '8px',
               }}
             >
@@ -927,78 +849,170 @@ export default function FinancialLedger({ currentUser }) {
               onChange={(e) => setEndDate(e.target.value)}
               style={{
                 border: 'none',
-                fontSize: '0.75rem',
+                fontSize: '0.78rem',
                 background: 'transparent',
-                color: '#475569',
+                color: endDate ? 'var(--ink-fg)' : 'var(--ink-fg-3)',
                 outline: 'none',
+                fontFamily: 'inherit',
+                cursor: 'pointer',
               }}
             />
           </div>
         </div>
+
+        {/* Dropdowns & Reset */}
         <div
           style={{
             display: 'flex',
-            gap: '8px',
+            gap: '10px',
             flexWrap: 'wrap',
             alignItems: 'center',
           }}
         >
-          <select
-            value={selectedUser}
-            onChange={(e) => setSelectedUser(e.target.value)}
+          {/* Operator Select */}
+          <div
             style={{
-              padding: '6px 10px',
-              fontSize: '0.75rem',
-              borderRadius: '6px',
-              border: '1px solid var(--border-strong)',
-              background: 'var(--bg-card)',
-              color: 'var(--text-primary)',
-              outline: 'none',
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
             }}
           >
-            <option value="">👤 All Operators</option>
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.username} ({u.role})
-              </option>
-            ))}
-          </select>
-          <select
-            value={paymentType}
-            onChange={(e) => setPaymentType(e.target.value)}
+            <span
+              style={{
+                position: 'absolute',
+                left: '12px',
+                color: 'var(--ink-fg-2)',
+                display: 'flex',
+                pointerEvents: 'none',
+              }}
+            >
+              <UserIcon />
+            </span>
+            <select
+              value={selectedUser}
+              onChange={(e) => setSelectedUser(e.target.value)}
+              style={{
+                ...inputStyle,
+                paddingLeft: '36px',
+                paddingRight: '32px',
+                appearance: 'none',
+              }}
+            >
+              <option value="">All Operators</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.username} ({u.role})
+                </option>
+              ))}
+            </select>
+            <span
+              style={{
+                position: 'absolute',
+                right: '10px',
+                color: 'var(--ink-fg-3)',
+                display: 'flex',
+                pointerEvents: 'none',
+              }}
+            >
+              <ChevronDownIcon />
+            </span>
+          </div>
+
+          {/* Payment Type Select */}
+          <div
             style={{
-              padding: '6px 10px',
-              fontSize: '0.75rem',
-              borderRadius: '6px',
-              border: '1px solid var(--border-strong)',
-              background: 'var(--bg-card)',
-              color: 'var(--text-primary)',
-              outline: 'none',
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
             }}
           >
-            <option value="">💳 All Payments</option>
-            <option value="CASH">Cash</option>
-            <option value="CREDIT">Credit</option>
-            <option value="COD">COD</option>
-          </select>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
+            <span
+              style={{
+                position: 'absolute',
+                left: '12px',
+                color: 'var(--ink-fg-2)',
+                display: 'flex',
+                pointerEvents: 'none',
+              }}
+            >
+              <CreditCardIcon />
+            </span>
+            <select
+              value={paymentType}
+              onChange={(e) => setPaymentType(e.target.value)}
+              style={{
+                ...inputStyle,
+                paddingLeft: '36px',
+                paddingRight: '32px',
+                appearance: 'none',
+              }}
+            >
+              <option value="">All Payments</option>
+              <option value="CASH">Cash</option>
+              <option value="CREDIT">Credit</option>
+              <option value="COD">COD</option>
+            </select>
+            <span
+              style={{
+                position: 'absolute',
+                right: '10px',
+                color: 'var(--ink-fg-3)',
+                display: 'flex',
+                pointerEvents: 'none',
+              }}
+            >
+              <ChevronDownIcon />
+            </span>
+          </div>
+
+          {/* Sort By Select */}
+          <div
             style={{
-              padding: '6px 10px',
-              fontSize: '0.75rem',
-              borderRadius: '6px',
-              border: '1px solid var(--border-strong)',
-              background: 'var(--bg-card)',
-              color: 'var(--text-primary)',
-              outline: 'none',
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
             }}
           >
-            <option value="date_desc">📅 Latest to Oldest</option>
-            <option value="date_asc">📜 Oldest to Latest</option>
-            <option value="amount_desc">📈 Highest to Lowest Amt</option>
-            <option value="amount_asc">📉 Lowest to Highest Amt</option>
-          </select>
+            <span
+              style={{
+                position: 'absolute',
+                left: '12px',
+                color: 'var(--ink-fg-2)',
+                display: 'flex',
+                pointerEvents: 'none',
+              }}
+            >
+              <CalendarIcon />
+            </span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              style={{
+                ...inputStyle,
+                paddingLeft: '36px',
+                paddingRight: '32px',
+                appearance: 'none',
+              }}
+            >
+              <option value="date_desc">Latest to Oldest</option>
+              <option value="date_asc">Oldest to Latest</option>
+              <option value="amount_desc">Highest to Lowest Amt</option>
+              <option value="amount_asc">Lowest to Highest Amt</option>
+            </select>
+            <span
+              style={{
+                position: 'absolute',
+                right: '10px',
+                color: 'var(--ink-fg-3)',
+                display: 'flex',
+                pointerEvents: 'none',
+              }}
+            >
+              <ChevronDownIcon />
+            </span>
+          </div>
+
+          {/* Reset Filter Button */}
           {(startDate ||
             endDate ||
             selectedUser ||
@@ -1006,14 +1020,15 @@ export default function FinancialLedger({ currentUser }) {
             sortBy !== 'date_desc') && (
             <button
               style={{
-                fontSize: '0.75rem',
-                padding: '6px 12px',
-                background: '#fee2e2',
-                color: 'var(--danger)',
-                border: 'none',
-                fontWeight: 'bold',
+                fontSize: '0.78rem',
+                padding: '9px 14px',
+                background: 'var(--ink-1)',
+                color: 'var(--ink-danger)',
+                border: '1px solid var(--ink-3)',
+                fontWeight: 500,
                 borderRadius: '6px',
                 cursor: 'pointer',
+                transition: 'background 120ms ease',
               }}
               onClick={clearFilters}
             >
@@ -1027,13 +1042,13 @@ export default function FinancialLedger({ currentUser }) {
       <div
         style={{
           flex: 1,
-          background: 'var(--bg-card)',
+          background: 'var(--ink-0)',
           padding: '16px',
           borderRadius: '10px',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          border: '1.5px solid var(--border-color)',
+          border: '1px solid var(--ink-3)',
         }}
       >
         <div
@@ -1042,88 +1057,58 @@ export default function FinancialLedger({ currentUser }) {
             justifyContent: 'space-between',
             alignItems: 'center',
             marginBottom: '12px',
-            borderBottom: '1px solid #e2e8f0',
+            borderBottom: '1px solid var(--ink-3)',
             paddingBottom: '12px',
           }}
         >
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={() => setActiveTab('SALES')}
-              style={{
-                padding: '6px 14px',
-                fontSize: '0.75rem',
-                fontWeight: 'bold',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                border: 'none',
-                background:
-                  activeTab === 'SALES' ? 'var(--brand-primary)' : '#f1f5f9',
-                color: activeTab === 'SALES' ? '#fff' : '#64748b',
-              }}
-            >
-              🛒 Retail Sales ({sales.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('REFUNDS')}
-              style={{
-                padding: '6px 14px',
-                fontSize: '0.75rem',
-                fontWeight: 'bold',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                border: 'none',
-                background:
-                  activeTab === 'REFUNDS' ? 'var(--brand-primary)' : '#f1f5f9',
-                color: activeTab === 'REFUNDS' ? '#fff' : '#64748b',
-              }}
-            >
-              🔄 Refunds & Returns ({refunds.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('EXPENSES')}
-              style={{
-                padding: '6px 14px',
-                fontSize: '0.75rem',
-                fontWeight: 'bold',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                border: 'none',
-                background:
-                  activeTab === 'EXPENSES' ? 'var(--brand-primary)' : '#f1f5f9',
-                color: activeTab === 'EXPENSES' ? '#fff' : '#64748b',
-              }}
-            >
-              💸 Operating Expenses ({expenses.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('PURCHASES')}
-              style={{
-                padding: '6px 14px',
-                fontSize: '0.75rem',
-                fontWeight: 'bold',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                border: 'none',
-                background:
-                  activeTab === 'PURCHASES'
-                    ? 'var(--brand-primary)'
-                    : '#f1f5f9',
-                color: activeTab === 'PURCHASES' ? '#fff' : '#64748b',
-              }}
-            >
-              📦 Stock Purchases ({purchases.length})
-            </button>
+            {[
+              { id: 'SALES', label: `🛒 Retail Sales (${sales.length})` },
+              {
+                id: 'REFUNDS',
+                label: `🔄 Refunds & Returns (${refunds.length})`,
+              },
+              {
+                id: 'EXPENSES',
+                label: `💸 Operating Expenses (${expenses.length})`,
+              },
+              {
+                id: 'PURCHASES',
+                label: `📦 Stock Purchases (${purchases.length})`,
+              },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '0.75rem',
+                  fontWeight: 500,
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  border: '1px solid var(--ink-3)',
+                  background:
+                    activeTab === tab.id
+                      ? 'var(--brand-primary)'
+                      : 'var(--ink-1)',
+                  color: activeTab === tab.id ? '#fff' : 'var(--ink-fg-2)',
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
               style={{
                 fontSize: '0.75rem',
                 padding: '6px 12px',
-                background: 'var(--bg-hover)',
-                border: '1px solid var(--border-strong)',
+                background: 'var(--ink-1)',
+                border: '1px solid var(--ink-3)',
                 borderRadius: '6px',
                 cursor: 'pointer',
-                fontWeight: 'bold',
+                fontWeight: 500,
+                color: 'var(--ink-fg)',
               }}
               onClick={loadFinancials}
             >
@@ -1136,7 +1121,7 @@ export default function FinancialLedger({ currentUser }) {
                   padding: '6px 12px',
                   background: 'var(--brand-primary)',
                   color: '#fff',
-                  fontWeight: 'bold',
+                  fontWeight: 500,
                   border: 'none',
                   borderRadius: '6px',
                   cursor: 'pointer',
@@ -1155,13 +1140,14 @@ export default function FinancialLedger({ currentUser }) {
             display: 'grid',
             gridTemplateColumns: unifiedGridTemplate,
             fontSize: '0.7rem',
-            fontWeight: '700',
-            background: 'var(--bg-hover)',
-            color: 'var(--text-secondary)',
-            padding: '12px 10px',
+            fontWeight: 600,
+            background: 'var(--ink-1)',
+            color: 'var(--ink-fg-2)',
+            padding: '10px 12px',
             borderRadius: '6px',
-            borderBottom: '1.5px solid #e2e8f0',
+            borderBottom: '1px solid var(--ink-3)',
             textTransform: 'uppercase',
+            letterSpacing: '0.03em',
           }}
         >
           <span>DATE</span>
@@ -1184,8 +1170,8 @@ export default function FinancialLedger({ currentUser }) {
             overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
-            gap: '2px',
-            marginTop: '4px',
+            gap: '6px',
+            marginTop: '6px',
           }}
         >
           {activeTab === 'SALES' &&
@@ -1195,35 +1181,25 @@ export default function FinancialLedger({ currentUser }) {
                 style={{
                   display: 'grid',
                   gridTemplateColumns: unifiedGridTemplate,
-                  fontSize: '0.78rem',
+                  fontSize: '0.75rem',
                   alignItems: 'center',
-                  background: 'var(--bg-card)',
-                  padding: '10px',
-                  borderBottom: '1px solid #f1f5f9',
+                  background: 'var(--ink-1)',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--ink-3)',
                 }}
               >
-                <span
-                  style={{
-                    fontSize: '0.72rem',
-                    color: 'var(--text-secondary)',
-                  }}
-                >
-                  {s.date}
-                </span>
+                <span style={{ color: 'var(--ink-fg-3)' }}>{s.date}</span>
                 <span
                   className="monospace"
-                  style={{
-                    fontWeight: '700',
-                    color: 'var(--brand-primary)',
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
+                  style={{ fontWeight: 600, color: 'var(--brand-primary)' }}
                 >
                   #INV-{s.sale_id}
                 </span>
                 <span
                   style={{
-                    fontWeight: '700',
-                    color: 'var(--text-primary)',
+                    fontWeight: 500,
+                    color: 'var(--ink-fg)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -1234,30 +1210,25 @@ export default function FinancialLedger({ currentUser }) {
                 <span>
                   <span
                     style={{
-                      background: 'var(--bg-hover)',
-                      color: '#475569',
+                      background: 'var(--ink-0)',
+                      color: 'var(--ink-fg-2)',
                       padding: '2px 6px',
                       borderRadius: '4px',
-                      fontSize: '0.65rem',
-                      fontWeight: 'bold',
+                      fontSize: '0.68rem',
+                      fontWeight: 500,
+                      border: '1px solid var(--ink-3)',
                     }}
                   >
                     {s.payment_type}
                   </span>
                 </span>
-                <span
-                  style={{
-                    fontSize: '0.72rem',
-                    color: 'var(--text-secondary)',
-                    fontWeight: '600',
-                  }}
-                >
+                <span style={{ color: 'var(--ink-fg-3)' }}>
                   {s.username || 'Cashier'}
                 </span>
                 <span
                   style={{
-                    fontWeight: '600',
-                    color: 'var(--text-primary)',
+                    fontWeight: 500,
+                    color: 'var(--ink-fg)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -1266,38 +1237,30 @@ export default function FinancialLedger({ currentUser }) {
                   {s.item_name}
                 </span>
                 <span
-                  className="monospace"
-                  style={{
-                    textAlign: 'right',
-                    fontWeight: '700',
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
+                  className="monospace tabular"
+                  style={{ textAlign: 'right', fontWeight: 600 }}
                 >
                   {s.qty_sold}
                 </span>
                 <span
-                  className="monospace"
-                  style={{
-                    textAlign: 'right',
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
+                  className="monospace tabular"
+                  style={{ textAlign: 'right', color: 'var(--ink-fg-3)' }}
                 >
-                  Rs. {s.unit_price?.toLocaleString()}
+                  Rs. {Number(s.unit_price || 0).toLocaleString()}
                 </span>
                 <span
-                  className="monospace"
+                  className="monospace tabular"
                   style={{
                     textAlign: 'right',
-                    fontWeight: '700',
-                    color: 'var(--success)',
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontWeight: 600,
+                    color: 'var(--ink-success)',
                   }}
                 >
-                  Rs. {s.total_line?.toLocaleString()}
+                  Rs. {Number(s.total_line || 0).toLocaleString()}
                 </span>
                 <span
                   style={{
-                    color: 'var(--text-secondary)',
+                    color: 'var(--ink-fg-3)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -1309,39 +1272,37 @@ export default function FinancialLedger({ currentUser }) {
                   style={{
                     display: 'flex',
                     justifyContent: 'center',
-                    gap: '4px',
+                    gap: '6px',
                   }}
                 >
                   <button
                     style={{
-                      background: '#e0f2fe',
-                      color: 'var(--info)',
-                      border: 'none',
-                      padding: '4px 8px',
-                      fontSize: '0.7rem',
+                      background: 'var(--ink-0)',
+                      color: 'var(--brand-primary)',
+                      border: '1px solid var(--ink-3)',
+                      padding: '4px 6px',
                       cursor: 'pointer',
                       borderRadius: '4px',
-                      fontWeight: 'bold',
+                      display: 'flex',
                     }}
                     onClick={() => openEditModal(s, 'SALES')}
                   >
-                    ✏️
+                    <EditIcon />
                   </button>
                   {currentUser?.role?.toUpperCase() === 'ADMIN' && (
                     <button
                       style={{
-                        background: '#fee2e2',
-                        color: 'var(--danger)',
-                        border: 'none',
-                        padding: '4px 8px',
-                        fontSize: '0.7rem',
+                        background: 'var(--ink-0)',
+                        color: 'var(--ink-danger)',
+                        border: '1px solid var(--ink-3)',
+                        padding: '4px 6px',
                         cursor: 'pointer',
                         borderRadius: '4px',
-                        fontWeight: 'bold',
+                        display: 'flex',
                       }}
                       onClick={() => handleDeleteRecord(s.sale_id, 'SALES')}
                     >
-                      🗑️
+                      <TrashIcon />
                     </button>
                   )}
                 </div>
@@ -1355,35 +1316,25 @@ export default function FinancialLedger({ currentUser }) {
                 style={{
                   display: 'grid',
                   gridTemplateColumns: unifiedGridTemplate,
-                  fontSize: '0.78rem',
+                  fontSize: '0.75rem',
                   alignItems: 'center',
-                  background: '#fff5f5',
-                  padding: '10px',
-                  borderBottom: '1px solid #f1f5f9',
+                  background: 'var(--ink-1)',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--ink-3)',
                 }}
               >
-                <span
-                  style={{
-                    fontSize: '0.72rem',
-                    color: 'var(--text-secondary)',
-                  }}
-                >
-                  {r.date}
-                </span>
+                <span style={{ color: 'var(--ink-fg-3)' }}>{r.date}</span>
                 <span
                   className="monospace"
-                  style={{
-                    fontWeight: '700',
-                    color: 'var(--danger)',
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
+                  style={{ fontWeight: 600, color: 'var(--ink-danger)' }}
                 >
                   REF-{r.id}
                 </span>
                 <span
                   style={{
-                    fontWeight: '700',
-                    color: 'var(--text-primary)',
+                    fontWeight: 500,
+                    color: 'var(--ink-fg)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -1394,30 +1345,25 @@ export default function FinancialLedger({ currentUser }) {
                 <span>
                   <span
                     style={{
-                      background: '#fee2e2',
-                      color: 'var(--danger)',
+                      background: 'var(--ink-0)',
+                      color: 'var(--ink-danger)',
                       padding: '2px 6px',
                       borderRadius: '4px',
-                      fontSize: '0.65rem',
-                      fontWeight: 'bold',
+                      fontSize: '0.68rem',
+                      fontWeight: 500,
+                      border: '1px solid var(--ink-3)',
                     }}
                   >
                     REFUND
                   </span>
                 </span>
-                <span
-                  style={{
-                    fontSize: '0.72rem',
-                    color: 'var(--text-secondary)',
-                    fontWeight: '600',
-                  }}
-                >
+                <span style={{ color: 'var(--ink-fg-3)' }}>
                   {r.username || 'Manager'}
                 </span>
                 <span
                   style={{
-                    fontWeight: '600',
-                    color: 'var(--danger)',
+                    fontWeight: 500,
+                    color: 'var(--ink-danger)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -1426,38 +1372,30 @@ export default function FinancialLedger({ currentUser }) {
                   {r.item_name || 'General Return'}
                 </span>
                 <span
-                  className="monospace"
-                  style={{
-                    textAlign: 'right',
-                    fontWeight: '700',
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
+                  className="monospace tabular"
+                  style={{ textAlign: 'right', fontWeight: 600 }}
                 >
                   {r.qty}
                 </span>
                 <span
-                  className="monospace"
-                  style={{
-                    textAlign: 'right',
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
+                  className="monospace tabular"
+                  style={{ textAlign: 'right', color: 'var(--ink-fg-3)' }}
                 >
-                  Rs. {r.amount_refunded?.toLocaleString()}
+                  Rs. {Number(r.amount_refunded || 0).toLocaleString()}
                 </span>
                 <span
-                  className="monospace"
+                  className="monospace tabular"
                   style={{
                     textAlign: 'right',
-                    fontWeight: '700',
-                    color: 'var(--danger)',
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontWeight: 600,
+                    color: 'var(--ink-danger)',
                   }}
                 >
-                  - Rs. {r.amount_refunded?.toLocaleString()}
+                  − Rs. {Number(r.amount_refunded || 0).toLocaleString()}
                 </span>
                 <span
                   style={{
-                    color: 'var(--text-secondary)',
+                    color: 'var(--ink-fg-3)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -1469,39 +1407,37 @@ export default function FinancialLedger({ currentUser }) {
                   style={{
                     display: 'flex',
                     justifyContent: 'center',
-                    gap: '4px',
+                    gap: '6px',
                   }}
                 >
                   <button
                     style={{
-                      background: '#e0f2fe',
-                      color: 'var(--info)',
-                      border: 'none',
-                      padding: '4px 8px',
-                      fontSize: '0.7rem',
+                      background: 'var(--ink-0)',
+                      color: 'var(--brand-primary)',
+                      border: '1px solid var(--ink-3)',
+                      padding: '4px 6px',
                       cursor: 'pointer',
                       borderRadius: '4px',
-                      fontWeight: 'bold',
+                      display: 'flex',
                     }}
                     onClick={() => openEditModal(r, 'REFUNDS')}
                   >
-                    ✏️
+                    <EditIcon />
                   </button>
                   {currentUser?.role?.toUpperCase() === 'ADMIN' && (
                     <button
                       style={{
-                        background: '#fee2e2',
-                        color: 'var(--danger)',
-                        border: 'none',
-                        padding: '4px 8px',
-                        fontSize: '0.7rem',
+                        background: 'var(--ink-0)',
+                        color: 'var(--ink-danger)',
+                        border: '1px solid var(--ink-3)',
+                        padding: '4px 6px',
                         cursor: 'pointer',
                         borderRadius: '4px',
-                        fontWeight: 'bold',
+                        display: 'flex',
                       }}
                       onClick={() => handleDeleteRecord(r.id, 'REFUNDS')}
                     >
-                      🗑️
+                      <TrashIcon />
                     </button>
                   )}
                 </div>
@@ -1515,94 +1451,70 @@ export default function FinancialLedger({ currentUser }) {
                 style={{
                   display: 'grid',
                   gridTemplateColumns: unifiedGridTemplate,
-                  fontSize: '0.78rem',
+                  fontSize: '0.75rem',
                   alignItems: 'center',
-                  background: 'var(--bg-card)',
-                  padding: '10px',
-                  borderBottom: '1px solid #f1f5f9',
+                  background: 'var(--ink-1)',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--ink-3)',
                 }}
               >
-                <span
-                  style={{
-                    fontSize: '0.72rem',
-                    color: 'var(--text-secondary)',
-                  }}
-                >
-                  {exp.date}
-                </span>
+                <span style={{ color: 'var(--ink-fg-3)' }}>{exp.date}</span>
                 <span
                   className="monospace"
-                  style={{
-                    fontWeight: '700',
-                    color: 'var(--danger)',
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
+                  style={{ fontWeight: 600, color: 'var(--ink-danger)' }}
                 >
                   EXP-{exp.id}
                 </span>
-                <span
-                  style={{ fontWeight: '700', color: 'var(--text-primary)' }}
-                >
+                <span style={{ fontWeight: 500, color: 'var(--ink-fg)' }}>
                   Store Overhead
                 </span>
                 <span>
                   <span
                     style={{
-                      background: '#fee2e2',
-                      color: 'var(--danger)',
+                      background: 'var(--ink-0)',
+                      color: 'var(--ink-fg-2)',
                       padding: '2px 6px',
                       borderRadius: '4px',
-                      fontSize: '0.65rem',
-                      fontWeight: 'bold',
+                      fontSize: '0.68rem',
+                      fontWeight: 500,
+                      border: '1px solid var(--ink-3)',
                     }}
                   >
                     CASH
                   </span>
                 </span>
-                <span
-                  style={{
-                    fontSize: '0.72rem',
-                    color: 'var(--text-secondary)',
-                    fontWeight: '600',
-                  }}
-                >
+                <span style={{ color: 'var(--ink-fg-3)' }}>
                   {exp.username || 'Manager'}
                 </span>
-                <span style={{ fontWeight: '600', color: '#475569' }}>
+                <span style={{ fontWeight: 500, color: 'var(--ink-fg)' }}>
                   {exp.category}
                 </span>
                 <span
-                  className="monospace"
-                  style={{
-                    textAlign: 'right',
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
+                  className="monospace tabular"
+                  style={{ textAlign: 'right' }}
                 >
                   1
                 </span>
                 <span
-                  className="monospace"
-                  style={{
-                    textAlign: 'right',
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
+                  className="monospace tabular"
+                  style={{ textAlign: 'right', color: 'var(--ink-fg-3)' }}
                 >
-                  Rs. {exp.amount?.toLocaleString()}
+                  Rs. {Number(exp.amount || 0).toLocaleString()}
                 </span>
                 <span
-                  className="monospace"
+                  className="monospace tabular"
                   style={{
                     textAlign: 'right',
-                    fontWeight: '700',
-                    color: '#ef4444',
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontWeight: 600,
+                    color: 'var(--ink-danger)',
                   }}
                 >
-                  - Rs. {exp.amount?.toLocaleString()}
+                  − Rs. {Number(exp.amount || 0).toLocaleString()}
                 </span>
                 <span
                   style={{
-                    color: 'var(--text-secondary)',
+                    color: 'var(--ink-fg-3)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -1615,39 +1527,37 @@ export default function FinancialLedger({ currentUser }) {
                   style={{
                     display: 'flex',
                     justifyContent: 'center',
-                    gap: '4px',
+                    gap: '6px',
                   }}
                 >
                   <button
                     style={{
-                      background: '#e0f2fe',
-                      color: 'var(--info)',
-                      border: 'none',
-                      padding: '4px 8px',
-                      fontSize: '0.7rem',
+                      background: 'var(--ink-0)',
+                      color: 'var(--brand-primary)',
+                      border: '1px solid var(--ink-3)',
+                      padding: '4px 6px',
                       cursor: 'pointer',
                       borderRadius: '4px',
-                      fontWeight: 'bold',
+                      display: 'flex',
                     }}
                     onClick={() => openEditModal(exp, 'EXPENSES')}
                   >
-                    ✏️
+                    <EditIcon />
                   </button>
                   {currentUser?.role?.toUpperCase() === 'ADMIN' && (
                     <button
                       style={{
-                        background: '#fee2e2',
-                        color: 'var(--danger)',
-                        border: 'none',
-                        padding: '4px 8px',
-                        fontSize: '0.7rem',
+                        background: 'var(--ink-0)',
+                        color: 'var(--ink-danger)',
+                        border: '1px solid var(--ink-3)',
+                        padding: '4px 6px',
                         cursor: 'pointer',
                         borderRadius: '4px',
-                        fontWeight: 'bold',
+                        display: 'flex',
                       }}
                       onClick={() => handleDeleteRecord(exp.id, 'EXPENSES')}
                     >
-                      🗑️
+                      <TrashIcon />
                     </button>
                   )}
                 </div>
@@ -1661,35 +1571,25 @@ export default function FinancialLedger({ currentUser }) {
                 style={{
                   display: 'grid',
                   gridTemplateColumns: unifiedGridTemplate,
-                  fontSize: '0.78rem',
+                  fontSize: '0.75rem',
                   alignItems: 'center',
-                  background: 'var(--bg-card)',
-                  padding: '10px',
-                  borderBottom: '1px solid #f1f5f9',
+                  background: 'var(--ink-1)',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--ink-3)',
                 }}
               >
-                <span
-                  style={{
-                    fontSize: '0.72rem',
-                    color: 'var(--text-secondary)',
-                  }}
-                >
-                  {p.date}
-                </span>
+                <span style={{ color: 'var(--ink-fg-3)' }}>{p.date}</span>
                 <span
                   className="monospace"
-                  style={{
-                    fontWeight: '700',
-                    color: 'var(--info)',
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
+                  style={{ fontWeight: 600, color: 'var(--brand-primary)' }}
                 >
                   {p.invoice_no || `GRN-${p.id}`}
                 </span>
                 <span
                   style={{
-                    fontWeight: '700',
-                    color: 'var(--text-primary)',
+                    fontWeight: 500,
+                    color: 'var(--ink-fg)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -1700,31 +1600,25 @@ export default function FinancialLedger({ currentUser }) {
                 <span>
                   <span
                     style={{
-                      background:
-                        p.payment_type === 'CASH' ? '#d1fae5' : '#fef3c7',
-                      color: p.payment_type === 'CASH' ? '#065f46' : '#d97706',
+                      background: 'var(--ink-0)',
+                      color: 'var(--ink-fg-2)',
                       padding: '2px 6px',
                       borderRadius: '4px',
-                      fontSize: '0.65rem',
-                      fontWeight: 'bold',
+                      fontSize: '0.68rem',
+                      fontWeight: 500,
+                      border: '1px solid var(--ink-3)',
                     }}
                   >
                     {p.payment_type || 'CREDIT'}
                   </span>
                 </span>
-                <span
-                  style={{
-                    fontSize: '0.72rem',
-                    color: 'var(--text-secondary)',
-                    fontWeight: '600',
-                  }}
-                >
+                <span style={{ color: 'var(--ink-fg-3)' }}>
                   {p.username || 'Manager'}
                 </span>
                 <span
                   style={{
-                    fontWeight: '600',
-                    color: 'var(--text-primary)',
+                    fontWeight: 500,
+                    color: 'var(--ink-fg)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -1733,39 +1627,33 @@ export default function FinancialLedger({ currentUser }) {
                   {p.item_name}
                 </span>
                 <span
-                  className="monospace"
-                  style={{
-                    textAlign: 'right',
-                    fontWeight: '700',
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
+                  className="monospace tabular"
+                  style={{ textAlign: 'right', fontWeight: 600 }}
                 >
                   {p.qty_received}
                 </span>
                 <span
-                  className="monospace"
-                  style={{
-                    textAlign: 'right',
-                    color: 'var(--text-secondary)',
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
+                  className="monospace tabular"
+                  style={{ textAlign: 'right', color: 'var(--ink-fg-3)' }}
                 >
-                  Rs. {p.unit_cost?.toLocaleString()}
+                  Rs. {Number(p.unit_cost || 0).toLocaleString()}
                 </span>
                 <span
-                  className="monospace"
+                  className="monospace tabular"
                   style={{
                     textAlign: 'right',
-                    fontWeight: '700',
-                    color: '#f59e0b',
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontWeight: 600,
+                    color: 'var(--ink-fg)',
                   }}
                 >
-                  Rs. {(p.qty_received * p.unit_cost)?.toLocaleString()}
+                  Rs.{' '}
+                  {Number(
+                    (p.qty_received || 0) * (p.unit_cost || 0),
+                  ).toLocaleString()}
                 </span>
                 <span
                   style={{
-                    color: 'var(--text-secondary)',
+                    color: 'var(--ink-fg-3)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -1777,39 +1665,37 @@ export default function FinancialLedger({ currentUser }) {
                   style={{
                     display: 'flex',
                     justifyContent: 'center',
-                    gap: '4px',
+                    gap: '6px',
                   }}
                 >
                   <button
                     style={{
-                      background: '#e0f2fe',
-                      color: 'var(--info)',
-                      border: 'none',
-                      padding: '4px 8px',
-                      fontSize: '0.7rem',
+                      background: 'var(--ink-0)',
+                      color: 'var(--brand-primary)',
+                      border: '1px solid var(--ink-3)',
+                      padding: '4px 6px',
                       cursor: 'pointer',
                       borderRadius: '4px',
-                      fontWeight: 'bold',
+                      display: 'flex',
                     }}
                     onClick={() => openEditModal(p, 'PURCHASES')}
                   >
-                    ✏️
+                    <EditIcon />
                   </button>
                   {currentUser?.role?.toUpperCase() === 'ADMIN' && (
                     <button
                       style={{
-                        background: '#fee2e2',
-                        color: 'var(--danger)',
-                        border: 'none',
-                        padding: '4px 8px',
-                        fontSize: '0.7rem',
+                        background: 'var(--ink-0)',
+                        color: 'var(--ink-danger)',
+                        border: '1px solid var(--ink-3)',
+                        padding: '4px 6px',
                         cursor: 'pointer',
                         borderRadius: '4px',
-                        fontWeight: 'bold',
+                        display: 'flex',
                       }}
                       onClick={() => handleDeleteRecord(p.id, 'PURCHASES')}
                     >
-                      🗑️
+                      <TrashIcon />
                     </button>
                   )}
                 </div>
@@ -1823,9 +1709,9 @@ export default function FinancialLedger({ currentUser }) {
             <div
               style={{
                 textAlign: 'center',
-                color: '#94a3b8',
+                color: 'var(--ink-fg-3)',
                 padding: '40px 0',
-                fontSize: '0.85rem',
+                fontSize: '0.8rem',
               }}
             >
               No records found matching your criteria.
@@ -1833,36 +1719,41 @@ export default function FinancialLedger({ currentUser }) {
           )}
         </div>
       </div>
-
       {/* MODALS */}
       {isExpenseModalOpen && (
         <div
-          className="receipt-modal-backdrop"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setIsExpenseModalOpen(false);
+          }}
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(15, 23, 42, 0.6)',
+            background: 'rgba(0, 0, 0, 0.55)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 50,
+            padding: '16px',
           }}
         >
           <div
             style={{
               width: '380px',
-              background: 'var(--bg-card)',
-              padding: '24px',
-              borderRadius: '10px',
-              border: '1px solid var(--border-color)',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+              maxWidth: '100%',
+              background: 'var(--ink-0)',
+              padding: '20px',
+              borderRadius: '12px',
+              border: '1px solid var(--ink-3)',
             }}
           >
             <h3
               style={{
                 marginTop: 0,
-                color: 'var(--text-primary)',
+                fontSize: '0.95rem',
+                fontWeight: 600,
+                color: 'var(--ink-fg)',
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
+                marginBottom: '14px',
               }}
             >
               💸 Record Operating Expense
@@ -1873,120 +1764,125 @@ export default function FinancialLedger({ currentUser }) {
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '12px',
-                marginTop: '16px',
               }}
             >
-              <select
-                className="input-field"
-                value={expenseForm.category}
-                onChange={(e) =>
-                  setExpenseForm({ ...expenseForm, category: e.target.value })
-                }
+              <Field label="Category">
+                <select
+                  style={inputStyle}
+                  value={expenseForm.category}
+                  onChange={(e) =>
+                    setExpenseForm({ ...expenseForm, category: e.target.value })
+                  }
+                >
+                  <option value="Rent">🏢 Store Rent</option>
+                  <option value="Utilities">💡 Electricity & Utilities</option>
+                  <option value="Travel">🚗 Travel & Transport</option>
+                  <option value="Salaries">👨‍💼 Staff Salaries</option>
+                  <option value="Food">🍲 Food / Refreshments</option>
+                  <option value="Other">📦 Miscellaneous</option>
+                </select>
+              </Field>
+
+              <Field label="Amount (Rs.) *">
+                <input
+                  type="number"
+                  step="0.01"
+                  className="monospace tabular"
+                  style={{ ...inputStyle, fontWeight: 600 }}
+                  value={expenseForm.amount}
+                  onChange={(e) =>
+                    setExpenseForm({ ...expenseForm, amount: e.target.value })
+                  }
+                  placeholder="0.00"
+                  required
+                />
+              </Field>
+
+              <Field label="Description / Note">
+                <input
+                  type="text"
+                  style={inputStyle}
+                  value={expenseForm.description}
+                  onChange={(e) =>
+                    setExpenseForm({
+                      ...expenseForm,
+                      description: e.target.value,
+                    })
+                  }
+                  placeholder="e.g. October electric bill..."
+                />
+              </Field>
+
+              <div
                 style={{
-                  padding: '10px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border-strong)',
+                  display: 'flex',
+                  gap: '8px',
+                  justifyContent: 'flex-end',
+                  marginTop: '6px',
+                  paddingTop: '12px',
+                  borderTop: '1px solid var(--ink-3)',
                 }}
               >
-                <option value="Rent">🏢 Store Rent</option>
-                <option value="Utilities">💡 Electricity & Utilities</option>
-                <option value="Travel">🚗 Travel & Transport</option>
-                <option value="Salaries">👨‍💼 Staff Salaries</option>
-                <option value="Food">🍲 Food / Refreshments</option>
-                <option value="Other">📦 Miscellaneous</option>
-              </select>
-              <input
-                type="number"
-                className="input-field"
-                value={expenseForm.amount}
-                onChange={(e) =>
-                  setExpenseForm({ ...expenseForm, amount: e.target.value })
-                }
-                placeholder="Amount (Rs.)"
-                required
-                style={{
-                  padding: '10px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border-strong)',
-                }}
-              />
-              <input
-                type="text"
-                className="input-field"
-                value={expenseForm.description}
-                onChange={(e) =>
-                  setExpenseForm({
-                    ...expenseForm,
-                    description: e.target.value,
-                  })
-                }
-                placeholder="Description / Note"
-                style={{
-                  padding: '10px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border-strong)',
-                }}
-              />
-              <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  style={{
-                    flex: 1,
-                    background: 'var(--brand-primary)',
-                    color: '#fff',
-                    padding: '10px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  Record Expense
-                </button>
                 <button
                   type="button"
-                  className="btn"
                   style={{
-                    background: '#e2e8f0',
-                    color: 'var(--text-primary)',
-                    padding: '10px 16px',
+                    padding: '8px 16px',
+                    background: 'var(--ink-1)',
+                    color: 'var(--ink-fg-2)',
+                    border: '1px solid var(--ink-3)',
                     borderRadius: '6px',
-                    border: 'none',
+                    fontWeight: 500,
                     cursor: 'pointer',
-                    fontWeight: 'bold',
+                    fontSize: '0.8rem',
                   }}
                   onClick={() => setIsExpenseModalOpen(false)}
                 >
                   Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    padding: '8px 16px',
+                    background: 'var(--brand-primary)',
+                    color: '#fff',
+                    borderRadius: '6px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  Record Expense
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
       {isEditModalOpen && editingRecord && (
         <div
-          className="receipt-modal-backdrop"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setIsEditModalOpen(false);
+          }}
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(15, 23, 42, 0.6)',
+            background: 'rgba(0, 0, 0, 0.55)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 50,
+            padding: '16px',
           }}
         >
           <div
             style={{
-              width: '420px',
-              background: 'var(--bg-card)',
-              padding: '24px',
-              borderRadius: '10px',
-              border: '1px solid var(--border-color)',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+              width: '400px',
+              maxWidth: '100%',
+              background: 'var(--ink-0)',
+              padding: '20px',
+              borderRadius: '12px',
+              border: '1px solid var(--ink-3)',
             }}
           >
             <div
@@ -1994,13 +1890,17 @@ export default function FinancialLedger({ currentUser }) {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '16px',
+                marginBottom: '14px',
+                paddingBottom: '10px',
+                borderBottom: '1px solid var(--ink-3)',
               }}
             >
               <h3
                 style={{
                   margin: 0,
-                  color: 'var(--text-primary)',
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  color: 'var(--ink-fg)',
                   fontFamily: "'Plus Jakarta Sans', sans-serif",
                 }}
               >
@@ -2014,17 +1914,19 @@ export default function FinancialLedger({ currentUser }) {
                       : 'Stock Purchase'}
               </h3>
               <button
+                onClick={() => setIsEditModalOpen(false)}
+                aria-label="Close"
                 style={{
-                  background: 'var(--bg-hover)',
-                  border: 'none',
-                  padding: '6px 10px',
+                  background: 'var(--ink-1)',
+                  border: '1px solid var(--ink-3)',
+                  color: 'var(--ink-fg-2)',
+                  padding: '6px',
                   borderRadius: '6px',
                   cursor: 'pointer',
-                  fontWeight: 'bold',
+                  display: 'flex',
                 }}
-                onClick={() => setIsEditModalOpen(false)}
               >
-                ✕
+                <CloseIcon />
               </button>
             </div>
             <form
@@ -2033,26 +1935,12 @@ export default function FinancialLedger({ currentUser }) {
             >
               {editingRecord.type === 'SALES' && (
                 <>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: 'var(--text-primary)',
-                      }}
-                    >
-                      Total Invoice Amount (Rs.)
-                    </label>
+                  <Field label="Total Invoice Amount (Rs.)">
                     <input
                       type="number"
                       step="0.01"
-                      className="input-field"
-                      style={{
-                        padding: '8px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
+                      className="monospace tabular"
+                      style={{ ...inputStyle, fontWeight: 600 }}
                       value={editForm.total_amount}
                       onChange={(e) =>
                         setEditForm({
@@ -2062,25 +1950,10 @@ export default function FinancialLedger({ currentUser }) {
                       }
                       required
                     />
-                  </div>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: 'var(--text-primary)',
-                      }}
-                    >
-                      Payment Type
-                    </label>
+                  </Field>
+                  <Field label="Payment Type">
                     <select
-                      className="input-field"
-                      style={{
-                        padding: '8px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
+                      style={inputStyle}
                       value={editForm.payment_type}
                       onChange={(e) =>
                         setEditForm({
@@ -2093,32 +1966,18 @@ export default function FinancialLedger({ currentUser }) {
                       <option value="CREDIT">CREDIT</option>
                       <option value="COD">COD</option>
                     </select>
-                  </div>
+                  </Field>
                 </>
               )}
 
               {editingRecord.type === 'REFUNDS' && (
                 <>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: 'var(--text-primary)',
-                      }}
-                    >
-                      Refund Amount (Rs.)
-                    </label>
+                  <Field label="Refund Amount (Rs.)">
                     <input
                       type="number"
                       step="0.01"
-                      className="input-field"
-                      style={{
-                        padding: '8px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
+                      className="monospace tabular"
+                      style={{ ...inputStyle, fontWeight: 600 }}
                       value={editForm.amount_refunded}
                       onChange={(e) =>
                         setEditForm({
@@ -2128,52 +1987,23 @@ export default function FinancialLedger({ currentUser }) {
                       }
                       required
                     />
-                  </div>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: 'var(--text-primary)',
-                      }}
-                    >
-                      Quantity Returned
-                    </label>
+                  </Field>
+                  <Field label="Quantity Returned">
                     <input
                       type="number"
-                      className="input-field"
-                      style={{
-                        padding: '8px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
+                      className="monospace tabular"
+                      style={{ ...inputStyle, fontWeight: 600 }}
                       value={editForm.qty}
                       onChange={(e) =>
                         setEditForm({ ...editForm, qty: e.target.value })
                       }
                       required
                     />
-                  </div>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: 'var(--text-primary)',
-                      }}
-                    >
-                      Description / Reason
-                    </label>
+                  </Field>
+                  <Field label="Description / Reason">
                     <input
                       type="text"
-                      className="input-field"
-                      style={{
-                        padding: '8px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
+                      style={inputStyle}
                       value={editForm.description}
                       onChange={(e) =>
                         setEditForm({
@@ -2182,84 +2012,40 @@ export default function FinancialLedger({ currentUser }) {
                         })
                       }
                     />
-                  </div>
+                  </Field>
                 </>
               )}
 
               {editingRecord.type === 'EXPENSES' && (
                 <>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: 'var(--text-primary)',
-                      }}
-                    >
-                      Category
-                    </label>
+                  <Field label="Category">
                     <input
                       type="text"
-                      className="input-field"
-                      style={{
-                        padding: '8px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
+                      style={inputStyle}
                       value={editForm.category}
                       onChange={(e) =>
                         setEditForm({ ...editForm, category: e.target.value })
                       }
                       required
                     />
-                  </div>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: 'var(--text-primary)',
-                      }}
-                    >
-                      Amount (Rs.)
-                    </label>
+                  </Field>
+                  <Field label="Amount (Rs.)">
                     <input
                       type="number"
                       step="0.01"
-                      className="input-field"
-                      style={{
-                        padding: '8px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
+                      className="monospace tabular"
+                      style={{ ...inputStyle, fontWeight: 600 }}
                       value={editForm.amount}
                       onChange={(e) =>
                         setEditForm({ ...editForm, amount: e.target.value })
                       }
                       required
                     />
-                  </div>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: 'var(--text-primary)',
-                      }}
-                    >
-                      Description / Remarks
-                    </label>
+                  </Field>
+                  <Field label="Description / Remarks">
                     <input
                       type="text"
-                      className="input-field"
-                      style={{
-                        padding: '8px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
+                      style={inputStyle}
                       value={editForm.description}
                       onChange={(e) =>
                         setEditForm({
@@ -2268,31 +2054,17 @@ export default function FinancialLedger({ currentUser }) {
                         })
                       }
                     />
-                  </div>
+                  </Field>
                 </>
               )}
 
               {editingRecord.type === 'PURCHASES' && (
                 <>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: 'var(--text-primary)',
-                      }}
-                    >
-                      Received Quantity
-                    </label>
+                  <Field label="Received Quantity">
                     <input
                       type="number"
-                      className="input-field"
-                      style={{
-                        padding: '8px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
+                      className="monospace tabular"
+                      style={{ ...inputStyle, fontWeight: 600 }}
                       value={editForm.qty_received}
                       onChange={(e) =>
                         setEditForm({
@@ -2302,52 +2074,23 @@ export default function FinancialLedger({ currentUser }) {
                       }
                       required
                     />
-                  </div>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: 'var(--text-primary)',
-                      }}
-                    >
-                      Unit Cost (Rs.)
-                    </label>
+                  </Field>
+                  <Field label="Unit Cost (Rs.)">
                     <input
                       type="number"
                       step="0.01"
-                      className="input-field"
-                      style={{
-                        padding: '8px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
+                      className="monospace tabular"
+                      style={{ ...inputStyle, fontWeight: 600 }}
                       value={editForm.unit_cost}
                       onChange={(e) =>
                         setEditForm({ ...editForm, unit_cost: e.target.value })
                       }
                       required
                     />
-                  </div>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: 'var(--text-primary)',
-                      }}
-                    >
-                      Payment Mode
-                    </label>
+                  </Field>
+                  <Field label="Payment Mode">
                     <select
-                      className="input-field"
-                      style={{
-                        padding: '8px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
+                      style={inputStyle}
                       value={editForm.payment_type}
                       onChange={(e) =>
                         setEditForm({
@@ -2359,42 +2102,50 @@ export default function FinancialLedger({ currentUser }) {
                       <option value="CASH">CASH</option>
                       <option value="CREDIT">CREDIT</option>
                     </select>
-                  </div>
+                  </Field>
                 </>
               )}
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  style={{
-                    flex: 1,
-                    background: 'var(--brand-primary)',
-                    fontWeight: 'bold',
-                    color: '#fff',
-                    padding: '10px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Save Changes
-                </button>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '8px',
+                  justifyContent: 'flex-end',
+                  marginTop: '6px',
+                  paddingTop: '12px',
+                  borderTop: '1px solid var(--ink-3)',
+                }}
+              >
                 <button
                   type="button"
-                  className="btn"
                   style={{
-                    background: '#e2e8f0',
-                    color: 'var(--text-primary)',
-                    padding: '10px 16px',
+                    padding: '8px 16px',
+                    background: 'var(--ink-1)',
+                    color: 'var(--ink-fg-2)',
+                    border: '1px solid var(--ink-3)',
                     borderRadius: '6px',
-                    border: 'none',
+                    fontWeight: 500,
                     cursor: 'pointer',
-                    fontWeight: 'bold',
+                    fontSize: '0.8rem',
                   }}
                   onClick={() => setIsEditModalOpen(false)}
                 >
                   Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    padding: '8px 16px',
+                    background: 'var(--brand-primary)',
+                    fontWeight: 500,
+                    color: '#fff',
+                    borderRadius: '6px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  Save Changes
                 </button>
               </div>
             </form>

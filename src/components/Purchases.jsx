@@ -1,124 +1,244 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getIpc } from '../utils/ipc';
 
-// --- CUSTOM TOAST COMPONENT ---
-const Toast = ({ message, type, onClose }) => {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 4000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  const colors = {
-    success: {
-      bg: '#f0fdf4',
-      border: 'var(--success)',
-      text: '#065f46',
-      icon: '✅',
-    },
-    error: {
-      bg: '#fef2f2',
-      border: 'var(--danger)',
-      text: '#991b1b',
-      icon: '🚨',
-    },
-    info: { bg: '#eff6ff', border: 'var(--info)', text: '#1e40af', icon: 'ℹ️' },
-  };
-  const c = colors[type] || colors.info;
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        background: c.bg,
-        borderLeft: `4px solid ${c.border}`,
-        color: c.text,
-        padding: '12px 16px',
-        borderRadius: '6px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-        minWidth: '280px',
-        fontWeight: '600',
-        fontSize: '0.85rem',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      <span>{c.icon}</span>
-      <span style={{ flex: 1 }}>{message}</span>
-      <button
-        onClick={onClose}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          color: c.text,
-          fontWeight: 'bold',
-        }}
-      >
-        ✕
-      </button>
-    </div>
-  );
+// ─────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────
+const getInitials = (name) => {
+  if (!name) return '?';
+  const words = name.trim().split(' ');
+  if (words.length === 1) return words[0].substring(0, 2).toUpperCase();
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 };
 
-export default function Purchases({ currentUser }) {
+const fmt = (n) =>
+  `Rs. ${Number(n || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })}`;
+
+const fmt2 = (n) =>
+  `Rs. ${Number(n || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+
+const emptyItemForm = () => ({
+  code: '',
+  name: '',
+  category: 'General',
+  stock_qty: 0,
+  avg_cost: 0,
+  min_price: 0,
+  max_price: 0,
+  selling_price: 0,
+  unit: 'Pcs',
+  image_path: '',
+});
+
+const emptyPurchase = () => ({
+  supplier_id: '',
+  custom_supplier_name: '',
+  item_id: '',
+  qty_received: '',
+  unit_cost: '',
+  payment_type: 'CREDIT',
+  invoice_no: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+  date: new Date().toISOString().substring(0, 10),
+});
+
+// ─────────────────────────────────────────────────────────────
+// Icons — 16px, 1.5 stroke
+// ─────────────────────────────────────────────────────────────
+const iconBase = {
+  width: 16,
+  height: 16,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.5,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+};
+
+const SearchIcon = () => (
+  <svg {...iconBase}>
+    <circle cx="11" cy="11" r="8" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </svg>
+);
+const PlusIcon = () => (
+  <svg {...iconBase}>
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+const RefreshIcon = () => (
+  <svg {...iconBase}>
+    <polyline points="23 4 23 10 17 10" />
+    <polyline points="1 20 1 14 7 14" />
+    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+  </svg>
+);
+const CloseIcon = () => (
+  <svg {...iconBase}>
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+const BoxIcon = () => (
+  <svg {...iconBase} width="24" height="24">
+    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+    <line x1="12" y1="22.08" x2="12" y2="12" />
+  </svg>
+);
+const GridIcon = () => (
+  <svg {...iconBase} width="14" height="14">
+    <rect x="3" y="3" width="7" height="7" />
+    <rect x="14" y="3" width="7" height="7" />
+    <rect x="14" y="14" width="7" height="7" />
+    <rect x="3" y="14" width="7" height="7" />
+  </svg>
+);
+const ListIcon = () => (
+  <svg {...iconBase} width="14" height="14">
+    <line x1="8" y1="6" x2="21" y2="6" />
+    <line x1="8" y1="12" x2="21" y2="12" />
+    <line x1="8" y1="18" x2="21" y2="18" />
+    <line x1="3" y1="6" x2="3.01" y2="6" />
+    <line x1="3" y1="12" x2="3.01" y2="12" />
+    <line x1="3" y1="18" x2="3.01" y2="18" />
+  </svg>
+);
+const TruckIcon = () => (
+  <svg {...iconBase}>
+    <rect x="1" y="3" width="15" height="13" />
+    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+    <circle cx="5.5" cy="18.5" r="2.5" />
+    <circle cx="18.5" cy="18.5" r="2.5" />
+  </svg>
+);
+
+// ─────────────────────────────────────────────────────────────
+// Small primitives
+// ─────────────────────────────────────────────────────────────
+const SegmentChip = ({ active, onClick, icon, children, type = 'button' }) => (
+  <button
+    type={type}
+    onClick={onClick}
+    style={{
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '6px',
+      padding: '7px 10px',
+      fontSize: '0.75rem',
+      fontWeight: 500,
+      borderRadius: '6px',
+      border: 'none',
+      background: active ? 'var(--ink-0)' : 'transparent',
+      color: active ? 'var(--ink-fg)' : 'var(--ink-fg-2)',
+      boxShadow: active ? '0 0 0 1px var(--ink-3)' : 'none',
+      cursor: 'pointer',
+      transition: 'background-color 120ms ease, color 120ms ease',
+      flex: 1,
+    }}
+  >
+    {active && (
+      <span
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 6,
+          bottom: 6,
+          width: '3px',
+          borderRadius: '2px',
+          background: 'var(--brand-primary)',
+        }}
+      />
+    )}
+    {icon}
+    <span>{children}</span>
+  </button>
+);
+
+const Field = ({ label, children }) => (
+  <div>
+    <label
+      style={{
+        fontSize: '0.72rem',
+        fontWeight: 500,
+        color: 'var(--ink-fg-2)',
+        display: 'block',
+        marginBottom: '4px',
+      }}
+    >
+      {label}
+    </label>
+    {children}
+  </div>
+);
+
+const inputStyle = {
+  padding: '8px 10px',
+  borderRadius: '6px',
+  border: '1px solid var(--ink-3)',
+  background: 'var(--ink-0)',
+  color: 'var(--ink-fg)',
+  fontSize: '0.82rem',
+  width: '100%',
+  outline: 'none',
+};
+
+// ─────────────────────────────────────────────────────────────
+// Purchases
+// ─────────────────────────────────────────────────────────────
+export default function Purchases({ currentUser, showToast }) {
   const [items, setItems] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState('GRID');
-  const [toasts, setToasts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Form State
+  // Form
   const [purchaseType, setPurchaseType] = useState('REGISTERED');
-  const [purchase, setPurchase] = useState({
-    supplier_id: '',
-    custom_supplier_name: '',
-    item_id: '',
-    qty_received: '',
-    unit_cost: '',
-    payment_type: 'CREDIT',
-    invoice_no: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-    date: new Date().toISOString().substring(0, 10),
-  });
+  const [purchase, setPurchase] = useState(emptyPurchase());
 
-  // Item Lookup & New Product Modal State
+  // Item lookup
   const [itemSearchText, setItemSearchText] = useState('');
   const [isItemDropdownOpen, setIsItemDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const formRef = useRef(null);
   const qtyInputRef = useRef(null);
 
-  // New Product Modal State (Cloned from Inventory)
+  // Add item modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addMarginType, setAddMarginType] = useState('custom');
-  const [itemForm, setItemForm] = useState({
-    code: '',
-    name: '',
-    category: 'General',
-    stock_qty: 0,
-    avg_cost: 0,
-    min_price: 0,
-    max_price: 0,
-    selling_price: 0,
-    unit: 'Pcs',
-    image_path: '',
-  });
+  const [itemForm, setItemForm] = useState(emptyItemForm());
 
-  const addToast = (message, type = 'info') => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, type }]);
+  const toast = (msg, type = 'info') => {
+    if (showToast) showToast(msg, type);
+    else if (type === 'error') console.error(msg);
   };
-  const removeToast = (id) =>
-    setToasts((prev) => prev.filter((t) => t.id !== id));
 
   const loadData = async () => {
     const ipc = getIpc();
-    if (ipc) {
-      const fetchedItems = await ipc.invoke('get-items');
-      const fetchedSuppliers = await ipc.invoke('get-suppliers');
+    if (!ipc) return;
+    try {
+      const [fetchedItems, fetchedSuppliers] = await Promise.all([
+        ipc.invoke('get-items'),
+        ipc.invoke('get-suppliers'),
+      ]);
       setItems(fetchedItems || []);
       setSuppliers(fetchedSuppliers || []);
+      setError(null);
+    } catch (err) {
+      setError(err?.message || 'Could not load purchases data.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -126,27 +246,31 @@ export default function Purchases({ currentUser }) {
     loadData();
   }, []);
 
-  // Close dropdown on click outside
+  // Click outside closes dropdown
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const onDown = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsItemDropdownOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
   }, []);
 
-  // Auto-generate SKU for New Product
+  // Auto-SKU for new item
   useEffect(() => {
     const fetchSku = async () => {
       const ipc = getIpc();
       if (ipc && itemForm.name && isAddModalOpen) {
-        const generatedCode = await ipc.invoke('get-next-sku', {
-          category: itemForm.category,
-          name: itemForm.name,
-        });
-        setItemForm((prev) => ({ ...prev, code: generatedCode }));
+        try {
+          const code = await ipc.invoke('get-next-sku', {
+            category: itemForm.category,
+            name: itemForm.name,
+          });
+          setItemForm((prev) => ({ ...prev, code }));
+        } catch (err) {
+          console.error('SKU gen failed:', err);
+        }
       }
     };
     fetchSku();
@@ -162,12 +286,14 @@ export default function Purchases({ currentUser }) {
   const handleRecordPurchase = async (e) => {
     e.preventDefault();
     if (!purchase.item_id)
-      return addToast('Please select an inventory item first.', 'error');
+      return toast('Select an inventory item first.', 'error');
     if (!purchase.qty_received || parseFloat(purchase.qty_received) <= 0)
-      return addToast('Enter a valid received quantity.', 'error');
+      return toast('Enter a valid received quantity.', 'error');
 
     const ipc = getIpc();
-    if (ipc) {
+    if (!ipc) return;
+
+    try {
       const finalInvoiceNo =
         purchaseType === 'DIRECT' && purchase.custom_supplier_name
           ? `${purchase.invoice_no} [Vendor: ${purchase.custom_supplier_name}]`
@@ -186,83 +312,54 @@ export default function Purchases({ currentUser }) {
       });
 
       if (res.success) {
-        addToast('Stock received & WAC updated successfully!', 'success');
-        setPurchase({
-          supplier_id: '',
-          custom_supplier_name: '',
-          item_id: '',
-          qty_received: '',
-          unit_cost: '',
-          payment_type: 'CREDIT',
-          invoice_no: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-          date: new Date().toISOString().substring(0, 10),
-        });
+        toast('Stock received · WAC updated', 'success');
+        setPurchase(emptyPurchase());
         setItemSearchText('');
-        loadData();
+        await loadData();
       } else {
-        addToast('Error: ' + res.error, 'error');
+        toast('Error: ' + res.error, 'error');
       }
+    } catch (err) {
+      toast('Error: ' + err.message, 'error');
     }
   };
 
-  // NEW PRODUCT HANDLER
   const handleRegisterNewItem = async (e) => {
     e.preventDefault();
     const ipc = getIpc();
-    if (ipc) {
+    if (!ipc) return;
+    try {
       const payload = { ...itemForm, stock_qty: 0 };
-      const res = await ipc.invoke('add-item', { item: payload, currentUser });
+      const res = await ipc.invoke('add-item', {
+        item: payload,
+        currentUser,
+      });
       if (res.success) {
         setIsAddModalOpen(false);
-        setItemForm({
-          code: '',
-          name: '',
-          category: 'General',
-          stock_qty: 0,
-          avg_cost: 0,
-          min_price: 0,
-          max_price: 0,
-          selling_price: 0,
-          unit: 'Pcs',
-          image_path: '',
-        });
+        setItemForm(emptyItemForm());
         setAddMarginType('custom');
-        addToast(
-          'New product registered successfully. You can now restock it.',
-          'success',
-        );
-
-        // Refresh items and auto-select the newly created item
-        const fetchedItems = await ipc.invoke('get-items');
-        setItems(fetchedItems || []);
-
-        // Note: Since the backend doesn't return the ID of the new item in this specific handler,
-        // we'll just prompt the user to search for it again. (Best practice would be to return the ID).
-        // For now, we just clear the search.
+        toast('Product registered — search for it to restock.', 'success');
+        await loadData();
         setItemSearchText('');
       } else {
-        addToast('Error adding item: ' + res.error, 'error');
+        toast('Error: ' + res.error, 'error');
       }
+    } catch (err) {
+      toast('Error: ' + err.message, 'error');
     }
   };
 
   const handleQuickRestock = (item) => {
-    setPurchase({
-      ...purchase,
+    setPurchase((p) => ({
+      ...p,
       item_id: item.id,
       unit_cost: item.avg_cost || '',
-    });
+    }));
     setItemSearchText(
-      `${item.name} (${item.code}) - Stock: ${item.stock_qty} ${item.unit}`,
+      `${item.name} (${item.code}) — ${item.stock_qty} ${item.unit || 'pcs'} on hand`,
     );
-
-    // UI Magic: Scroll to form and highlight it
     if (formRef.current) {
       formRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-      formRef.current.style.boxShadow = '0 0 0 3px var(--info)';
-      setTimeout(() => {
-        if (formRef.current) formRef.current.style.boxShadow = 'none';
-      }, 1500);
     }
     if (qtyInputRef.current) qtyInputRef.current.focus();
   };
@@ -282,41 +379,70 @@ export default function Purchases({ currentUser }) {
     (parseFloat(purchase.qty_received) || 0) *
     (parseFloat(purchase.unit_cost) || 0);
 
+  // ─── Loading
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '60vh',
+          color: 'var(--ink-fg-3)',
+          fontSize: '0.85rem',
+          fontFamily: "'Inter', sans-serif",
+        }}
+      >
+        Loading purchases…
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
         display: 'flex',
         flexDirection: 'column',
-        flex: 1, // 👈 ADD THIS
-        height: '100%',
+        flex: 1,
         gap: '16px',
-        height: 'calc(100vh - 80px)',
+        height: 'calc(100vh - 64px)',
         overflow: 'hidden',
-        position: 'relative',
         fontFamily: "'Inter', sans-serif",
+        color: 'var(--ink-fg)',
       }}
     >
-      {/* TOASTS */}
-      <div
-        style={{
-          position: 'fixed',
-          bottom: '24px',
-          right: '24px',
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-        }}
-      >
-        {toasts.map((t) => (
-          <Toast
-            key={t.id}
-            message={t.message}
-            type={t.type}
-            onClose={() => removeToast(t.id)}
-          />
-        ))}
-      </div>
+      {error && (
+        <div
+          role="alert"
+          style={{
+            background: 'var(--ink-danger)',
+            color: '#ffffff',
+            padding: '12px 16px',
+            borderRadius: '10px',
+            fontSize: '0.82rem',
+            fontWeight: 500,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <span>{error}</span>
+          <button
+            onClick={() => setError(null)}
+            aria-label="Dismiss"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#ffffff',
+              cursor: 'pointer',
+              padding: 0,
+              display: 'flex',
+            }}
+          >
+            <CloseIcon />
+          </button>
+        </div>
+      )}
 
       {/* HEADER */}
       <div
@@ -324,180 +450,167 @@ export default function Purchases({ currentUser }) {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          background: 'var(--bg-card)',
-          padding: '10px 18px',
-          borderRadius: '10px',
-          border: '1.5px solid var(--border-color)',
+          gap: '12px',
+          background: 'var(--ink-0)',
+          padding: '14px 16px',
+          borderRadius: '12px',
+          border: '1px solid var(--ink-3)',
+          flexWrap: 'wrap',
         }}
       >
-        <h3
-          style={{
-            margin: 0,
-            color: 'var(--text-primary)',
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-            fontWeight: '800',
-            textTransform: 'uppercase',
-          }}
-        >
-          Stock Purchases & GRN Intake
-        </h3>
+        <div>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: '1.05rem',
+              fontWeight: 600,
+              color: 'var(--ink-fg)',
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              letterSpacing: '-0.01em',
+            }}
+          >
+            Purchases
+          </h2>
+          <p
+            style={{
+              margin: '2px 0 0 0',
+              fontSize: '0.75rem',
+              color: 'var(--ink-fg-3)',
+            }}
+          >
+            Log stock intake and GRNs
+          </p>
+        </div>
         <button
-          className="btn"
+          onClick={loadData}
           style={{
-            padding: '8px 16px',
-            background: 'var(--brand-primary)',
-            color: '#fff',
-            fontWeight: 'bold',
-            borderRadius: '6px',
-            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '8px 14px',
+            fontSize: '0.8rem',
+            fontWeight: 500,
+            background: 'var(--ink-1)',
+            color: 'var(--ink-fg)',
+            border: '1px solid var(--ink-3)',
+            borderRadius: '8px',
             cursor: 'pointer',
           }}
-          onClick={loadData}
         >
-          🔄 Refresh Catalog
+          <RefreshIcon /> Refresh
         </button>
       </div>
 
       <div
         style={{
-          display: 'flex',
-          gap: '5px',
+          display: 'grid',
+          gridTemplateColumns: '1fr 1.8fr',
+          gap: '16px',
           flex: 1,
-          height: '100vh',
-          overflow: 'hidden',
+          minHeight: 0,
         }}
       >
-        {/* LEFT FORM PANEL */}
+        {/* ─────────── LEFT: FORM ─────────── */}
         <div
           ref={formRef}
-          className="card"
           style={{
-            flex: '1.1',
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            padding: '18px',
-            border: '1.5px solid var(--border-color)',
+            background: 'var(--ink-0)',
+            borderRadius: '12px',
+            padding: '16px',
+            border: '1px solid var(--ink-3)',
             overflowY: 'auto',
-            transition: 'box-shadow 0.3s ease',
           }}
         >
-          <h4
+          <div
             style={{
-              margin: '0 0 16px 0',
-              fontSize: '0.95rem',
-              fontWeight: '800',
-              color: 'var(--text-primary)',
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginBottom: '16px',
+              paddingBottom: '12px',
+              borderBottom: '1px solid var(--ink-3)',
             }}
           >
-            Log Stock Addition / GRN
-          </h4>
+            <span style={{ color: 'var(--ink-fg-2)' }}>
+              <TruckIcon />
+            </span>
+            <h3
+              style={{
+                margin: 0,
+                fontSize: '0.92rem',
+                fontWeight: 600,
+                color: 'var(--ink-fg)',
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+              }}
+            >
+              New intake
+            </h3>
+          </div>
 
           <form
             onSubmit={handleRecordPurchase}
             style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
           >
-            {/* SOURCE TOGGLE */}
+            {/* Source */}
             <div>
-              <label
+              <div
                 style={{
-                  fontSize: '0.75rem',
-                  fontWeight: '700',
-                  color: '#475569',
-                  marginBottom: '6px',
-                  display: 'block',
+                  fontSize: '0.72rem',
+                  fontWeight: 500,
+                  color: 'var(--ink-fg-2)',
+                  marginBottom: '4px',
                 }}
               >
-                Purchase Source
-              </label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  type="button"
+                Source
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '2px',
+                  padding: '2px',
+                  background: 'var(--ink-1)',
+                  border: '1px solid var(--ink-3)',
+                  borderRadius: '8px',
+                }}
+              >
+                <SegmentChip
+                  active={purchaseType === 'REGISTERED'}
                   onClick={() => setPurchaseType('REGISTERED')}
-                  style={{
-                    flex: 1,
-                    padding: '8px',
-                    fontSize: '0.75rem',
-                    borderRadius: '6px',
-                    background:
-                      purchaseType === 'REGISTERED' ? 'var(--info)' : '#f1f5f9',
-                    color: purchaseType === 'REGISTERED' ? '#fff' : '#475569',
-                    fontWeight: 'bold',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
                 >
-                  Registered Supplier
-                </button>
-                <button
-                  type="button"
+                  Registered supplier
+                </SegmentChip>
+                <SegmentChip
+                  active={purchaseType === 'DIRECT'}
                   onClick={() => setPurchaseType('DIRECT')}
-                  style={{
-                    flex: 1,
-                    padding: '8px',
-                    fontSize: '0.75rem',
-                    borderRadius: '6px',
-                    background:
-                      purchaseType === 'DIRECT' ? 'var(--info)' : '#f1f5f9',
-                    color: purchaseType === 'DIRECT' ? '#fff' : '#475569',
-                    fontWeight: 'bold',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
                 >
-                  Direct / Custom Buy
-                </button>
+                  Direct purchase
+                </SegmentChip>
               </div>
             </div>
 
             {purchaseType === 'REGISTERED' ? (
-              <div>
-                <label
-                  style={{
-                    fontSize: '0.75rem',
-                    fontWeight: '700',
-                    color: '#475569',
-                  }}
-                >
-                  Select Wholesaler
-                </label>
+              <Field label="Wholesaler">
                 <select
-                  className="input-field"
+                  style={inputStyle}
                   value={purchase.supplier_id}
                   onChange={(e) =>
                     setPurchase({ ...purchase, supplier_id: e.target.value })
                   }
-                  style={{
-                    padding: '10px',
-                    fontSize: '0.8rem',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border-strong)',
-                    width: '100%',
-                  }}
                   required
                 >
-                  <option value="">-- Choose Wholesaler --</option>
+                  <option value="">Choose wholesaler</option>
                   {suppliers.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name} ({s.company || 'Direct'})
                     </option>
                   ))}
                 </select>
-              </div>
+              </Field>
             ) : (
-              <div>
-                <label
-                  style={{
-                    fontSize: '0.75rem',
-                    fontWeight: '700',
-                    color: '#475569',
-                  }}
-                >
-                  Custom Vendor / Market Name
-                </label>
+              <Field label="Custom vendor / market">
                 <input
                   type="text"
-                  className="input-field"
+                  style={inputStyle}
                   value={purchase.custom_supplier_name}
                   onChange={(e) =>
                     setPurchase({
@@ -505,78 +618,49 @@ export default function Purchases({ currentUser }) {
                       custom_supplier_name: e.target.value,
                     })
                   }
-                  placeholder="e.g. Wholesale Market"
-                  style={{
-                    padding: '10px',
-                    fontSize: '0.8rem',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border-strong)',
-                    width: '100%',
-                  }}
+                  placeholder="Wholesale market"
                 />
-              </div>
+              </Field>
             )}
 
-            {/* PAYMENT MODE */}
+            {/* Payment mode */}
             <div>
-              <label
+              <div
                 style={{
-                  fontSize: '0.75rem',
-                  fontWeight: '700',
-                  color: '#475569',
-                  marginBottom: '6px',
-                  display: 'block',
+                  fontSize: '0.72rem',
+                  fontWeight: 500,
+                  color: 'var(--ink-fg-2)',
+                  marginBottom: '4px',
                 }}
               >
-                Payment Mode
-              </label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  type="button"
+                Payment
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '2px',
+                  padding: '2px',
+                  background: 'var(--ink-1)',
+                  border: '1px solid var(--ink-3)',
+                  borderRadius: '8px',
+                }}
+              >
+                <SegmentChip
+                  active={purchase.payment_type === 'CREDIT'}
                   onClick={() =>
                     setPurchase({ ...purchase, payment_type: 'CREDIT' })
                   }
-                  style={{
-                    flex: 1,
-                    padding: '8px',
-                    fontSize: '0.75rem',
-                    borderRadius: '6px',
-                    background:
-                      purchase.payment_type === 'CREDIT'
-                        ? 'var(--brand-primary)'
-                        : '#f1f5f9',
-                    color:
-                      purchase.payment_type === 'CREDIT' ? '#fff' : '#475569',
-                    fontWeight: 'bold',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
                 >
-                  On Credit (Payable)
-                </button>
-                <button
-                  type="button"
+                  On credit
+                </SegmentChip>
+                <SegmentChip
+                  active={purchase.payment_type === 'CASH'}
                   onClick={() =>
                     setPurchase({ ...purchase, payment_type: 'CASH' })
                   }
-                  style={{
-                    flex: 1,
-                    padding: '8px',
-                    fontSize: '0.75rem',
-                    borderRadius: '6px',
-                    background:
-                      purchase.payment_type === 'CASH'
-                        ? 'var(--success)'
-                        : '#f1f5f9',
-                    color:
-                      purchase.payment_type === 'CASH' ? '#fff' : '#475569',
-                    fontWeight: 'bold',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
                 >
-                  Paid in Cash
-                </button>
+                  Paid in cash
+                </SegmentChip>
               </div>
             </div>
 
@@ -584,139 +668,118 @@ export default function Purchases({ currentUser }) {
               style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
-                gap: '12px',
+                gap: '10px',
               }}
             >
-              <div>
-                <label
-                  style={{
-                    fontSize: '0.75rem',
-                    fontWeight: '700',
-                    color: '#475569',
-                  }}
-                >
-                  Supplier Bill / Invoice No.
-                </label>
+              <Field label="Invoice #">
                 <input
                   type="text"
-                  className="input-field monospace"
+                  className="monospace"
+                  style={inputStyle}
                   value={purchase.invoice_no}
                   onChange={(e) =>
                     setPurchase({ ...purchase, invoice_no: e.target.value })
                   }
-                  style={{
-                    padding: '10px',
-                    fontSize: '0.8rem',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border-strong)',
-                    width: '100%',
-                  }}
                   required
                 />
-              </div>
-              <div>
-                <label
-                  style={{
-                    fontSize: '0.75rem',
-                    fontWeight: '700',
-                    color: '#475569',
-                  }}
-                >
-                  Purchase Date
-                </label>
+              </Field>
+              <Field label="Date">
                 <input
                   type="date"
-                  className="input-field"
+                  style={inputStyle}
                   value={purchase.date}
                   onChange={(e) =>
                     setPurchase({ ...purchase, date: e.target.value })
                   }
-                  style={{
-                    padding: '10px',
-                    fontSize: '0.8rem',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border-strong)',
-                    width: '100%',
-                  }}
                   required
                 />
-              </div>
+              </Field>
             </div>
 
-            {/* ITEM LOOKUP WITH CREATE NEW */}
+            {/* Item lookup */}
             <div style={{ position: 'relative' }} ref={dropdownRef}>
-              <label
-                style={{
-                  fontSize: '0.75rem',
-                  fontWeight: '700',
-                  color: '#475569',
-                }}
-              >
-                Search Inventory Item
-              </label>
-              <input
-                type="text"
-                className="input-field"
-                placeholder="🔍 Type product name or SKU..."
-                value={itemSearchText}
-                onChange={(e) => {
-                  setItemSearchText(e.target.value);
-                  setIsItemDropdownOpen(true);
-                }}
-                onFocus={() => setIsItemDropdownOpen(true)}
-                style={{
-                  padding: '10px',
-                  fontSize: '0.8rem',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border-strong)',
-                  width: '100%',
-                }}
-                required
-              />
+              <Field label="Inventory item">
+                <div style={{ position: 'relative' }}>
+                  <span
+                    style={{
+                      position: 'absolute',
+                      left: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--ink-fg-3)',
+                      display: 'flex',
+                    }}
+                  >
+                    <SearchIcon />
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Search name or SKU"
+                    value={itemSearchText}
+                    onChange={(e) => {
+                      setItemSearchText(e.target.value);
+                      setIsItemDropdownOpen(true);
+                    }}
+                    onFocus={() => setIsItemDropdownOpen(true)}
+                    style={{
+                      ...inputStyle,
+                      paddingLeft: '32px',
+                      background: 'var(--ink-1)',
+                    }}
+                    required
+                  />
+                </div>
+              </Field>
 
               {isItemDropdownOpen && (
                 <div
                   style={{
                     position: 'absolute',
-                    top: '100%',
+                    top: 'calc(100% + 4px)',
                     left: 0,
                     right: 0,
-                    maxHeight: '200px',
+                    maxHeight: '220px',
                     overflowY: 'auto',
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border-strong)',
-                    borderRadius: '6px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    background: 'var(--ink-0)',
+                    border: '1px solid var(--ink-3)',
+                    borderRadius: '8px',
                     zIndex: 999,
-                    marginTop: '4px',
                   }}
                 >
                   {filteredLookupItems.length === 0 ? (
-                    <div style={{ padding: '12px', textAlign: 'center' }}>
+                    <div
+                      style={{
+                        padding: '16px 12px',
+                        textAlign: 'center',
+                      }}
+                    >
                       <div
                         style={{
                           fontSize: '0.75rem',
-                          color: 'var(--text-secondary)',
-                          marginBottom: '8px',
+                          color: 'var(--ink-fg-3)',
+                          marginBottom: '10px',
                         }}
                       >
-                        No product found matching "{itemSearchText}"
+                        No match for "{itemSearchText}"
                       </div>
                       <button
                         type="button"
                         onClick={() => setIsAddModalOpen(true)}
                         style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
                           padding: '6px 12px',
                           background: 'var(--brand-primary)',
-                          color: '#fff',
+                          color: '#ffffff',
                           border: 'none',
                           borderRadius: '6px',
                           fontSize: '0.75rem',
-                          fontWeight: 'bold',
+                          fontWeight: 500,
                           cursor: 'pointer',
                         }}
                       >
-                        + Create New Product
+                        <PlusIcon /> Create product
                       </button>
                     </div>
                   ) : (
@@ -736,39 +799,43 @@ export default function Purchases({ currentUser }) {
                           padding: '10px 12px',
                           fontSize: '0.8rem',
                           cursor: 'pointer',
-                          borderBottom: '1px solid #f1f5f9',
+                          borderBottom: '1px solid var(--ink-3)',
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
+                          gap: '8px',
                         }}
                       >
                         <span
                           style={{
-                            fontWeight: '700',
-                            color: 'var(--text-primary)',
+                            fontWeight: 500,
+                            color: 'var(--ink-fg)',
+                            minWidth: 0,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           {i.name}{' '}
                           <span
+                            className="monospace"
                             style={{
-                              color: 'var(--text-secondary)',
-                              fontWeight: 'normal',
+                              color: 'var(--ink-fg-3)',
+                              fontSize: '0.72rem',
                             }}
                           >
-                            ({i.code})
+                            {i.code}
                           </span>
                         </span>
                         <span
+                          className="monospace tabular"
                           style={{
                             fontSize: '0.7rem',
-                            color: 'var(--info)',
-                            background: '#e0f2fe',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            fontWeight: 'bold',
+                            color: 'var(--ink-fg-3)',
+                            whiteSpace: 'nowrap',
                           }}
                         >
-                          Stock: {i.stock_qty} {i.unit}
+                          {i.stock_qty} {i.unit || 'pcs'}
                         </span>
                       </div>
                     ))
@@ -781,136 +848,100 @@ export default function Purchases({ currentUser }) {
               style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
-                gap: '12px',
+                gap: '10px',
               }}
             >
-              <div>
-                <label
-                  style={{
-                    fontSize: '0.75rem',
-                    fontWeight: '700',
-                    color: '#475569',
-                  }}
-                >
-                  Received Qty
-                </label>
+              <Field label="Received qty">
                 <input
                   ref={qtyInputRef}
                   type="number"
-                  className="input-field"
+                  className="monospace tabular"
+                  style={inputStyle}
                   value={purchase.qty_received}
                   onChange={(e) =>
                     setPurchase({ ...purchase, qty_received: e.target.value })
                   }
                   placeholder="50"
-                  style={{
-                    padding: '10px',
-                    fontSize: '0.8rem',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border-strong)',
-                    width: '100%',
-                  }}
                   required
                 />
-              </div>
-              <div>
-                <label
-                  style={{
-                    fontSize: '0.75rem',
-                    fontWeight: '700',
-                    color: '#475569',
-                  }}
-                >
-                  Wholesale Unit Cost
-                </label>
+              </Field>
+              <Field label="Unit cost">
                 <input
                   type="number"
-                  className="input-field"
+                  className="monospace tabular"
+                  style={inputStyle}
                   value={purchase.unit_cost}
                   onChange={(e) =>
                     setPurchase({ ...purchase, unit_cost: e.target.value })
                   }
                   placeholder="1150"
-                  style={{
-                    padding: '10px',
-                    fontSize: '0.8rem',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border-strong)',
-                    width: '100%',
-                  }}
                   required
                 />
-              </div>
+              </Field>
             </div>
 
-            {/* GIANT TOTAL BANNER */}
+            {/* TOTAL — quiet paper surface */}
             <div
               style={{
-                background: '#f0f9ff',
-                border: '1.5px solid var(--info)',
-                padding: '16px',
-                borderRadius: '8px',
+                marginTop: '4px',
+                padding: '14px 0',
+                borderTop: '1px solid var(--ink-3)',
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center',
-                marginTop: '8px',
+                alignItems: 'baseline',
+                gap: '12px',
               }}
             >
               <span
                 style={{
-                  fontSize: '0.85rem',
-                  fontWeight: '800',
-                  color: '#0369a1',
-                  textTransform: 'uppercase',
+                  fontSize: '0.78rem',
+                  fontWeight: 500,
+                  color: 'var(--ink-fg-2)',
                 }}
               >
-                Total Bill Amount
+                Total
               </span>
               <span
-                className="monospace"
+                className="monospace tabular"
                 style={{
-                  fontSize: '1.4rem',
-                  fontWeight: '900',
-                  color: '#0c4a6e',
-                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: '1.35rem',
+                  fontWeight: 600,
+                  color: 'var(--ink-fg)',
                 }}
               >
-                Rs. {estimatedTotal.toLocaleString()}
+                {fmt(estimatedTotal)}
               </span>
             </div>
 
             <button
               type="submit"
-              className="btn btn-primary"
               style={{
-                padding: '12px',
-                marginTop: '4px',
+                padding: '10px',
                 background: 'var(--brand-primary)',
-                fontWeight: 'bold',
-                fontSize: '0.9rem',
-                borderRadius: '6px',
+                color: '#ffffff',
+                fontWeight: 500,
+                fontSize: '0.85rem',
+                borderRadius: '8px',
                 border: 'none',
                 cursor: 'pointer',
-                color: '#fff',
               }}
             >
-              Record Purchase & Update WAC
+              Record intake
             </button>
           </form>
         </div>
 
-        {/* RIGHT PANEL: CATALOG */}
+        {/* ─────────── RIGHT: CATALOG ─────────── */}
         <div
-          className="card"
           style={{
-            flex: '2',
-            background: 'var(--bg-hover)',
-            borderRadius: '10px',
-            padding: '18px',
-            border: '1.5px solid var(--border-color)',
+            background: 'var(--ink-0)',
+            borderRadius: '12px',
+            padding: '16px',
+            border: '1px solid var(--ink-3)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
+            minHeight: 0,
           }}
         >
           <div
@@ -918,88 +949,108 @@ export default function Purchases({ currentUser }) {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
+              gap: '12px',
               marginBottom: '16px',
+              flexWrap: 'wrap',
             }}
           >
-            <h4
+            <h3
               style={{
                 margin: 0,
-                fontSize: '0.95rem',
-                fontWeight: '800',
-                color: 'var(--text-primary)',
+                fontSize: '0.92rem',
+                fontWeight: 600,
+                color: 'var(--ink-fg)',
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
               }}
             >
-              Inventory Catalog
-            </h4>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <input
-                type="text"
-                className="input-field"
-                placeholder="🔍 Search catalog..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                style={{
-                  width: '220px',
-                  margin: 0,
-                  padding: '8px 10px',
-                  fontSize: '0.78rem',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border-strong)',
-                }}
-              />
+              Catalog
+            </h3>
+            <div
+              style={{
+                display: 'flex',
+                gap: '8px',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+              }}
+            >
+              <div style={{ position: 'relative', width: '220px' }}>
+                <span
+                  style={{
+                    position: 'absolute',
+                    left: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--ink-fg-3)',
+                    display: 'flex',
+                  }}
+                >
+                  <SearchIcon />
+                </span>
+                <input
+                  type="text"
+                  placeholder="Search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  style={{
+                    ...inputStyle,
+                    paddingLeft: '32px',
+                    height: '32px',
+                    background: 'var(--ink-1)',
+                  }}
+                />
+              </div>
               <div
                 style={{
                   display: 'flex',
-                  gap: '4px',
-                  background: 'var(--bg-hover)',
-                  padding: '4px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border-strong)',
+                  gap: '2px',
+                  padding: '2px',
+                  background: 'var(--ink-1)',
+                  border: '1px solid var(--ink-3)',
+                  borderRadius: '8px',
                 }}
               >
-                <button
+                <SegmentChip
+                  active={viewMode === 'GRID'}
                   onClick={() => setViewMode('GRID')}
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: '0.7rem',
-                    background:
-                      viewMode === 'GRID'
-                        ? 'var(--brand-primary)'
-                        : 'transparent',
-                    color: viewMode === 'GRID' ? '#fff' : '#334155',
-                    border: 'none',
-                    fontWeight: 'bold',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                  }}
+                  icon={<GridIcon />}
                 >
                   Grid
-                </button>
-                <button
+                </SegmentChip>
+                <SegmentChip
+                  active={viewMode === 'LIST'}
                   onClick={() => setViewMode('LIST')}
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: '0.7rem',
-                    background:
-                      viewMode === 'LIST'
-                        ? 'var(--brand-primary)'
-                        : 'transparent',
-                    color: viewMode === 'LIST' ? '#fff' : '#334155',
-                    border: 'none',
-                    fontWeight: 'bold',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                  }}
+                  icon={<ListIcon />}
                 >
                   List
-                </button>
+                </SegmentChip>
               </div>
             </div>
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
-            {viewMode === 'GRID' ? (
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+            {filteredCatalogItems.length === 0 ? (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '50px 20px',
+                  color: 'var(--ink-fg-3)',
+                  gap: '8px',
+                }}
+              >
+                <BoxIcon />
+                <div style={{ fontSize: '0.85rem', fontWeight: 500 }}>
+                  {search ? 'No matches' : 'No products yet'}
+                </div>
+                <div style={{ fontSize: '0.75rem' }}>
+                  {search
+                    ? 'Try a different name or SKU.'
+                    : 'Add your first product from Inventory.'}
+                </div>
+              </div>
+            ) : viewMode === 'GRID' ? (
               <div
                 style={{
                   display: 'grid',
@@ -1011,15 +1062,14 @@ export default function Purchases({ currentUser }) {
                   <div
                     key={item.id}
                     style={{
-                      background: 'var(--bg-card)',
-                      border: '1.5px solid var(--border-color)',
-                      borderRadius: '8px',
+                      background: 'var(--ink-1)',
+                      border: '1px solid var(--ink-3)',
+                      borderRadius: '10px',
                       padding: '12px',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
                       gap: '10px',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                     }}
                   >
                     <div
@@ -1031,14 +1081,14 @@ export default function Purchases({ currentUser }) {
                     >
                       <div
                         style={{
-                          width: '50px',
-                          height: '50px',
-                          background: 'var(--bg-hover)',
-                          borderRadius: '6px',
+                          width: '40px',
+                          height: '40px',
+                          background: 'var(--ink-2)',
+                          borderRadius: '8px',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          border: '1px solid var(--border-strong)',
+                          border: '1px solid var(--ink-3)',
                           overflow: 'hidden',
                           flexShrink: 0,
                         }}
@@ -1050,19 +1100,27 @@ export default function Purchases({ currentUser }) {
                             style={{
                               width: '100%',
                               height: '100%',
-                              objectFit: 'contain',
+                              objectFit: 'cover',
                             }}
                           />
                         ) : (
-                          <span style={{ fontSize: '1.2rem' }}>📦</span>
+                          <span
+                            style={{
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              color: 'var(--ink-fg-3)',
+                            }}
+                          >
+                            {getInitials(item.name)}
+                          </span>
                         )}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div
                           style={{
-                            fontWeight: '800',
                             fontSize: '0.8rem',
-                            color: 'var(--text-primary)',
+                            fontWeight: 500,
+                            color: 'var(--ink-fg)',
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -1072,110 +1130,117 @@ export default function Purchases({ currentUser }) {
                           {item.name}
                         </div>
                         <div
+                          className="monospace"
                           style={{
                             fontSize: '0.7rem',
-                            color: 'var(--text-secondary)',
+                            color: 'var(--ink-fg-3)',
                           }}
                         >
-                          SKU: {item.code}
+                          {item.code}
                         </div>
                         <div
+                          className="monospace tabular"
                           style={{
                             fontSize: '0.7rem',
                             color:
                               item.stock_qty <= 5
-                                ? 'var(--danger)'
-                                : 'var(--success)',
-                            fontWeight: 'bold',
+                                ? 'var(--ink-danger)'
+                                : 'var(--ink-fg-2)',
+                            marginTop: '2px',
                           }}
                         >
-                          Stock: {item.stock_qty} {item.unit}
+                          {item.stock_qty} {item.unit || 'pcs'}
                         </div>
                       </div>
                     </div>
                     <div
                       style={{
-                        borderTop: '1px solid #f1f5f9',
+                        borderTop: '1px solid var(--ink-3)',
                         paddingTop: '8px',
-                        fontSize: '0.75rem',
                         display: 'flex',
                         justifyContent: 'space-between',
-                        color: '#475569',
+                        fontSize: '0.75rem',
+                        color: 'var(--ink-fg-2)',
                       }}
                     >
-                      <span>Cost (WAC):</span>
-                      <span
-                        className="monospace"
-                        style={{ fontWeight: 'bold' }}
-                      >
-                        Rs. {item.avg_cost?.toFixed(2) || '0.00'}
+                      <span>WAC</span>
+                      <span className="monospace tabular">
+                        {fmt2(item.avg_cost)}
                       </span>
                     </div>
                     <button
                       onClick={() => handleQuickRestock(item)}
                       style={{
-                        padding: '8px',
-                        fontSize: '0.75rem',
-                        background: 'var(--info)',
-                        fontWeight: 'bold',
-                        width: '100%',
+                        padding: '7px',
+                        fontSize: '0.72rem',
+                        fontWeight: 500,
+                        background: 'var(--ink-0)',
+                        color: 'var(--ink-fg)',
+                        border: '1px solid var(--ink-3)',
                         borderRadius: '6px',
-                        border: 'none',
-                        color: '#fff',
                         cursor: 'pointer',
                       }}
                     >
-                      ⚡ Quick Restock
+                      Restock
                     </button>
                   </div>
                 ))}
               </div>
             ) : (
               <div
-                style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}
+                style={{
+                  border: '1px solid var(--ink-3)',
+                  borderRadius: '10px',
+                  overflow: 'hidden',
+                }}
               >
                 <div
                   style={{
                     display: 'grid',
                     gridTemplateColumns: '1fr 2fr 1fr 1fr 1fr',
                     fontSize: '0.7rem',
-                    fontWeight: '700',
-                    background: 'var(--brand-primary)',
-                    color: '#fff',
-                    padding: '10px',
-                    borderRadius: '6px',
-                    textTransform: 'uppercase',
+                    fontWeight: 500,
+                    background: 'var(--ink-2)',
+                    color: 'var(--ink-fg-2)',
+                    padding: '10px 12px',
+                    borderBottom: '1px solid var(--ink-3)',
                   }}
                 >
                   <span>SKU</span>
-                  <span>Product Name</span>
+                  <span>Product</span>
                   <span style={{ textAlign: 'right' }}>Stock</span>
                   <span style={{ textAlign: 'right' }}>WAC</span>
                   <span style={{ textAlign: 'center' }}>Action</span>
                 </div>
-                {filteredCatalogItems.map((item) => (
+                {filteredCatalogItems.map((item, idx) => (
                   <div
                     key={item.id}
                     style={{
                       display: 'grid',
                       gridTemplateColumns: '1fr 2fr 1fr 1fr 1fr',
-                      fontSize: '0.78rem',
+                      fontSize: '0.8rem',
                       alignItems: 'center',
-                      background: 'var(--bg-card)',
-                      padding: '10px',
-                      borderBottom: '1px solid #f1f5f9',
+                      background: 'var(--ink-0)',
+                      padding: '10px 12px',
+                      borderBottom:
+                        idx === filteredCatalogItems.length - 1
+                          ? 'none'
+                          : '1px solid var(--ink-3)',
                     }}
                   >
                     <span
                       className="monospace"
-                      style={{ color: 'var(--text-secondary)' }}
+                      style={{
+                        color: 'var(--ink-fg-3)',
+                        fontSize: '0.72rem',
+                      }}
                     >
                       {item.code}
                     </span>
                     <span
                       style={{
-                        fontWeight: '700',
-                        color: 'var(--text-primary)',
+                        fontWeight: 500,
+                        color: 'var(--ink-fg)',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -1184,20 +1249,25 @@ export default function Purchases({ currentUser }) {
                       {item.name}
                     </span>
                     <span
-                      className="monospace"
+                      className="monospace tabular"
                       style={{
                         textAlign: 'right',
-                        fontWeight: 'bold',
                         color:
                           item.stock_qty <= 5
-                            ? 'var(--danger)'
-                            : 'var(--success)',
+                            ? 'var(--ink-danger)'
+                            : 'var(--ink-fg-2)',
                       }}
                     >
-                      {item.stock_qty} {item.unit}
+                      {item.stock_qty} {item.unit || ''}
                     </span>
-                    <span className="monospace" style={{ textAlign: 'right' }}>
-                      Rs. {item.avg_cost?.toFixed(2) || '0.00'}
+                    <span
+                      className="monospace tabular"
+                      style={{
+                        textAlign: 'right',
+                        color: 'var(--ink-fg-2)',
+                      }}
+                    >
+                      {fmt2(item.avg_cost)}
                     </span>
                     <div style={{ textAlign: 'center' }}>
                       <button
@@ -1205,60 +1275,52 @@ export default function Purchases({ currentUser }) {
                         style={{
                           padding: '4px 10px',
                           fontSize: '0.7rem',
-                          background: 'var(--info)',
-                          fontWeight: 'bold',
+                          fontWeight: 500,
+                          background: 'var(--ink-1)',
+                          color: 'var(--ink-fg)',
+                          border: '1px solid var(--ink-3)',
                           borderRadius: '6px',
-                          border: 'none',
-                          color: '#fff',
                           cursor: 'pointer',
                         }}
                       >
-                        ⚡ Restock
+                        Restock
                       </button>
                     </div>
                   </div>
                 ))}
               </div>
             )}
-            {filteredCatalogItems.length === 0 && (
-              <div
-                style={{
-                  textAlign: 'center',
-                  color: '#94a3b8',
-                  padding: '40px 0',
-                  fontSize: '0.85rem',
-                }}
-              >
-                No products found in inventory.
-              </div>
-            )}
           </div>
         </div>
       </div>
 
-      {/* ➕ ADD NEW PRODUCT MODAL (CLONED FROM INVENTORY) */}
+      {/* ─────────── ADD PRODUCT MODAL ─────────── */}
       {isAddModalOpen && (
         <div
-          className="receipt-modal-backdrop"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setIsAddModalOpen(false);
+          }}
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(15, 23, 42, 0.6)',
+            background: 'rgba(0,0,0,0.55)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 50,
+            padding: '16px',
           }}
         >
           <div
-            className="card"
             style={{
-              width: '480px',
-              background: 'var(--bg-card)',
-              padding: '24px',
-              borderRadius: '10px',
-              border: '1px solid var(--border-color)',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+              width: '720px',
+              maxWidth: '100%',
+              maxHeight: '92vh',
+              overflowY: 'auto',
+              background: 'var(--ink-0)',
+              padding: '20px',
+              borderRadius: '12px',
+              border: '1px solid var(--ink-3)',
             }}
           >
             <div
@@ -1267,45 +1329,54 @@ export default function Purchases({ currentUser }) {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 marginBottom: '16px',
+                paddingBottom: '12px',
+                borderBottom: '1px solid var(--ink-3)',
               }}
             >
               <h3
                 style={{
                   margin: 0,
-                  color: 'var(--text-primary)',
-                  fontSize: '1.1rem',
+                  color: 'var(--ink-fg)',
+                  fontSize: '1rem',
+                  fontWeight: 600,
                   fontFamily: "'Plus Jakarta Sans', sans-serif",
                 }}
               >
-                + Register New Product
+                Add product
               </h3>
               <button
+                onClick={() => setIsAddModalOpen(false)}
+                aria-label="Close"
                 style={{
-                  background: 'var(--bg-hover)',
-                  border: 'none',
-                  padding: '6px 10px',
+                  background: 'var(--ink-1)',
+                  border: '1px solid var(--ink-3)',
+                  color: 'var(--ink-fg-2)',
+                  padding: '6px',
                   borderRadius: '6px',
                   cursor: 'pointer',
-                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
                 }}
-                onClick={() => setIsAddModalOpen(false)}
               >
-                ✕
+                <CloseIcon />
               </button>
             </div>
+
             <p
               style={{
                 fontSize: '0.75rem',
-                color: 'var(--text-secondary)',
+                color: 'var(--ink-fg-3)',
                 marginBottom: '16px',
-                background: 'var(--bg-hover)',
-                padding: '10px',
+                background: 'var(--ink-1)',
+                padding: '10px 12px',
                 borderRadius: '6px',
+                border: '1px solid var(--ink-3)',
               }}
             >
-              New products start with 0 stock. Once saved, you can select them
-              in the Purchase form.
+              New products start at 0 stock. After saving, you can select them
+              in the intake form to receive stock.
             </p>
+
             <form
               onSubmit={handleRegisterNewItem}
               style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
@@ -1314,187 +1385,98 @@ export default function Purchases({ currentUser }) {
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr',
-                  gap: '12px',
+                  gap: '10px',
                 }}
               >
-                <div>
-                  <label
-                    style={{
-                      fontSize: '0.75rem',
-                      fontWeight: '700',
-                      color: 'var(--text-primary)',
-                    }}
-                  >
-                    SKU (Auto)
-                  </label>
+                <Field label="SKU (auto)">
                   <input
                     type="text"
-                    className="input-field monospace"
+                    className="monospace"
                     style={{
-                      background: 'var(--bg-hover)',
-                      padding: '8px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--border-strong)',
-                      width: '100%',
+                      ...inputStyle,
+                      background: 'var(--ink-1)',
+                      color: 'var(--ink-fg-2)',
                     }}
                     value={itemForm.code}
                     readOnly
                   />
-                </div>
-                <div>
-                  <label
-                    style={{
-                      fontSize: '0.75rem',
-                      fontWeight: '700',
-                      color: 'var(--text-primary)',
-                    }}
-                  >
-                    Category
-                  </label>
+                </Field>
+                <Field label="Category">
                   <input
                     type="text"
-                    className="input-field"
-                    style={{
-                      padding: '8px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--border-strong)',
-                      width: '100%',
-                    }}
+                    style={inputStyle}
                     value={itemForm.category}
                     onChange={(e) =>
                       setItemForm({ ...itemForm, category: e.target.value })
                     }
-                    placeholder="e.g. Electronics"
+                    placeholder="Electronics"
                   />
-                </div>
+                </Field>
               </div>
-              <div>
-                <label
-                  style={{
-                    fontSize: '0.75rem',
-                    fontWeight: '700',
-                    color: 'var(--text-primary)',
-                  }}
-                >
-                  Item Name
-                </label>
+              <Field label="Item name">
                 <input
                   type="text"
-                  className="input-field"
-                  style={{
-                    padding: '8px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border-strong)',
-                    width: '100%',
-                  }}
+                  style={inputStyle}
                   value={itemForm.name}
                   onChange={(e) =>
                     setItemForm({ ...itemForm, name: e.target.value })
                   }
-                  placeholder="e.g. Wireless Mouse"
+                  placeholder="Wireless mouse"
                   required
                 />
-              </div>
-
+              </Field>
               <div
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr 1.5fr',
-                  gap: '12px',
+                  gap: '10px',
                 }}
               >
-                <div>
-                  <label
-                    style={{
-                      fontSize: '0.75rem',
-                      fontWeight: '700',
-                      color: 'var(--text-primary)',
-                    }}
-                  >
-                    Initial Unit Cost
-                  </label>
+                <Field label="Unit cost">
                   <input
                     type="number"
-                    className="input-field"
-                    style={{
-                      padding: '8px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--border-strong)',
-                      width: '100%',
-                    }}
+                    className="monospace tabular"
+                    style={inputStyle}
                     value={itemForm.avg_cost}
                     onChange={(e) => {
-                      const newCost = parseFloat(e.target.value) || 0;
-                      const newSp =
-                        calculateSellingPrice(newCost, addMarginType) ||
+                      const cost = parseFloat(e.target.value) || 0;
+                      const sp =
+                        calculateSellingPrice(cost, addMarginType) ??
                         itemForm.selling_price;
                       setItemForm({
                         ...itemForm,
-                        avg_cost: newCost,
-                        selling_price: newSp,
+                        avg_cost: cost,
+                        selling_price: sp,
                       });
                     }}
                     placeholder="800"
                   />
-                </div>
-                <div>
-                  <label
-                    style={{
-                      fontSize: '0.75rem',
-                      fontWeight: '700',
-                      color: 'var(--text-primary)',
-                    }}
-                  >
-                    Profit Margin
-                  </label>
+                </Field>
+                <Field label="Margin">
                   <select
-                    className="input-field"
-                    style={{
-                      padding: '8px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--border-strong)',
-                      width: '100%',
-                    }}
+                    style={inputStyle}
                     value={addMarginType}
                     onChange={(e) => {
-                      const mType = e.target.value;
-                      setAddMarginType(mType);
-                      const newSp = calculateSellingPrice(
-                        itemForm.avg_cost,
-                        mType,
-                      );
-                      if (newSp !== null)
-                        setItemForm({ ...itemForm, selling_price: newSp });
+                      const m = e.target.value;
+                      setAddMarginType(m);
+                      const sp = calculateSellingPrice(itemForm.avg_cost, m);
+                      if (sp !== null)
+                        setItemForm({ ...itemForm, selling_price: sp });
                     }}
                   >
                     <option value="custom">Manual</option>
-                    <option value="10">10%</option>
-                    <option value="15">15%</option>
-                    <option value="20">20%</option>
-                    <option value="25">25%</option>
-                    <option value="50">50%</option>
-                    <option value="100">100%</option>
+                    {[10, 15, 20, 25, 50, 100].map((p) => (
+                      <option key={p} value={p}>
+                        {p}%
+                      </option>
+                    ))}
                   </select>
-                </div>
-                <div>
-                  <label
-                    style={{
-                      fontSize: '0.75rem',
-                      fontWeight: '700',
-                      color: 'var(--text-primary)',
-                    }}
-                  >
-                    Selling Price*
-                  </label>
+                </Field>
+                <Field label="Selling price *">
                   <input
                     type="number"
-                    className="input-field"
-                    style={{
-                      padding: '8px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--border-strong)',
-                      width: '100%',
-                    }}
+                    className="monospace tabular"
+                    style={inputStyle}
                     value={itemForm.selling_price}
                     onChange={(e) => {
                       setItemForm({
@@ -1503,38 +1485,22 @@ export default function Purchases({ currentUser }) {
                       });
                       setAddMarginType('custom');
                     }}
-                    placeholder="1200"
                     required
                   />
-                </div>
+                </Field>
               </div>
-
               <div
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr',
-                  gap: '12px',
+                  gap: '10px',
                 }}
               >
-                <div>
-                  <label
-                    style={{
-                      fontSize: '0.75rem',
-                      fontWeight: '700',
-                      color: 'var(--text-primary)',
-                    }}
-                  >
-                    Min Bargain Price
-                  </label>
+                <Field label="Min price">
                   <input
                     type="number"
-                    className="input-field"
-                    style={{
-                      padding: '8px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--border-strong)',
-                      width: '100%',
-                    }}
+                    className="monospace tabular"
+                    style={inputStyle}
                     value={itemForm.min_price}
                     onChange={(e) =>
                       setItemForm({
@@ -1542,28 +1508,13 @@ export default function Purchases({ currentUser }) {
                         min_price: parseFloat(e.target.value) || 0,
                       })
                     }
-                    placeholder="1000"
                   />
-                </div>
-                <div>
-                  <label
-                    style={{
-                      fontSize: '0.75rem',
-                      fontWeight: '700',
-                      color: 'var(--text-primary)',
-                    }}
-                  >
-                    Max List Price
-                  </label>
+                </Field>
+                <Field label="Max price">
                   <input
                     type="number"
-                    className="input-field"
-                    style={{
-                      padding: '8px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--border-strong)',
-                      width: '100%',
-                    }}
+                    className="monospace tabular"
+                    style={inputStyle}
                     value={itemForm.max_price}
                     onChange={(e) =>
                       setItemForm({
@@ -1571,43 +1522,50 @@ export default function Purchases({ currentUser }) {
                         max_price: parseFloat(e.target.value) || 0,
                       })
                     }
-                    placeholder="1500"
                   />
-                </div>
+                </Field>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  style={{
-                    flex: 1,
-                    background: 'var(--brand-primary)',
-                    fontWeight: 'bold',
-                    color: '#fff',
-                    padding: '10px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Save & Register
-                </button>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '8px',
+                  marginTop: '16px',
+                  justifyContent: 'flex-end',
+                  borderTop: '1px solid var(--ink-3)',
+                  paddingTop: '14px',
+                }}
+              >
                 <button
                   type="button"
-                  className="btn"
-                  style={{
-                    background: '#e2e8f0',
-                    color: 'var(--text-primary)',
-                    padding: '10px 16px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                  }}
                   onClick={() => setIsAddModalOpen(false)}
+                  style={{
+                    padding: '8px 16px',
+                    background: 'var(--ink-1)',
+                    color: 'var(--ink-fg-2)',
+                    fontWeight: 500,
+                    borderRadius: '8px',
+                    border: '1px solid var(--ink-3)',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem',
+                  }}
                 >
                   Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    padding: '8px 20px',
+                    background: 'var(--brand-primary)',
+                    color: '#ffffff',
+                    fontWeight: 500,
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  Save product
                 </button>
               </div>
             </form>

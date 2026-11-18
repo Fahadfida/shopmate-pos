@@ -1,6 +1,66 @@
 import React, { useState, useEffect } from 'react';
 import { getIpc } from '../utils/ipc';
 
+// ─────────────────────────────────────────────────────────────
+// Icons (Lucide 16px/18px 1.5 stroke)
+// ─────────────────────────────────────────────────────────────
+const iconBase = {
+  width: 16,
+  height: 16,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.5,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+};
+
+const SearchIcon = () => (
+  <svg {...iconBase}>
+    <circle cx="11" cy="11" r="8" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </svg>
+);
+
+const CalendarIcon = () => (
+  <svg {...iconBase}>
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+    <line x1="16" y1="2" x2="16" y2="6" />
+    <line x1="8" y1="2" x2="8" y2="6" />
+    <line x1="3" y1="10" x2="21" y2="10" />
+  </svg>
+);
+
+const RefreshIcon = () => (
+  <svg {...iconBase}>
+    <path d="M23 4v6h-6" />
+    <path d="M1 20v-6h6" />
+    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+  </svg>
+);
+
+const DownloadIcon = () => (
+  <svg {...iconBase}>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </svg>
+);
+
+// ─────────────────────────────────────────────────────────────
+// Primitives
+// ─────────────────────────────────────────────────────────────
+const inputStyle = {
+  padding: '9px 12px',
+  borderRadius: '6px',
+  border: '1px solid var(--ink-3)',
+  background: 'var(--ink-0)',
+  color: 'var(--ink-fg)',
+  fontSize: '0.82rem',
+  outline: 'none',
+  fontFamily: 'inherit',
+};
+
 export default function MasterLedger({ currentUser }) {
   const [entries, setEntries] = useState([]);
   const [filterStream, setFilterStream] = useState('ALL');
@@ -154,16 +214,19 @@ export default function MasterLedger({ currentUser }) {
     else if (!res.canceled) alert('PDF Export failed: ' + res.error);
   };
 
+  const unifiedGridTemplate = '1.2fr 1fr 1.2fr 2fr 1fr 1fr 1fr';
+
   return (
     <div
       style={{
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
-        flex: 1, // 👈 ADD THIS
-        height: '100%',
+        flex: 1,
+        height: 'calc(100vh - 90px)',
         overflow: 'hidden',
         fontFamily: "'Inter', sans-serif",
+        color: 'var(--ink-fg)',
       }}
     >
       {/* HEADER */}
@@ -172,17 +235,21 @@ export default function MasterLedger({ currentUser }) {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          background: 'var(--ink-0)',
+          padding: '16px 20px',
+          borderRadius: '10px',
+          border: '1px solid var(--ink-3)',
         }}
       >
         <div>
           <h3
             style={{
               margin: 0,
-              color: 'var(--text-primary)',
+              color: 'var(--ink-fg)',
               fontSize: '1.05rem',
               fontFamily: "'Plus Jakarta Sans', sans-serif",
-              fontWeight: '800',
-              textTransform: 'uppercase',
+              fontWeight: 600,
+              letterSpacing: '-0.01em',
             }}
           >
             Master General Ledger
@@ -190,7 +257,7 @@ export default function MasterLedger({ currentUser }) {
           <p
             style={{
               fontSize: '0.75rem',
-              color: 'var(--text-secondary)',
+              color: 'var(--ink-fg-3)',
               margin: '2px 0 0 0',
             }}
           >
@@ -199,36 +266,40 @@ export default function MasterLedger({ currentUser }) {
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
-            className="btn"
             style={{
-              fontSize: '0.75rem',
-              padding: '8px 14px',
+              fontSize: '0.78rem',
+              padding: '7px 14px',
               background: 'var(--brand-primary)',
               color: '#fff',
-              fontWeight: 'bold',
+              fontWeight: 500,
               borderRadius: '6px',
               border: 'none',
               cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
             }}
             onClick={handleExportPDF}
           >
-            📥 Export PDF
+            <DownloadIcon /> Export PDF
           </button>
           <button
-            className="btn"
             style={{
-              fontSize: '0.75rem',
-              padding: '8px 14px',
-              background: 'var(--bg-hover)',
-              color: 'var(--text-primary)',
-              fontWeight: 'bold',
+              fontSize: '0.78rem',
+              padding: '7px 14px',
+              background: 'var(--ink-1)',
+              color: 'var(--ink-fg)',
+              fontWeight: 500,
               borderRadius: '6px',
-              border: '1px solid var(--border-strong)',
+              border: '1px solid var(--ink-3)',
               cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
             }}
             onClick={loadMasterLedger}
           >
-            🔄 Refresh
+            <RefreshIcon /> Refresh
           </button>
         </div>
       </div>
@@ -242,122 +313,166 @@ export default function MasterLedger({ currentUser }) {
         }}
       >
         <div
-          className="card"
           style={{
             padding: '16px',
             borderRadius: '10px',
-            background: 'var(--bg-card)',
-            border: '1.5px solid var(--danger)',
+            background: 'var(--ink-0)',
+            border: '1px solid var(--ink-3)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div
-            style={{
-              fontSize: '0.7rem',
-              color: 'var(--danger)',
-              fontWeight: '800',
-              textTransform: 'uppercase',
-            }}
-          >
-            Total Outflows (Debits)
+          <div>
+            <div
+              style={{
+                fontSize: '0.7rem',
+                color: 'var(--ink-danger)',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.03em',
+              }}
+            >
+              Total Outflows (Debits)
+            </div>
+            <div
+              className="monospace tabular"
+              style={{
+                fontSize: '1.25rem',
+                fontWeight: 600,
+                color: 'var(--ink-fg)',
+                marginTop: '6px',
+              }}
+            >
+              Rs.{' '}
+              {totalDebits.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+              })}
+            </div>
           </div>
           <div
-            className="monospace"
             style={{
-              fontSize: '1.3rem',
-              fontWeight: '900',
-              color: 'var(--danger)',
-              marginTop: '6px',
-              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '0.68rem',
+              color: 'var(--ink-fg-3)',
+              marginTop: '8px',
             }}
           >
-            Rs.{' '}
-            {totalDebits.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-            })}
+            Sum of all debit operations
           </div>
         </div>
+
         <div
-          className="card"
           style={{
             padding: '16px',
             borderRadius: '10px',
-            background: 'var(--bg-card)',
-            border: '1.5px solid var(--success)',
+            background: 'var(--ink-0)',
+            border: '1px solid var(--ink-3)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div
-            style={{
-              fontSize: '0.7rem',
-              color: 'var(--success)',
-              fontWeight: '800',
-              textTransform: 'uppercase',
-            }}
-          >
-            Total Inflows (Credits)
+          <div>
+            <div
+              style={{
+                fontSize: '0.7rem',
+                color: 'var(--ink-success)',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.03em',
+              }}
+            >
+              Total Inflows (Credits)
+            </div>
+            <div
+              className="monospace tabular"
+              style={{
+                fontSize: '1.25rem',
+                fontWeight: 600,
+                color: 'var(--ink-fg)',
+                marginTop: '6px',
+              }}
+            >
+              Rs.{' '}
+              {totalCredits.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+              })}
+            </div>
           </div>
           <div
-            className="monospace"
             style={{
-              fontSize: '1.3rem',
-              fontWeight: '900',
-              color: 'var(--success)',
-              marginTop: '6px',
-              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '0.68rem',
+              color: 'var(--ink-fg-3)',
+              marginTop: '8px',
             }}
           >
-            Rs.{' '}
-            {totalCredits.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-            })}
+            Sum of all credit operations
           </div>
         </div>
+
         <div
-          className="card"
           style={{
             padding: '16px',
             borderRadius: '10px',
-            background: 'var(--bg-card)',
-            border: `1.5px solid ${netCashImpact >= 0 ? 'var(--brand-primary)' : 'var(--danger)'}`,
+            background: 'var(--ink-0)',
+            border: '1px solid var(--ink-3)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div
-            style={{
-              fontSize: '0.7rem',
-              color:
-                netCashImpact >= 0 ? 'var(--brand-primary)' : 'var(--danger)',
-              fontWeight: '800',
-              textTransform: 'uppercase',
-            }}
-          >
-            Net Cash Impact
+          <div>
+            <div
+              style={{
+                fontSize: '0.7rem',
+                color:
+                  netCashImpact >= 0
+                    ? 'var(--ink-success)'
+                    : 'var(--ink-danger)',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.03em',
+              }}
+            >
+              Net Cash Impact
+            </div>
+            <div
+              className="monospace tabular"
+              style={{
+                fontSize: '1.25rem',
+                fontWeight: 600,
+                color:
+                  netCashImpact >= 0
+                    ? 'var(--ink-success)'
+                    : 'var(--ink-danger)',
+                marginTop: '6px',
+              }}
+            >
+              Rs.{' '}
+              {netCashImpact.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+              })}
+            </div>
           </div>
           <div
-            className="monospace"
             style={{
-              fontSize: '1.3rem',
-              fontWeight: '900',
-              color:
-                netCashImpact >= 0 ? 'var(--brand-primary)' : 'var(--danger)',
-              marginTop: '6px',
-              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '0.68rem',
+              color: 'var(--ink-fg-3)',
+              marginTop: '8px',
             }}
           >
-            Rs.{' '}
-            {netCashImpact.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-            })}
+            Credits minus Debits balance
           </div>
         </div>
       </div>
 
       {/* FILTER TOOLBAR */}
       <div
-        className="card"
         style={{
-          background: 'var(--bg-card)',
+          background: 'var(--ink-0)',
           padding: '12px 16px',
           borderRadius: '10px',
-          border: '1.5px solid var(--border-color)',
+          border: '1px solid var(--ink-3)',
           display: 'flex',
           flexWrap: 'wrap',
           gap: '12px',
@@ -381,13 +496,15 @@ export default function MasterLedger({ currentUser }) {
               style={{
                 fontSize: '0.75rem',
                 padding: '6px 12px',
-                border: 'none',
+                border: '1px solid var(--ink-3)',
                 borderRadius: '6px',
                 cursor: 'pointer',
-                fontWeight: 'bold',
+                fontWeight: 500,
                 background:
-                  filterStream === pill.id ? 'var(--brand-primary)' : '#f1f5f9',
-                color: filterStream === pill.id ? '#fff' : '#64748b',
+                  filterStream === pill.id
+                    ? 'var(--brand-primary)'
+                    : 'var(--ink-1)',
+                color: filterStream === pill.id ? '#fff' : 'var(--ink-fg-2)',
               }}
             >
               {pill.label}
@@ -408,18 +525,19 @@ export default function MasterLedger({ currentUser }) {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              background: 'var(--bg-hover)',
+              gap: '8px',
+              background: 'var(--ink-1)',
               padding: '6px 12px',
               borderRadius: '6px',
-              border: '1px solid var(--border-strong)',
+              border: '1px solid var(--ink-3)',
             }}
           >
+            <CalendarIcon />
             <span
               style={{
                 fontSize: '0.75rem',
-                fontWeight: '700',
-                color: 'var(--text-primary)',
+                fontWeight: 500,
+                color: 'var(--ink-fg-2)',
               }}
             >
               From:
@@ -432,15 +550,17 @@ export default function MasterLedger({ currentUser }) {
                 border: 'none',
                 fontSize: '0.75rem',
                 background: 'transparent',
-                color: '#475569',
+                color: 'var(--ink-fg)',
                 outline: 'none',
+                fontFamily: 'inherit',
+                cursor: 'pointer',
               }}
             />
             <span
               style={{
                 fontSize: '0.75rem',
-                fontWeight: '700',
-                color: 'var(--text-primary)',
+                fontWeight: 500,
+                color: 'var(--ink-fg-2)',
                 marginLeft: '8px',
               }}
             >
@@ -454,26 +574,43 @@ export default function MasterLedger({ currentUser }) {
                 border: 'none',
                 fontSize: '0.75rem',
                 background: 'transparent',
-                color: '#475569',
+                color: 'var(--ink-fg)',
                 outline: 'none',
+                fontFamily: 'inherit',
+                cursor: 'pointer',
               }}
             />
           </div>
-          <input
-            type="text"
-            className="input-field"
-            placeholder="🔍 Search entity, note, operator..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+          <div
             style={{
-              margin: 0,
-              padding: '8px 12px',
-              fontSize: '0.75rem',
-              width: '220px',
-              borderRadius: '6px',
-              border: '1px solid var(--border-strong)',
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
             }}
-          />
+          >
+            <span
+              style={{
+                position: 'absolute',
+                left: '10px',
+                color: 'var(--ink-fg-3)',
+                display: 'flex',
+                pointerEvents: 'none',
+              }}
+            >
+              <SearchIcon />
+            </span>
+            <input
+              type="text"
+              placeholder="Search entity, note..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                ...inputStyle,
+                paddingLeft: '34px',
+                width: '200px',
+              }}
+            />
+          </div>
           {(startDate || endDate || searchQuery || filterStream !== 'ALL') && (
             <button
               onClick={() => {
@@ -485,10 +622,10 @@ export default function MasterLedger({ currentUser }) {
               style={{
                 fontSize: '0.75rem',
                 padding: '8px 12px',
-                background: '#fee2e2',
-                color: 'var(--danger)',
-                border: 'none',
-                fontWeight: 'bold',
+                background: 'var(--ink-1)',
+                color: 'var(--ink-danger)',
+                border: '1px solid var(--ink-3)',
+                fontWeight: 500,
                 borderRadius: '6px',
                 cursor: 'pointer',
               }}
@@ -501,30 +638,31 @@ export default function MasterLedger({ currentUser }) {
 
       {/* TABLE CONTAINER */}
       <div
-        className="card"
         style={{
           flex: 1,
-          background: 'var(--bg-card)',
+          background: 'var(--ink-0)',
           padding: '16px',
           borderRadius: '10px',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          border: '1.5px solid var(--border-color)',
+          border: '1px solid var(--ink-3)',
         }}
       >
         {/* TABLE HEADER */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1.2fr 1fr 1.2fr 2fr 1fr 1fr 1fr',
+            gridTemplateColumns: unifiedGridTemplate,
             fontSize: '0.7rem',
-            fontWeight: '700',
-            background: 'var(--brand-primary)',
-            color: '#fff',
-            padding: '12px 10px',
+            fontWeight: 600,
+            background: 'var(--ink-1)',
+            color: 'var(--ink-fg-2)',
+            padding: '10px 12px',
             borderRadius: '6px',
+            borderBottom: '1px solid var(--ink-3)',
             textTransform: 'uppercase',
+            letterSpacing: '0.03em',
           }}
         >
           <span>Timestamp</span>
@@ -543,141 +681,122 @@ export default function MasterLedger({ currentUser }) {
             overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
-            gap: '2px',
-            marginTop: '4px',
+            gap: '6px',
+            marginTop: '6px',
           }}
         >
           {filteredEntries.length === 0 ? (
             <div
               style={{
                 textAlign: 'center',
-                color: '#94a3b8',
+                color: 'var(--ink-fg-3)',
                 padding: '50px 0',
-                fontSize: '0.85rem',
+                fontSize: '0.8rem',
               }}
             >
               No master ledger transactions found matching your criteria.
             </div>
           ) : (
-            filteredEntries.map((entry, idx) => {
-              let badgeBg = '#e2e8f0',
-                badgeColor = '#334155';
-              if (entry.stream === 'SALE') {
-                badgeBg = '#d1fae5';
-                badgeColor = '#065f46';
-              } else if (entry.stream === 'EXPENSE') {
-                badgeBg = '#fee2e2';
-                badgeColor = '#991b1b';
-              } else if (entry.stream === 'RECEIVABLE') {
-                badgeBg = '#e0f2fe';
-                badgeColor = '#0369a1';
-              } else if (entry.stream === 'PAYABLE') {
-                badgeBg = '#fef3c7';
-                badgeColor = '#d97706';
-              } else if (entry.stream === 'AUDIT') {
-                badgeBg = '#f3e8ff';
-                badgeColor = '#6b21a8';
-              }
-
-              return (
-                <div
-                  key={idx}
+            filteredEntries.map((entry, idx) => (
+              <div
+                key={idx}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: unifiedGridTemplate,
+                  fontSize: '0.75rem',
+                  alignItems: 'center',
+                  background: 'var(--ink-1)',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--ink-3)',
+                }}
+              >
+                <span
                   style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1.2fr 1fr 1.2fr 2fr 1fr 1fr 1fr',
-                    fontSize: '0.78rem',
-                    alignItems: 'center',
-                    background: idx % 2 === 0 ? '#ffffff' : '#f8fafc',
-                    padding: '10px',
-                    borderBottom: '1px solid #f1f5f9',
+                    fontSize: '0.72rem',
+                    color: 'var(--ink-fg-3)',
                   }}
                 >
+                  {entry.transaction_date
+                    ? entry.transaction_date.replace('T', ' ').substring(0, 19)
+                    : ''}
+                </span>
+                <div>
                   <span
                     style={{
-                      fontSize: '0.72rem',
-                      color: 'var(--text-secondary)',
+                      background: 'var(--ink-0)',
+                      color: 'var(--ink-fg-2)',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontSize: '0.68rem',
+                      fontWeight: 500,
+                      border: '1px solid var(--ink-3)',
                     }}
                   >
-                    {entry.transaction_date
-                      ? entry.transaction_date
-                          .replace('T', ' ')
-                          .substring(0, 19)
-                      : ''}
-                  </span>
-                  <div>
-                    <span
-                      style={{
-                        background: badgeBg,
-                        color: badgeColor,
-                        padding: '4px 8px',
-                        borderRadius: '6px',
-                        fontSize: '0.68rem',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      {entry.stream}
-                    </span>
-                  </div>
-                  <span
-                    style={{
-                      fontWeight: '700',
-                      color: 'var(--text-primary)',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {entry.entity_name || 'General'}
-                  </span>
-                  <span
-                    style={{
-                      color: '#475569',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {entry.description}
-                  </span>
-                  <span
-                    className="monospace"
-                    style={{
-                      textAlign: 'right',
-                      color: entry.debit > 0 ? 'var(--danger)' : '#94a3b8',
-                      fontWeight: entry.debit > 0 ? 'bold' : 'normal',
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    {entry.debit > 0
-                      ? `Rs. ${entry.debit.toLocaleString()}`
-                      : '—'}
-                  </span>
-                  <span
-                    className="monospace"
-                    style={{
-                      textAlign: 'right',
-                      color: entry.credit > 0 ? 'var(--success)' : '#94a3b8',
-                      fontWeight: entry.credit > 0 ? 'bold' : 'normal',
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    {entry.credit > 0
-                      ? `Rs. ${entry.credit.toLocaleString()}`
-                      : '—'}
-                  </span>
-                  <span
-                    style={{
-                      textAlign: 'center',
-                      fontSize: '0.72rem',
-                      color: 'var(--text-secondary)',
-                      fontWeight: '600',
-                    }}
-                  >
-                    {entry.user_name || 'Manager'}
+                    {entry.stream}
                   </span>
                 </div>
-              );
-            })
+                <span
+                  style={{
+                    fontWeight: 500,
+                    color: 'var(--ink-fg)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {entry.entity_name || 'General'}
+                </span>
+                <span
+                  style={{
+                    color: 'var(--ink-fg-3)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {entry.description}
+                </span>
+                <span
+                  className="monospace tabular"
+                  style={{
+                    textAlign: 'right',
+                    color:
+                      entry.debit > 0 ? 'var(--ink-danger)' : 'var(--ink-fg-3)',
+                    fontWeight: entry.debit > 0 ? 600 : 'normal',
+                  }}
+                >
+                  {entry.debit > 0
+                    ? `Rs. ${entry.debit.toLocaleString()}`
+                    : '—'}
+                </span>
+                <span
+                  className="monospace tabular"
+                  style={{
+                    textAlign: 'right',
+                    color:
+                      entry.credit > 0
+                        ? 'var(--ink-success)'
+                        : 'var(--ink-fg-3)',
+                    fontWeight: entry.credit > 0 ? 600 : 'normal',
+                  }}
+                >
+                  {entry.credit > 0
+                    ? `Rs. ${entry.credit.toLocaleString()}`
+                    : '—'}
+                </span>
+                <span
+                  style={{
+                    textAlign: 'center',
+                    fontSize: '0.72rem',
+                    color: 'var(--ink-fg-3)',
+                    fontWeight: 500,
+                  }}
+                >
+                  {entry.user_name || 'Manager'}
+                </span>
+              </div>
+            ))
           )}
         </div>
 
@@ -687,23 +806,23 @@ export default function MasterLedger({ currentUser }) {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            borderTop: '1.5px solid #e2e8f0',
+            borderTop: '1px solid var(--ink-3)',
             paddingTop: '12px',
             marginTop: '8px',
             fontSize: '0.75rem',
-            color: 'var(--text-secondary)',
-            fontWeight: '600',
+            color: 'var(--ink-fg-3)',
+            fontWeight: 500,
           }}
         >
           <span>
             Showing {filteredEntries.length} of {entries.length} audit feed
             entries
           </span>
-          <div style={{ display: 'flex', gap: '15px', fontWeight: 'bold' }}>
-            <span style={{ color: 'var(--danger)' }}>
+          <div style={{ display: 'flex', gap: '15px', fontWeight: 600 }}>
+            <span style={{ color: 'var(--ink-danger)' }}>
               Outflows: Rs. {totalDebits.toLocaleString()}
             </span>
-            <span style={{ color: 'var(--success)' }}>
+            <span style={{ color: 'var(--ink-success)' }}>
               Inflows: Rs. {totalCredits.toLocaleString()}
             </span>
           </div>

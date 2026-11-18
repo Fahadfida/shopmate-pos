@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { getIpc } from '../utils/ipc';
 
-// Helper to get initials (e.g., "Wireless Mouse" -> "WM")
+// ─────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────
 const getInitials = (name) => {
   if (!name) return '?';
   const words = name.trim().split(' ');
@@ -9,52 +11,225 @@ const getInitials = (name) => {
   return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 };
 
-export default function Inventory({ currentUser }) {
+const fmt = (n) =>
+  `Rs. ${Number(n || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })}`;
+
+const fmt2 = (n) =>
+  `Rs. ${Number(n || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+
+// ─────────────────────────────────────────────────────────────
+// Icons — 16px, 1.5 stroke
+// ─────────────────────────────────────────────────────────────
+const iconBase = {
+  width: 16,
+  height: 16,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.5,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+};
+
+const SearchIcon = () => (
+  <svg {...iconBase}>
+    <circle cx="11" cy="11" r="8" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </svg>
+);
+const PlusIcon = () => (
+  <svg {...iconBase}>
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+const EditIcon = () => (
+  <svg {...iconBase}>
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+const ArchiveIcon = () => (
+  <svg {...iconBase}>
+    <polyline points="21 8 21 21 3 21 3 8" />
+    <rect x="1" y="3" width="22" height="5" />
+    <line x1="10" y1="12" x2="14" y2="12" />
+  </svg>
+);
+const RestoreIcon = () => (
+  <svg {...iconBase}>
+    <polyline points="1 4 1 10 7 10" />
+    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+  </svg>
+);
+const CloseIcon = () => (
+  <svg {...iconBase}>
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+const GridIcon = () => (
+  <svg {...iconBase} width="14" height="14">
+    <rect x="3" y="3" width="7" height="7" />
+    <rect x="14" y="3" width="7" height="7" />
+    <rect x="14" y="14" width="7" height="7" />
+    <rect x="3" y="14" width="7" height="7" />
+  </svg>
+);
+const ListIcon = () => (
+  <svg {...iconBase} width="14" height="14">
+    <line x1="8" y1="6" x2="21" y2="6" />
+    <line x1="8" y1="12" x2="21" y2="12" />
+    <line x1="8" y1="18" x2="21" y2="18" />
+    <line x1="3" y1="6" x2="3.01" y2="6" />
+    <line x1="3" y1="12" x2="3.01" y2="12" />
+    <line x1="3" y1="18" x2="3.01" y2="18" />
+  </svg>
+);
+const BoxIcon = () => (
+  <svg {...iconBase} width="28" height="28">
+    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+    <line x1="12" y1="22.08" x2="12" y2="12" />
+  </svg>
+);
+
+// ─────────────────────────────────────────────────────────────
+// Small primitives
+// ─────────────────────────────────────────────────────────────
+const SegmentChip = ({ active, onClick, icon, children }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    style={{
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      padding: '6px 12px',
+      fontSize: '0.75rem',
+      fontWeight: 500,
+      borderRadius: '6px',
+      border: 'none',
+      background: active ? 'var(--ink-0)' : 'transparent',
+      color: active ? 'var(--ink-fg)' : 'var(--ink-fg-2)',
+      boxShadow: active ? '0 0 0 1px var(--ink-3)' : 'none',
+      cursor: 'pointer',
+      transition: 'background-color 120ms ease, color 120ms ease',
+    }}
+  >
+    {icon}
+    {children}
+  </button>
+);
+
+const Field = ({ label, children }) => (
+  <div>
+    <label
+      style={{
+        fontSize: '0.72rem',
+        fontWeight: 500,
+        color: 'var(--ink-fg-2)',
+        display: 'block',
+        marginBottom: '4px',
+      }}
+    >
+      {label}
+    </label>
+    {children}
+  </div>
+);
+
+const inputStyle = {
+  padding: '8px 10px',
+  borderRadius: '6px',
+  border: '1px solid var(--ink-3)',
+  background: 'var(--ink-0)',
+  color: 'var(--ink-fg)',
+  fontSize: '0.82rem',
+  width: '100%',
+  outline: 'none',
+};
+
+// ─────────────────────────────────────────────────────────────
+// Inventory
+// ─────────────────────────────────────────────────────────────
+export default function Inventory({ currentUser, showToast }) {
   const [items, setItems] = useState([]);
   const [search, setSearch] = useState('');
   const [filterMode, setFilterMode] = useState('active');
   const [viewMode, setViewMode] = useState('GRID');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Modal States
+  // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [confirmArchive, setConfirmArchive] = useState(null); // id | null
 
-  // Form States
+  // Form
   const [addMarginType, setAddMarginType] = useState('custom');
   const [editMarginType, setEditMarginType] = useState('custom');
-  const [itemForm, setItemForm] = useState({
-    code: '',
-    name: '',
-    category: 'General',
-    stock_qty: 0,
-    avg_cost: 0,
-    min_price: 0,
-    max_price: 0,
-    selling_price: 0,
-    unit: 'Pcs',
-    image_path: '',
-  });
+  const [itemForm, setItemForm] = useState(emptyForm());
+
+  function emptyForm() {
+    return {
+      code: '',
+      name: '',
+      category: 'General',
+      stock_qty: 0,
+      avg_cost: 0,
+      min_price: 0,
+      max_price: 0,
+      selling_price: 0,
+      unit: 'Pcs',
+      image_path: '',
+    };
+  }
+
+  const toast = (msg, type = 'info') => {
+    if (showToast) showToast(msg, type);
+    else if (type === 'error') console.error(msg);
+  };
 
   const loadItems = async () => {
     const ipc = getIpc();
-    if (ipc) setItems(await ipc.invoke('get-items', true));
+    if (!ipc) return;
+    try {
+      setItems(await ipc.invoke('get-items', true));
+      setError(null);
+    } catch (err) {
+      setError(err?.message || 'Could not load inventory.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     loadItems();
   }, []);
 
-  // Auto-generate SKU
+  // Auto SKU
   useEffect(() => {
     const fetchSku = async () => {
       const ipc = getIpc();
       if (ipc && itemForm.name && isAddModalOpen) {
-        const generatedCode = await ipc.invoke('get-next-sku', {
-          category: itemForm.category,
-          name: itemForm.name,
-        });
-        setItemForm((prev) => ({ ...prev, code: generatedCode }));
+        try {
+          const code = await ipc.invoke('get-next-sku', {
+            category: itemForm.category,
+            name: itemForm.name,
+          });
+          setItemForm((prev) => ({ ...prev, code }));
+        } catch (err) {
+          console.error('SKU generation failed:', err);
+        }
       }
     };
     fetchSku();
@@ -69,47 +244,45 @@ export default function Inventory({ currentUser }) {
 
   const handleImageUpload = (e, isEditing = false) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (isEditing)
-          setEditingItem((prev) => ({ ...prev, image_path: reader.result }));
-        else setItemForm((prev) => ({ ...prev, image_path: reader.result }));
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (isEditing)
+        setEditingItem((prev) => ({ ...prev, image_path: reader.result }));
+      else setItemForm((prev) => ({ ...prev, image_path: reader.result }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleRegisterItem = async (e) => {
     e.preventDefault();
     const ipc = getIpc();
-    if (ipc) {
+    if (!ipc) return;
+    try {
       const payload = { ...itemForm, stock_qty: 0 };
-      const res = await ipc.invoke('add-item', { item: payload, currentUser });
+      const res = await ipc.invoke('add-item', {
+        item: payload,
+        currentUser,
+      });
       if (res.success) {
+        toast('Product added.', 'success');
         setIsAddModalOpen(false);
-        setItemForm({
-          code: '',
-          name: '',
-          category: 'General',
-          stock_qty: 0,
-          avg_cost: 0,
-          min_price: 0,
-          max_price: 0,
-          selling_price: 0,
-          unit: 'Pcs',
-          image_path: '',
-        });
+        setItemForm(emptyForm());
         setAddMarginType('custom');
-        loadItems();
-      } else alert('Error adding item: ' + res.error);
+        await loadItems();
+      } else {
+        toast('Add failed: ' + res.error, 'error');
+      }
+    } catch (err) {
+      toast('Add failed: ' + err.message, 'error');
     }
   };
 
   const handleSaveEdit = async (e) => {
     e.preventDefault();
     const ipc = getIpc();
-    if (ipc && editingItem) {
+    if (!ipc || !editingItem) return;
+    try {
       const payload = {
         ...editingItem,
         selling_price: editingItem.unit_price || editingItem.selling_price,
@@ -120,41 +293,53 @@ export default function Inventory({ currentUser }) {
         currentUser,
       });
       if (res.success) {
+        toast('Product updated.', 'success');
         setIsEditModalOpen(false);
         setEditingItem(null);
-        loadItems();
-      } else alert('Update Error: ' + res.error);
+        await loadItems();
+      } else {
+        toast('Update failed: ' + res.error, 'error');
+      }
+    } catch (err) {
+      toast('Update failed: ' + err.message, 'error');
     }
   };
 
   const handleToggleArchive = async (item) => {
-    if (currentUser?.role !== 'ADMIN')
-      return alert('Access Denied: Only Managers can archive items.');
-    const actionText = item.is_active === 1 ? 'archive' : 'reactivate';
-    if (
-      !window.confirm(`Are you sure you want to ${actionText} "${item.name}"?`)
-    )
-      return;
+    if (currentUser?.role !== 'ADMIN') {
+      return toast('Only managers can archive items.', 'error');
+    }
     const ipc = getIpc();
-    if (ipc) {
+    if (!ipc) return;
+    try {
       const res = await ipc.invoke('toggle-archive-item', {
         itemId: item.id,
         is_active: item.is_active === 1 ? 0 : 1,
         currentUser,
       });
       if (res.success) {
-        if (res.items) setItems(res.items);
-        else loadItems();
-      } else alert('Archive Error: ' + res.error);
+        toast(
+          item.is_active === 1 ? 'Item archived.' : 'Item reactivated.',
+          'success',
+        );
+        await loadItems();
+      } else {
+        toast('Archive failed: ' + res.error, 'error');
+      }
+    } catch (err) {
+      toast('Archive failed: ' + err.message, 'error');
+    } finally {
+      setConfirmArchive(null);
     }
   };
 
   const filteredItems = items.filter((i) => {
-    const matchesSearch =
-      i.name.toLowerCase().includes(search.toLowerCase()) ||
-      i.code.toLowerCase().includes(search.toLowerCase()) ||
-      (i.category && i.category.toLowerCase().includes(search.toLowerCase()));
-    if (!matchesSearch) return false;
+    const q = search.toLowerCase();
+    const matches =
+      i.name.toLowerCase().includes(q) ||
+      i.code.toLowerCase().includes(q) ||
+      (i.category && i.category.toLowerCase().includes(q));
+    if (!matches) return false;
     if (filterMode === 'active')
       return i.is_active === 1 || i.is_active === undefined;
     if (filterMode === 'archived') return i.is_active === 0;
@@ -165,183 +350,247 @@ export default function Inventory({ currentUser }) {
     return true;
   });
 
+  const counts = {
+    active: items.filter((i) => i.is_active === 1 || i.is_active === undefined)
+      .length,
+    restock: items.filter(
+      (i) =>
+        (i.is_active === 1 || i.is_active === undefined) && i.stock_qty <= 5,
+    ).length,
+    archived: items.filter((i) => i.is_active === 0).length,
+    all: items.length,
+  };
+
+  // ─── Loading
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '60vh',
+          color: 'var(--ink-fg-3)',
+          fontSize: '0.85rem',
+          fontFamily: "'Inter', sans-serif",
+        }}
+      >
+        Loading inventory…
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
         display: 'flex',
-        flex: 1, // 👈 ADD THIS
-        height: '100%',
+        flex: 1,
         flexDirection: 'column',
         gap: '16px',
-        height: 'calc(100vh - 80px)',
+        height: 'calc(100vh - 64px)',
         overflow: 'hidden',
         fontFamily: "'Inter', sans-serif",
+        color: 'var(--ink-fg)',
       }}
     >
-      {/* HEADER BAR */}
+      {/* Error banner */}
+      {error && (
+        <div
+          role="alert"
+          style={{
+            background: 'var(--ink-danger)',
+            color: '#ffffff',
+            padding: '12px 16px',
+            borderRadius: '10px',
+            fontSize: '0.82rem',
+            fontWeight: 500,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <span>{error}</span>
+          <button
+            onClick={() => setError(null)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#ffffff',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              padding: 0,
+            }}
+            aria-label="Dismiss"
+          >
+            <CloseIcon />
+          </button>
+        </div>
+      )}
+
+      {/* HEADER */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          background: 'var(--bg-card)',
-          padding: '16px 18px',
-          borderRadius: '10px',
-          border: '1.5px solid var(--border-color)',
+          gap: '12px',
+          background: 'var(--ink-0)',
+          padding: '14px 16px',
+          borderRadius: '12px',
+          border: '1px solid var(--ink-3)',
+          flexWrap: 'wrap',
         }}
       >
-        <h3
-          style={{
-            margin: 0,
-            color: 'var(--text-primary)',
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-            fontWeight: '800',
-            textTransform: 'uppercase',
-            fontSize: '0.95rem',
-          }}
-        >
-          Inventory & Pricing
-        </h3>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <input
-            type="text"
-            className="input-field"
-            placeholder="🔍 Search SKU or product..."
+        <div>
+          <h2
             style={{
-              width: '260px',
               margin: 0,
-              padding: '8px 12px',
-              fontSize: '0.8rem',
-              borderRadius: '6px',
-              border: '1px solid var(--border-strong)',
-            }}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <button
-            className="btn btn-primary"
-            style={{
-              padding: '8px 16px',
-              fontWeight: 'bold',
-              background: 'var(--brand-primary)',
-              color: '#fff',
-              fontSize: '0.8rem',
-              whiteSpace: 'nowrap',
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-            onClick={() => {
-              setAddMarginType('custom');
-              setIsAddModalOpen(true);
+              fontSize: '1.05rem',
+              fontWeight: 600,
+              color: 'var(--ink-fg)',
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              letterSpacing: '-0.01em',
             }}
           >
-            + Add New Product
+            Inventory
+          </h2>
+          <p
+            style={{
+              margin: '2px 0 0 0',
+              fontSize: '0.75rem',
+              color: 'var(--ink-fg-3)',
+            }}
+          >
+            Stock, cost, and pricing
+          </p>
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            gap: '8px',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ position: 'relative', width: '260px' }}>
+            <span
+              style={{
+                position: 'absolute',
+                left: '10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--ink-fg-3)',
+                display: 'flex',
+              }}
+            >
+              <SearchIcon />
+            </span>
+            <input
+              type="text"
+              placeholder="Search SKU, name, or category"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                ...inputStyle,
+                paddingLeft: '32px',
+                height: '34px',
+                background: 'var(--ink-1)',
+              }}
+            />
+          </div>
+          <button
+            onClick={() => {
+              setAddMarginType('custom');
+              setItemForm(emptyForm());
+              setIsAddModalOpen(true);
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              fontSize: '0.8rem',
+              fontWeight: 500,
+              background: 'var(--brand-primary)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+            }}
+          >
+            <PlusIcon /> Add product
           </button>
         </div>
       </div>
 
-      {/* MODERN FILTER PILLS & VIEW TOGGLE */}
+      {/* FILTERS + VIEW TOGGLE */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          gap: '8px',
+          flexWrap: 'wrap',
         }}
       >
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {[
-            {
-              id: 'active',
-              label: `Active (${items.filter((i) => i.is_active === 1 || i.is_active === undefined).length})`,
-              activeBg: '#d1fae5',
-              activeColor: '#065f46',
-            },
-            {
-              id: 'restock',
-              label: `Restock (${items.filter((i) => (i.is_active === 1 || i.is_active === undefined) && i.stock_qty <= 5).length})`,
-              activeBg: '#fee2e2',
-              activeColor: '#991b1b',
-            },
-            {
-              id: 'archived',
-              label: `Archived (${items.filter((i) => i.is_active === 0).length})`,
-              activeBg: '#fef3c7',
-              activeColor: '#d97706',
-            },
-            {
-              id: 'all',
-              label: `All (${items.length})`,
-              activeBg: '#f1f5f9',
-              activeColor: '#334155',
-            },
-          ].map((pill) => {
-            const isActive = filterMode === pill.id;
-            return (
-              <button
-                key={pill.id}
-                onClick={() => setFilterMode(pill.id)}
-                style={{
-                  padding: '6px 14px',
-                  fontSize: '0.75rem',
-                  borderRadius: '20px',
-                  fontWeight: '700',
-                  background: isActive ? pill.activeBg : '#ffffff',
-                  color: isActive ? pill.activeColor : '#64748b',
-                  border: isActive
-                    ? '1.5px solid transparent'
-                    : '1.5px solid #cbd5e1',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-              >
-                {pill.label}
-              </button>
-            );
-          })}
-        </div>
         <div
           style={{
             display: 'flex',
-            gap: '4px',
-            background: 'var(--bg-hover)',
-            padding: '4px',
-            borderRadius: '6px',
-            border: '1px solid var(--border-strong)',
+            gap: '2px',
+            padding: '2px',
+            background: 'var(--ink-1)',
+            border: '1px solid var(--ink-3)',
+            borderRadius: '8px',
           }}
         >
-          <button
+          {[
+            { id: 'active', label: 'Active', n: counts.active },
+            { id: 'restock', label: 'Restock', n: counts.restock },
+            { id: 'archived', label: 'Archived', n: counts.archived },
+            { id: 'all', label: 'All', n: counts.all },
+          ].map((p) => (
+            <SegmentChip
+              key={p.id}
+              active={filterMode === p.id}
+              onClick={() => setFilterMode(p.id)}
+            >
+              {p.label}{' '}
+              <span
+                className="monospace tabular"
+                style={{ color: 'var(--ink-fg-3)', marginLeft: '2px' }}
+              >
+                {p.n}
+              </span>
+            </SegmentChip>
+          ))}
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            gap: '2px',
+            padding: '2px',
+            background: 'var(--ink-1)',
+            border: '1px solid var(--ink-3)',
+            borderRadius: '8px',
+          }}
+        >
+          <SegmentChip
+            active={viewMode === 'GRID'}
             onClick={() => setViewMode('GRID')}
-            style={{
-              padding: '4px 12px',
-              fontSize: '0.72rem',
-              background:
-                viewMode === 'GRID' ? 'var(--brand-primary)' : 'transparent',
-              color: viewMode === 'GRID' ? '#fff' : '#64748b',
-              border: 'none',
-              fontWeight: 'bold',
-              borderRadius: '6px',
-              cursor: 'pointer',
-            }}
+            icon={<GridIcon />}
           >
-            🔲 Grid
-          </button>
-          <button
+            Grid
+          </SegmentChip>
+          <SegmentChip
+            active={viewMode === 'LIST'}
             onClick={() => setViewMode('LIST')}
-            style={{
-              padding: '4px 12px',
-              fontSize: '0.72rem',
-              background:
-                viewMode === 'LIST' ? 'var(--brand-primary)' : 'transparent',
-              color: viewMode === 'LIST' ? '#fff' : '#64748b',
-              border: 'none',
-              fontWeight: 'bold',
-              borderRadius: '6px',
-              cursor: 'pointer',
-            }}
+            icon={<ListIcon />}
           >
-            📋 List
-          </button>
+            List
+          </SegmentChip>
         </div>
       </div>
 
@@ -349,58 +598,111 @@ export default function Inventory({ currentUser }) {
       <div
         style={{
           flex: 1,
-          background: 'var(--bg-card)',
+          background: 'var(--ink-0)',
           padding: '16px',
-          borderRadius: '10px',
-          border: '1.5px solid var(--border-color)',
+          borderRadius: '12px',
+          border: '1px solid var(--ink-3)',
           overflowY: 'auto',
         }}
       >
-        {viewMode === 'GRID' ? (
-          /* GRID VIEW */
+        {filteredItems.length === 0 ? (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '60px 20px',
+              color: 'var(--ink-fg-3)',
+              gap: '8px',
+            }}
+          >
+            <BoxIcon />
+            <div style={{ fontSize: '0.85rem', fontWeight: 500 }}>
+              {search
+                ? 'No matches for this search'
+                : filterMode === 'archived'
+                  ? 'No archived products'
+                  : filterMode === 'restock'
+                    ? 'Nothing to restock'
+                    : 'No products yet'}
+            </div>
+            <div style={{ fontSize: '0.75rem' }}>
+              {search
+                ? 'Try a different name, SKU, or category.'
+                : filterMode === 'archived'
+                  ? 'Archived items will appear here.'
+                  : filterMode === 'restock'
+                    ? 'All stock levels are above the low threshold.'
+                    : 'Add your first product to begin.'}
+            </div>
+            {!search && filterMode === 'active' && (
+              <button
+                onClick={() => {
+                  setAddMarginType('custom');
+                  setItemForm(emptyForm());
+                  setIsAddModalOpen(true);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  marginTop: '8px',
+                  padding: '8px 14px',
+                  fontSize: '0.8rem',
+                  fontWeight: 500,
+                  background: 'var(--brand-primary)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                }}
+              >
+                <PlusIcon /> Add product
+              </button>
+            )}
+          </div>
+        ) : viewMode === 'GRID' ? (
           <div
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-              gap: '16px',
+              gap: '12px',
             }}
           >
             {filteredItems.map((item) => {
-              const isArchived = item.is_active === 0;
+              const archived = item.is_active === 0;
               return (
                 <div
                   key={item.id}
                   style={{
-                    background: isArchived ? '#f8fafc' : '#ffffff',
-                    border: '1.5px solid var(--border-color)',
-                    borderRadius: '10px',
-                    padding: '16px',
+                    background: archived ? 'var(--ink-1)' : 'var(--ink-0)',
+                    border: '1px solid var(--ink-3)',
+                    borderRadius: '12px',
+                    padding: '14px',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
                     gap: '12px',
-                    opacity: isArchived ? 0.7 : 1,
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
                   }}
                 >
-                  {/* Top: Image & Title */}
                   <div
                     style={{
                       display: 'flex',
                       gap: '12px',
-                      alignItems: 'center',
+                      alignItems: 'flex-start',
                     }}
                   >
                     <div
                       style={{
-                        width: '60px',
-                        height: '60px',
-                        background: 'var(--bg-hover)',
+                        width: '48px',
+                        height: '48px',
+                        background: 'var(--ink-2)',
                         borderRadius: '8px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        border: '1px solid var(--border-color)',
+                        border: '1px solid var(--ink-3)',
                         overflow: 'hidden',
                         flexShrink: 0,
                       }}
@@ -412,15 +714,15 @@ export default function Inventory({ currentUser }) {
                           style={{
                             width: '100%',
                             height: '100%',
-                            objectFit: 'contain',
+                            objectFit: 'cover',
                           }}
                         />
                       ) : (
                         <span
                           style={{
-                            fontSize: '1.2rem',
-                            fontWeight: '900',
-                            color: '#94a3b8',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            color: 'var(--ink-fg-3)',
                           }}
                         >
                           {getInitials(item.name)}
@@ -430,193 +732,218 @@ export default function Inventory({ currentUser }) {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div
                         style={{
-                          fontWeight: '800',
                           fontSize: '0.85rem',
-                          color: 'var(--text-primary)',
+                          fontWeight: 600,
+                          color: 'var(--ink-fg)',
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
-                          textTransform: 'uppercase',
-                          fontFamily: "'Plus Jakarta Sans', sans-serif",
                         }}
                         title={item.name}
                       >
-                        {item.name}{' '}
-                        {isArchived && (
-                          <span
-                            style={{ fontSize: '0.65rem', color: '#d97706' }}
-                          >
-                            (Archived)
-                          </span>
-                        )}
+                        {item.name}
                       </div>
                       <div
+                        className="monospace"
                         style={{
-                          fontSize: '0.72rem',
-                          color: 'var(--text-secondary)',
+                          fontSize: '0.7rem',
+                          color: 'var(--ink-fg-3)',
                           marginTop: '2px',
                         }}
                       >
-                        SKU: {item.code}
+                        {item.code}
                       </div>
-                      <div style={{ marginTop: '6px' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          gap: '6px',
+                          marginTop: '6px',
+                          alignItems: 'center',
+                        }}
+                      >
                         <span
+                          className="monospace tabular"
                           style={{
-                            background:
-                              item.stock_qty <= 5 ? '#fee2e2' : '#d1fae5',
+                            fontSize: '0.7rem',
+                            fontWeight: 500,
                             color:
-                              item.stock_qty <= 5
-                                ? 'var(--danger)'
-                                : 'var(--success)',
-                            padding: '4px 8px',
+                              item.stock_qty <= 5 && !archived
+                                ? 'var(--ink-danger)'
+                                : 'var(--ink-fg-2)',
+                            border: '1px solid var(--ink-3)',
+                            padding: '2px 6px',
                             borderRadius: '6px',
-                            fontSize: '0.68rem',
-                            fontWeight: 'bold',
                           }}
                         >
-                          Stock: {item.stock_qty} {item.unit}
+                          {item.stock_qty} {item.unit || 'pcs'}
                         </span>
+                        {archived && (
+                          <span
+                            style={{
+                              fontSize: '0.68rem',
+                              color: 'var(--ink-fg-3)',
+                            }}
+                          >
+                            Archived
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Middle: Prices */}
                   <div
                     style={{
-                      borderTop: '1px solid #f1f5f9',
-                      paddingTop: '8px',
-                      fontSize: '0.75rem',
+                      borderTop: '1px solid var(--ink-3)',
+                      paddingTop: '10px',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '4px',
+                      fontSize: '0.75rem',
                     }}
                   >
                     <div
                       style={{
                         display: 'flex',
                         justifyContent: 'space-between',
-                        color: 'var(--text-primary)',
+                        color: 'var(--ink-fg-2)',
                       }}
                     >
-                      <span>Cost (WAC):</span>
-                      <span
-                        className="monospace"
-                        style={{
-                          fontWeight: '700',
-                          fontFamily: "'JetBrains Mono', monospace",
-                        }}
-                      >
-                        Rs. {item.avg_cost?.toFixed(2)}
+                      <span>Cost</span>
+                      <span className="monospace tabular">
+                        {fmt2(item.avg_cost)}
                       </span>
                     </div>
                     <div
                       style={{
                         display: 'flex',
                         justifyContent: 'space-between',
-                        color: 'var(--brand-primary)',
+                        color: 'var(--ink-fg-2)',
                       }}
                     >
-                      <span>Min Bargain:</span>
-                      <span
-                        className="monospace"
-                        style={{
-                          fontWeight: '700',
-                          fontFamily: "'JetBrains Mono', monospace",
-                        }}
-                      >
-                        Rs. {item.min_price?.toFixed(2) || '0.00'}
+                      <span>Min</span>
+                      <span className="monospace tabular">
+                        {fmt2(item.min_price)}
                       </span>
                     </div>
                     <div
                       style={{
                         display: 'flex',
                         justifyContent: 'space-between',
-                        color: 'var(--text-secondary)',
+                        color: 'var(--ink-fg-2)',
                       }}
                     >
-                      <span>Max List:</span>
-                      <span
-                        className="monospace"
-                        style={{
-                          fontWeight: '700',
-                          fontFamily: "'JetBrains Mono', monospace",
-                        }}
-                      >
-                        Rs. {item.max_price?.toFixed(2) || '0.00'}
+                      <span>Max</span>
+                      <span className="monospace tabular">
+                        {fmt2(item.max_price)}
                       </span>
                     </div>
                   </div>
 
-                  {/* Bottom: Action Bar */}
                   <div
                     style={{
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      background: 'var(--bg-hover)',
-                      padding: '8px 10px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--border-strong)',
+                      borderTop: '1px solid var(--ink-3)',
+                      paddingTop: '10px',
+                      gap: '6px',
                     }}
                   >
                     <div>
                       <div
                         style={{
-                          fontSize: '0.65rem',
-                          color: 'var(--text-secondary)',
-                          fontWeight: '700',
-                          textTransform: 'uppercase',
+                          fontSize: '0.68rem',
+                          color: 'var(--ink-fg-3)',
                         }}
                       >
-                        Selling Price
+                        Selling
                       </div>
-                      <span
-                        className="monospace"
+                      <div
+                        className="monospace tabular"
                         style={{
-                          fontWeight: '900',
-                          color: 'var(--brand-primary)',
-                          fontSize: '1rem',
-                          fontFamily: "'JetBrains Mono', monospace",
+                          fontSize: '0.95rem',
+                          fontWeight: 600,
+                          color: 'var(--ink-fg)',
                         }}
                       >
-                        Rs. {item.selling_price?.toFixed(2)}
-                      </span>
+                        {fmt2(item.selling_price)}
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '6px' }}>
+                    <div style={{ display: 'flex', gap: '4px' }}>
                       <button
-                        style={{
-                          fontSize: '0.72rem',
-                          padding: '6px 10px',
-                          background: 'var(--brand-primary)',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontWeight: 'bold',
-                        }}
                         onClick={() => {
                           setEditingItem(item);
                           setEditMarginType('custom');
                           setIsEditModalOpen(true);
                         }}
-                      >
-                        Edit
-                      </button>
-                      <button
+                        aria-label="Edit product"
                         style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '6px 8px',
                           fontSize: '0.72rem',
-                          padding: '6px 10px',
-                          background: isArchived ? 'var(--success)' : '#d97706',
-                          color: '#fff',
-                          border: 'none',
+                          fontWeight: 500,
+                          background: 'var(--ink-1)',
+                          color: 'var(--ink-fg)',
+                          border: '1px solid var(--ink-3)',
                           borderRadius: '6px',
                           cursor: 'pointer',
-                          fontWeight: 'bold',
                         }}
-                        onClick={() => handleToggleArchive(item)}
                       >
-                        {isArchived ? '🔄' : '📦'}
+                        <EditIcon /> Edit
                       </button>
+                      {confirmArchive === item.id ? (
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          <button
+                            onClick={() => handleToggleArchive(item)}
+                            style={{
+                              padding: '6px 10px',
+                              fontSize: '0.72rem',
+                              fontWeight: 500,
+                              background: 'var(--ink-danger)',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Confirm
+                          </button>
+                          <button
+                            onClick={() => setConfirmArchive(null)}
+                            style={{
+                              padding: '6px 10px',
+                              fontSize: '0.72rem',
+                              fontWeight: 500,
+                              background: 'var(--ink-1)',
+                              color: 'var(--ink-fg-2)',
+                              border: '1px solid var(--ink-3)',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmArchive(item.id)}
+                          aria-label={archived ? 'Reactivate' : 'Archive'}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: '6px 8px',
+                            background: 'var(--ink-1)',
+                            color: 'var(--ink-fg-2)',
+                            border: '1px solid var(--ink-3)',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {archived ? <RestoreIcon /> : <ArchiveIcon />}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -624,62 +951,63 @@ export default function Inventory({ currentUser }) {
             })}
           </div>
         ) : (
-          /* HIGH-DENSITY LIST VIEW */
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div
+            style={{
+              border: '1px solid var(--ink-3)',
+              borderRadius: '10px',
+              overflow: 'hidden',
+            }}
+          >
             <div
               style={{
                 display: 'grid',
                 gridTemplateColumns:
-                  '0.8fr 2fr 0.8fr 0.8fr 0.8fr 0.8fr 1fr 1.2fr',
+                  '0.8fr 2fr 0.8fr 0.9fr 0.9fr 0.9fr 1fr 1.2fr',
                 fontSize: '0.7rem',
-                fontWeight: '700',
-                background: 'var(--bg-hover)',
-                color: 'var(--text-secondary)',
-                padding: '12px 10px',
-                borderRadius: '6px',
-                borderBottom: '1.5px solid #e2e8f0',
-                textTransform: 'uppercase',
+                fontWeight: 500,
+                background: 'var(--ink-2)',
+                color: 'var(--ink-fg-2)',
+                padding: '10px 16px',
+                borderBottom: '1px solid var(--ink-3)',
               }}
             >
               <span>SKU</span>
-              <span>PRODUCT NAME</span>
-              <span style={{ textAlign: 'right' }}>STOCK</span>
-              <span style={{ textAlign: 'right' }}>WAC COST</span>
-              <span style={{ textAlign: 'right' }}>MIN BARG.</span>
-              <span style={{ textAlign: 'right' }}>MAX LIST</span>
-              <span style={{ textAlign: 'right' }}>SELLING</span>
-              <span style={{ textAlign: 'center' }}>ACTIONS</span>
+              <span>Product</span>
+              <span style={{ textAlign: 'right' }}>Stock</span>
+              <span style={{ textAlign: 'right' }}>Cost</span>
+              <span style={{ textAlign: 'right' }}>Min</span>
+              <span style={{ textAlign: 'right' }}>Max</span>
+              <span style={{ textAlign: 'right' }}>Selling</span>
+              <span style={{ textAlign: 'center' }}>Actions</span>
             </div>
-
-            {filteredItems.map((item) => {
-              const isArchived = item.is_active === 0;
+            {filteredItems.map((item, idx) => {
+              const archived = item.is_active === 0;
               return (
                 <div
                   key={item.id}
                   style={{
                     display: 'grid',
                     gridTemplateColumns:
-                      '0.8fr 2fr 0.8fr 0.8fr 0.8fr 0.8fr 1fr 1.2fr',
-                    fontSize: '0.78rem',
+                      '0.8fr 2fr 0.8fr 0.9fr 0.9fr 0.9fr 1fr 1.2fr',
+                    fontSize: '0.8rem',
                     alignItems: 'center',
-                    background: isArchived ? '#f8fafc' : '#ffffff',
-                    padding: '10px',
-                    borderBottom: '1px solid #f1f5f9',
-                    opacity: isArchived ? 0.7 : 1,
+                    background: archived ? 'var(--ink-1)' : 'var(--ink-0)',
+                    padding: '10px 16px',
+                    borderBottom:
+                      idx === filteredItems.length - 1
+                        ? 'none'
+                        : '1px solid var(--ink-3)',
                   }}
                 >
                   <span
                     className="monospace"
                     style={{
                       fontSize: '0.72rem',
-                      color: 'var(--text-secondary)',
-                      fontFamily: "'JetBrains Mono', monospace",
+                      color: 'var(--ink-fg-3)',
                     }}
                   >
                     {item.code}
                   </span>
-
-                  {/* Thumbnail + Name */}
                   <div
                     style={{
                       display: 'flex',
@@ -690,14 +1018,14 @@ export default function Inventory({ currentUser }) {
                   >
                     <div
                       style={{
-                        width: '36px',
-                        height: '36px',
-                        background: 'var(--bg-hover)',
+                        width: '28px',
+                        height: '28px',
+                        background: 'var(--ink-2)',
                         borderRadius: '6px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        border: '1px solid var(--border-color)',
+                        border: '1px solid var(--ink-3)',
                         flexShrink: 0,
                       }}
                     >
@@ -708,16 +1036,16 @@ export default function Inventory({ currentUser }) {
                           style={{
                             width: '100%',
                             height: '100%',
-                            objectFit: 'contain',
+                            objectFit: 'cover',
                             borderRadius: '6px',
                           }}
                         />
                       ) : (
                         <span
                           style={{
-                            fontSize: '0.75rem',
-                            fontWeight: '800',
-                            color: '#94a3b8',
+                            fontSize: '0.65rem',
+                            fontWeight: 600,
+                            color: 'var(--ink-fg-3)',
                           }}
                         >
                           {getInitials(item.name)}
@@ -726,1072 +1054,527 @@ export default function Inventory({ currentUser }) {
                     </div>
                     <div
                       style={{
-                        fontWeight: '700',
-                        color: 'var(--text-primary)',
+                        fontWeight: 500,
+                        color: 'var(--ink-fg)',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                       }}
                     >
-                      {item.name}{' '}
-                      {isArchived && (
-                        <span style={{ fontSize: '0.65rem', color: '#d97706' }}>
-                          (Archived)
+                      {item.name}
+                      {archived && (
+                        <span
+                          style={{
+                            marginLeft: '6px',
+                            fontSize: '0.68rem',
+                            color: 'var(--ink-fg-3)',
+                          }}
+                        >
+                          Archived
                         </span>
                       )}
                     </div>
                   </div>
-
                   <span
-                    className="monospace"
+                    className="monospace tabular"
                     style={{
                       textAlign: 'right',
-                      fontWeight: '700',
-                      fontFamily: "'JetBrains Mono', monospace",
-                      color: item.stock_qty <= 5 ? 'var(--danger)' : '#1e293b',
+                      color:
+                        item.stock_qty <= 5 && !archived
+                          ? 'var(--ink-danger)'
+                          : 'var(--ink-fg-2)',
                     }}
                   >
-                    {item.stock_qty} {item.unit}
+                    {item.stock_qty} {item.unit || ''}
                   </span>
                   <span
-                    className="monospace"
-                    style={{
-                      textAlign: 'right',
-                      color: 'var(--text-secondary)',
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
+                    className="monospace tabular"
+                    style={{ textAlign: 'right', color: 'var(--ink-fg-2)' }}
                   >
-                    Rs. {item.avg_cost?.toFixed(0)}
+                    {fmt2(item.avg_cost)}
                   </span>
                   <span
-                    className="monospace"
-                    style={{
-                      textAlign: 'right',
-                      color: 'var(--brand-primary)',
-                      fontWeight: '700',
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
+                    className="monospace tabular"
+                    style={{ textAlign: 'right', color: 'var(--ink-fg-2)' }}
                   >
-                    Rs. {item.min_price || 0}
+                    {fmt2(item.min_price)}
                   </span>
                   <span
-                    className="monospace"
-                    style={{
-                      textAlign: 'right',
-                      color: 'var(--text-secondary)',
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
+                    className="monospace tabular"
+                    style={{ textAlign: 'right', color: 'var(--ink-fg-2)' }}
                   >
-                    Rs. {item.max_price || 0}
+                    {fmt2(item.max_price)}
                   </span>
                   <span
-                    className="monospace"
+                    className="monospace tabular"
                     style={{
                       textAlign: 'right',
-                      fontWeight: '800',
-                      color: 'var(--brand-primary)',
-                      fontFamily: "'JetBrains Mono', monospace",
+                      fontWeight: 600,
+                      color: 'var(--ink-fg)',
                     }}
                   >
-                    Rs. {item.selling_price?.toFixed(2)}
+                    {fmt2(item.selling_price)}
                   </span>
-
                   <div
                     style={{
                       display: 'flex',
                       justifyContent: 'center',
-                      gap: '6px',
+                      gap: '4px',
                     }}
                   >
                     <button
-                      style={{
-                        fontSize: '0.7rem',
-                        padding: '4px 8px',
-                        background: 'var(--brand-primary)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontWeight: 'bold',
-                      }}
                       onClick={() => {
                         setEditingItem(item);
                         setEditMarginType('custom');
                         setIsEditModalOpen(true);
                       }}
-                    >
-                      ✏️
-                    </button>
-                    <button
+                      aria-label="Edit"
                       style={{
-                        fontSize: '0.7rem',
                         padding: '4px 8px',
-                        background: isArchived ? 'var(--success)' : '#d97706',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '4px',
+                        fontSize: '0.7rem',
+                        fontWeight: 500,
+                        background: 'var(--ink-1)',
+                        color: 'var(--ink-fg)',
+                        border: '1px solid var(--ink-3)',
+                        borderRadius: '6px',
                         cursor: 'pointer',
-                        fontWeight: 'bold',
                       }}
-                      onClick={() => handleToggleArchive(item)}
                     >
-                      {isArchived ? '🔄' : '📦'}
+                      Edit
                     </button>
+                    {confirmArchive === item.id ? (
+                      <>
+                        <button
+                          onClick={() => handleToggleArchive(item)}
+                          style={{
+                            padding: '4px 8px',
+                            fontSize: '0.7rem',
+                            fontWeight: 500,
+                            background: 'var(--ink-danger)',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          onClick={() => setConfirmArchive(null)}
+                          style={{
+                            padding: '4px 8px',
+                            fontSize: '0.7rem',
+                            fontWeight: 500,
+                            background: 'var(--ink-1)',
+                            color: 'var(--ink-fg-2)',
+                            border: '1px solid var(--ink-3)',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmArchive(item.id)}
+                        aria-label={archived ? 'Reactivate' : 'Archive'}
+                        style={{
+                          padding: '4px 8px',
+                          background: 'var(--ink-1)',
+                          color: 'var(--ink-fg-2)',
+                          border: '1px solid var(--ink-3)',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        {archived ? <RestoreIcon /> : <ArchiveIcon />}
+                      </button>
+                    )}
                   </div>
                 </div>
               );
             })}
           </div>
         )}
-
-        {filteredItems.length === 0 && (
-          <div
-            style={{
-              textAlign: 'center',
-              color: '#94a3b8',
-              padding: '50px 0',
-              fontSize: '0.85rem',
-            }}
-          >
-            No inventory products found matching your filter.
-          </div>
-        )}
       </div>
 
-      {/* --- ADD PRODUCT MODAL (2-COLUMN LAYOUT) --- */}
+      {/* ─────────── ADD MODAL ─────────── */}
       {isAddModalOpen && (
-        <div
-          className="receipt-modal-backdrop"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.6)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 50,
-          }}
-        >
-          <div
-            className="card"
-            style={{
-              width: '700px',
-              background: 'var(--bg-card)',
-              padding: '24px',
-              borderRadius: '12px',
-              border: '1px solid var(--border-color)',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '16px',
-                borderBottom: '1px solid #e2e8f0',
-                paddingBottom: '12px',
-              }}
-            >
-              <h3
-                style={{
-                  margin: 0,
-                  color: 'var(--text-primary)',
-                  fontSize: '1.1rem',
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                }}
-              >
-                + Register New Product
-              </h3>
-              <button
-                style={{
-                  background: 'var(--bg-hover)',
-                  border: 'none',
-                  padding: '6px 10px',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                }}
-                onClick={() => setIsAddModalOpen(false)}
-              >
-                ✕
-              </button>
-            </div>
-
-            <form
-              onSubmit={handleRegisterItem}
-              style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
-            >
-              {/* 2 Columns for Fields */}
-              <div style={{ display: 'flex', gap: '24px' }}>
-                {/* Left Column: Details */}
-                <div
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px',
-                  }}
-                >
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: '#475569',
-                      }}
-                    >
-                      SKU (Auto-Generated)
-                    </label>
-                    <input
-                      type="text"
-                      className="input-field monospace"
-                      style={{
-                        background: 'var(--bg-hover)',
-                        padding: '10px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
-                      value={itemForm.code}
-                      readOnly
-                    />
-                  </div>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: '#475569',
-                      }}
-                    >
-                      Item Name
-                    </label>
-                    <input
-                      type="text"
-                      className="input-field"
-                      style={{
-                        padding: '10px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
-                      value={itemForm.name}
-                      onChange={(e) =>
-                        setItemForm({ ...itemForm, name: e.target.value })
-                      }
-                      placeholder="e.g. Wireless Mouse"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: '#475569',
-                      }}
-                    >
-                      Category
-                    </label>
-                    <input
-                      type="text"
-                      className="input-field"
-                      style={{
-                        padding: '10px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
-                      value={itemForm.category}
-                      onChange={(e) =>
-                        setItemForm({ ...itemForm, category: e.target.value })
-                      }
-                      placeholder="e.g. Electronics"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: '#475569',
-                      }}
-                    >
-                      Unit of Measure
-                    </label>
-                    <input
-                      type="text"
-                      className="input-field"
-                      style={{
-                        padding: '10px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
-                      value={itemForm.unit}
-                      onChange={(e) =>
-                        setItemForm({ ...itemForm, unit: e.target.value })
-                      }
-                      placeholder="Pcs"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: '#475569',
-                      }}
-                    >
-                      Product Thumbnail
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e, false)}
-                      style={{
-                        fontSize: '0.8rem',
-                        marginTop: '6px',
-                        display: 'block',
-                      }}
-                    />
-                    {itemForm.image_path && (
-                      <div style={{ marginTop: '8px' }}>
-                        <img
-                          src={itemForm.image_path}
-                          alt="Preview"
-                          style={{
-                            width: '60px',
-                            height: '60px',
-                            borderRadius: '6px',
-                            objectFit: 'contain',
-                            border: '1px solid var(--border-strong)',
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Right Column: Pricing */}
-                <div
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px',
-                    background: 'var(--bg-hover)',
-                    padding: '16px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)',
-                  }}
-                >
-                  <h4
-                    style={{
-                      margin: 0,
-                      fontSize: '0.85rem',
-                      fontWeight: '800',
-                      color: 'var(--brand-primary)',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    Pricing Strategy
-                  </h4>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: '#475569',
-                      }}
-                    >
-                      Initial Unit Cost (WAC)
-                    </label>
-                    <input
-                      type="number"
-                      className="input-field"
-                      style={{
-                        padding: '10px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
-                      value={itemForm.avg_cost}
-                      onChange={(e) => {
-                        const newCost = parseFloat(e.target.value) || 0;
-                        const newSp =
-                          calculateSellingPrice(newCost, addMarginType) ||
-                          itemForm.selling_price;
-                        setItemForm({
-                          ...itemForm,
-                          avg_cost: newCost,
-                          selling_price: newSp,
-                        });
-                      }}
-                      placeholder="800"
-                    />
-                  </div>
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr',
-                      gap: '12px',
-                    }}
-                  >
-                    <div>
-                      <label
-                        style={{
-                          fontSize: '0.75rem',
-                          fontWeight: '700',
-                          color: '#475569',
-                        }}
-                      >
-                        Margin %
-                      </label>
-                      <select
-                        className="input-field"
-                        style={{
-                          padding: '10px',
-                          borderRadius: '6px',
-                          border: '1px solid var(--border-strong)',
-                          width: '100%',
-                        }}
-                        value={addMarginType}
-                        onChange={(e) => {
-                          const mType = e.target.value;
-                          setAddMarginType(mType);
-                          const newSp = calculateSellingPrice(
-                            itemForm.avg_cost,
-                            mType,
-                          );
-                          if (newSp !== null)
-                            setItemForm({ ...itemForm, selling_price: newSp });
-                        }}
-                      >
-                        <option value="custom">Manual</option>
-                        <option value="10">10%</option>
-                        <option value="15">15%</option>
-                        <option value="20">20%</option>
-                        <option value="25">25%</option>
-                        <option value="50">50%</option>
-                        <option value="100">100%</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label
-                        style={{
-                          fontSize: '0.75rem',
-                          fontWeight: '700',
-                          color: '#475569',
-                        }}
-                      >
-                        Selling Price*
-                      </label>
-                      <input
-                        type="number"
-                        className="input-field"
-                        style={{
-                          padding: '10px',
-                          borderRadius: '6px',
-                          border: '1px solid var(--border-strong)',
-                          width: '100%',
-                        }}
-                        value={itemForm.selling_price}
-                        onChange={(e) => {
-                          setItemForm({
-                            ...itemForm,
-                            selling_price: parseFloat(e.target.value) || 0,
-                          });
-                          setAddMarginType('custom');
-                        }}
-                        placeholder="1200"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr',
-                      gap: '12px',
-                    }}
-                  >
-                    <div>
-                      <label
-                        style={{
-                          fontSize: '0.75rem',
-                          fontWeight: '700',
-                          color: '#475569',
-                        }}
-                      >
-                        Min Bargain Price
-                      </label>
-                      <input
-                        type="number"
-                        className="input-field"
-                        style={{
-                          padding: '10px',
-                          borderRadius: '6px',
-                          border: '1px solid var(--border-strong)',
-                          width: '100%',
-                        }}
-                        value={itemForm.min_price}
-                        onChange={(e) =>
-                          setItemForm({
-                            ...itemForm,
-                            min_price: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                        placeholder="1000"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        style={{
-                          fontSize: '0.75rem',
-                          fontWeight: '700',
-                          color: '#475569',
-                        }}
-                      >
-                        Max List Price
-                      </label>
-                      <input
-                        type="number"
-                        className="input-field"
-                        style={{
-                          padding: '10px',
-                          borderRadius: '6px',
-                          border: '1px solid var(--border-strong)',
-                          width: '100%',
-                        }}
-                        value={itemForm.max_price}
-                        onChange={(e) =>
-                          setItemForm({
-                            ...itemForm,
-                            max_price: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                        placeholder="1500"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom: Action Buttons */}
-              <div
-                style={{
-                  display: 'flex',
-                  gap: '10px',
-                  justifyContent: 'flex-end',
-                  borderTop: '1px solid #e2e8f0',
-                  paddingTop: '16px',
-                }}
-              >
-                <button
-                  type="button"
-                  className="btn"
-                  style={{
-                    padding: '10px 20px',
-                    background: '#e2e8f0',
-                    color: 'var(--text-primary)',
-                    fontWeight: 'bold',
-                    borderRadius: '6px',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => setIsAddModalOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  style={{
-                    padding: '10px 24px',
-                    background: 'var(--brand-primary)',
-                    color: '#fff',
-                    fontWeight: 'bold',
-                    borderRadius: '6px',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Save Product
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <ProductModal
+          title="Add product"
+          form={itemForm}
+          setForm={setItemForm}
+          marginType={addMarginType}
+          setMarginType={setAddMarginType}
+          onSubmit={handleRegisterItem}
+          onClose={() => setIsAddModalOpen(false)}
+          onImage={(e) => handleImageUpload(e, false)}
+          isNew
+        />
       )}
 
-      {/* --- EDIT PRODUCT MODAL (2-COLUMN LAYOUT) --- */}
+      {/* ─────────── EDIT MODAL ─────────── */}
       {isEditModalOpen && editingItem && (
+        <ProductModal
+          title="Edit product"
+          form={editingItem}
+          setForm={setEditingItem}
+          marginType={editMarginType}
+          setMarginType={setEditMarginType}
+          onSubmit={handleSaveEdit}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditingItem(null);
+          }}
+          onImage={(e) => handleImageUpload(e, true)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Shared Modal
+// ─────────────────────────────────────────────────────────────
+function ProductModal({
+  title,
+  form,
+  setForm,
+  marginType,
+  setMarginType,
+  onSubmit,
+  onClose,
+  onImage,
+  isNew = false,
+}) {
+  const calculateSellingPrice = (cost, m) => {
+    if (m === 'custom') return null;
+    const base = parseFloat(cost) || 0;
+    const pct = parseFloat(m) || 0;
+    return Math.round((base + base * (pct / 100)) * 100) / 100;
+  };
+
+  return (
+    <div
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.55)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 50,
+        padding: '16px',
+      }}
+    >
+      <div
+        style={{
+          width: '720px',
+          maxWidth: '100%',
+          maxHeight: '92vh',
+          overflowY: 'auto',
+          background: 'var(--ink-0)',
+          padding: '20px',
+          borderRadius: '12px',
+          border: '1px solid var(--ink-3)',
+        }}
+      >
         <div
-          className="receipt-modal-backdrop"
           style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.6)',
             display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 50,
+            marginBottom: '16px',
+            paddingBottom: '12px',
+            borderBottom: '1px solid var(--ink-3)',
           }}
         >
-          <div
-            className="card"
+          <h3
             style={{
-              width: '700px',
-              background: 'var(--bg-card)',
-              padding: '24px',
-              borderRadius: '12px',
-              border: '1px solid var(--border-color)',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+              margin: 0,
+              color: 'var(--ink-fg)',
+              fontSize: '1rem',
+              fontWeight: 600,
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
           >
+            {title}
+          </h3>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              background: 'var(--ink-1)',
+              border: '1px solid var(--ink-3)',
+              color: 'var(--ink-fg-2)',
+              padding: '6px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            <CloseIcon />
+          </button>
+        </div>
+
+        <form
+          onSubmit={onSubmit}
+          style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              gap: '20px',
+              flexWrap: 'wrap',
+            }}
+          >
+            {/* Left */}
             <div
               style={{
+                flex: '1 1 260px',
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '16px',
-                borderBottom: '1px solid #e2e8f0',
-                paddingBottom: '12px',
+                flexDirection: 'column',
+                gap: '12px',
               }}
             >
-              <h3
-                style={{
-                  margin: 0,
-                  color: 'var(--text-primary)',
-                  fontSize: '1.1rem',
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                }}
-              >
-                ✏️ Edit Product
-              </h3>
-              <button
-                style={{
-                  background: 'var(--bg-hover)',
-                  border: 'none',
-                  padding: '6px 10px',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                }}
-                onClick={() => setIsEditModalOpen(false)}
-              >
-                ✕
-              </button>
+              <Field label="SKU (auto-generated)">
+                <input
+                  type="text"
+                  className="monospace"
+                  style={{
+                    ...inputStyle,
+                    background: 'var(--ink-1)',
+                    color: 'var(--ink-fg-2)',
+                  }}
+                  value={form.code}
+                  readOnly={isNew}
+                  disabled={!isNew}
+                />
+              </Field>
+              <Field label="Name">
+                <input
+                  type="text"
+                  style={inputStyle}
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="Wireless mouse"
+                  required
+                />
+              </Field>
+              <Field label="Category">
+                <input
+                  type="text"
+                  style={inputStyle}
+                  value={form.category}
+                  onChange={(e) =>
+                    setForm({ ...form, category: e.target.value })
+                  }
+                  placeholder="Electronics"
+                />
+              </Field>
+              <Field label="Unit">
+                <input
+                  type="text"
+                  style={inputStyle}
+                  value={form.unit}
+                  onChange={(e) => setForm({ ...form, unit: e.target.value })}
+                  placeholder="Pcs"
+                />
+              </Field>
+              <Field label="Thumbnail">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={onImage}
+                  style={{ fontSize: '0.78rem', color: 'var(--ink-fg-2)' }}
+                />
+                {form.image_path && (
+                  <div style={{ marginTop: '8px' }}>
+                    <img
+                      src={form.image_path}
+                      alt="Preview"
+                      style={{
+                        width: '52px',
+                        height: '52px',
+                        borderRadius: '6px',
+                        objectFit: 'cover',
+                        border: '1px solid var(--ink-3)',
+                      }}
+                    />
+                  </div>
+                )}
+              </Field>
             </div>
 
-            <form
-              onSubmit={handleSaveEdit}
-              style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
+            {/* Right — pricing */}
+            <div
+              style={{
+                flex: '1 1 260px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                background: 'var(--ink-1)',
+                padding: '14px',
+                borderRadius: '10px',
+                border: '1px solid var(--ink-3)',
+              }}
             >
-              {/* 2 Columns for Fields */}
-              <div style={{ display: 'flex', gap: '24px' }}>
-                {/* Left Column: Details */}
-                <div
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px',
-                  }}
-                >
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: '#475569',
-                      }}
-                    >
-                      SKU (Locked)
-                    </label>
-                    <input
-                      type="text"
-                      className="input-field monospace"
-                      style={{
-                        background: 'var(--bg-hover)',
-                        padding: '10px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
-                      value={editingItem.code}
-                      disabled
-                    />
-                  </div>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: '#475569',
-                      }}
-                    >
-                      Item Name
-                    </label>
-                    <input
-                      type="text"
-                      className="input-field"
-                      style={{
-                        padding: '10px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
-                      value={editingItem.name}
-                      onChange={(e) =>
-                        setEditingItem({ ...editingItem, name: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: '#475569',
-                      }}
-                    >
-                      Category
-                    </label>
-                    <input
-                      type="text"
-                      className="input-field"
-                      style={{
-                        padding: '10px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
-                      value={editingItem.category}
-                      onChange={(e) =>
-                        setEditingItem({
-                          ...editingItem,
-                          category: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: '#475569',
-                      }}
-                    >
-                      Unit
-                    </label>
-                    <input
-                      type="text"
-                      className="input-field"
-                      style={{
-                        padding: '10px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
-                      value={editingItem.unit}
-                      onChange={(e) =>
-                        setEditingItem({ ...editingItem, unit: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: '#475569',
-                      }}
-                    >
-                      Update Thumbnail
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e, true)}
-                      style={{
-                        fontSize: '0.8rem',
-                        marginTop: '6px',
-                        display: 'block',
-                      }}
-                    />
-                    {editingItem.image_path && (
-                      <div style={{ marginTop: '8px' }}>
-                        <img
-                          src={editingItem.image_path}
-                          alt="Preview"
-                          style={{
-                            width: '60px',
-                            height: '60px',
-                            borderRadius: '6px',
-                            objectFit: 'contain',
-                            border: '1px solid var(--border-strong)',
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Right Column: Pricing */}
-                <div
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px',
-                    background: 'var(--bg-hover)',
-                    padding: '16px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)',
-                  }}
-                >
-                  <h4
-                    style={{
-                      margin: 0,
-                      fontSize: '0.85rem',
-                      fontWeight: '800',
-                      color: 'var(--brand-primary)',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    Pricing Details
-                  </h4>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        color: '#475569',
-                      }}
-                    >
-                      Unit Cost (WAC)
-                    </label>
-                    <input
-                      type="number"
-                      className="input-field"
-                      style={{
-                        padding: '10px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-strong)',
-                        width: '100%',
-                      }}
-                      value={editingItem.avg_cost}
-                      onChange={(e) => {
-                        const newCost = parseFloat(e.target.value) || 0;
-                        const newSp =
-                          calculateSellingPrice(newCost, editMarginType) ||
-                          editingItem.selling_price;
-                        setEditingItem({
-                          ...editingItem,
-                          avg_cost: newCost,
-                          selling_price: newSp,
-                        });
-                      }}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr',
-                      gap: '12px',
-                    }}
-                  >
-                    <div>
-                      <label
-                        style={{
-                          fontSize: '0.75rem',
-                          fontWeight: '700',
-                          color: '#475569',
-                        }}
-                      >
-                        Margin %
-                      </label>
-                      <select
-                        className="input-field"
-                        style={{
-                          padding: '10px',
-                          borderRadius: '6px',
-                          border: '1px solid var(--border-strong)',
-                          width: '100%',
-                        }}
-                        value={editMarginType}
-                        onChange={(e) => {
-                          const mType = e.target.value;
-                          setEditMarginType(mType);
-                          const newSp = calculateSellingPrice(
-                            editingItem.avg_cost,
-                            mType,
-                          );
-                          if (newSp !== null)
-                            setEditingItem({
-                              ...editingItem,
-                              selling_price: newSp,
-                            });
-                        }}
-                      >
-                        <option value="custom">Manual</option>
-                        <option value="10">10%</option>
-                        <option value="15">15%</option>
-                        <option value="20">20%</option>
-                        <option value="25">25%</option>
-                        <option value="50">50%</option>
-                        <option value="100">100%</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label
-                        style={{
-                          fontSize: '0.75rem',
-                          fontWeight: '700',
-                          color: '#475569',
-                        }}
-                      >
-                        Selling Price*
-                      </label>
-                      <input
-                        type="number"
-                        className="input-field"
-                        style={{
-                          padding: '10px',
-                          borderRadius: '6px',
-                          border: '1px solid var(--border-strong)',
-                          width: '100%',
-                        }}
-                        value={editingItem.selling_price}
-                        onChange={(e) => {
-                          setEditingItem({
-                            ...editingItem,
-                            selling_price: parseFloat(e.target.value) || 0,
-                          });
-                          setEditMarginType('custom');
-                        }}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr',
-                      gap: '12px',
-                    }}
-                  >
-                    <div>
-                      <label
-                        style={{
-                          fontSize: '0.75rem',
-                          fontWeight: '700',
-                          color: '#475569',
-                        }}
-                      >
-                        Min Bargain Price
-                      </label>
-                      <input
-                        type="number"
-                        className="input-field"
-                        style={{
-                          padding: '10px',
-                          borderRadius: '6px',
-                          border: '1px solid var(--border-strong)',
-                          width: '100%',
-                        }}
-                        value={editingItem.min_price}
-                        onChange={(e) =>
-                          setEditingItem({
-                            ...editingItem,
-                            min_price: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <label
-                        style={{
-                          fontSize: '0.75rem',
-                          fontWeight: '700',
-                          color: '#475569',
-                        }}
-                      >
-                        Max List Price
-                      </label>
-                      <input
-                        type="number"
-                        className="input-field"
-                        style={{
-                          padding: '10px',
-                          borderRadius: '6px',
-                          border: '1px solid var(--border-strong)',
-                          width: '100%',
-                        }}
-                        value={editingItem.max_price}
-                        onChange={(e) =>
-                          setEditingItem({
-                            ...editingItem,
-                            max_price: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom: Action Buttons */}
               <div
                 style={{
-                  display: 'flex',
-                  gap: '10px',
-                  justifyContent: 'flex-end',
-                  borderTop: '1px solid #e2e8f0',
-                  paddingTop: '16px',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  color: 'var(--ink-fg)',
                 }}
               >
-                <button
-                  type="button"
-                  className="btn"
-                  style={{
-                    padding: '10px 20px',
-                    background: '#e2e8f0',
-                    color: 'var(--text-primary)',
-                    fontWeight: 'bold',
-                    borderRadius: '6px',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => setIsEditModalOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  style={{
-                    padding: '10px 24px',
-                    background: 'var(--brand-primary)',
-                    color: '#fff',
-                    fontWeight: 'bold',
-                    borderRadius: '6px',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Save Changes
-                </button>
+                Pricing
               </div>
-            </form>
+              <Field label="Unit cost">
+                <input
+                  type="number"
+                  className="monospace tabular"
+                  style={inputStyle}
+                  value={form.avg_cost}
+                  onChange={(e) => {
+                    const cost = parseFloat(e.target.value) || 0;
+                    const sp =
+                      calculateSellingPrice(cost, marginType) ??
+                      form.selling_price;
+                    setForm({ ...form, avg_cost: cost, selling_price: sp });
+                  }}
+                />
+              </Field>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '10px',
+                }}
+              >
+                <Field label="Margin">
+                  <select
+                    style={inputStyle}
+                    value={marginType}
+                    onChange={(e) => {
+                      const m = e.target.value;
+                      setMarginType(m);
+                      const sp = calculateSellingPrice(form.avg_cost, m);
+                      if (sp !== null) setForm({ ...form, selling_price: sp });
+                    }}
+                  >
+                    <option value="custom">Manual</option>
+                    {[10, 15, 20, 25, 50, 100].map((p) => (
+                      <option key={p} value={p}>
+                        {p}%
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Selling price *">
+                  <input
+                    type="number"
+                    className="monospace tabular"
+                    style={inputStyle}
+                    value={form.selling_price}
+                    onChange={(e) => {
+                      setForm({
+                        ...form,
+                        selling_price: parseFloat(e.target.value) || 0,
+                      });
+                      setMarginType('custom');
+                    }}
+                    required
+                  />
+                </Field>
+              </div>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '10px',
+                }}
+              >
+                <Field label="Min price">
+                  <input
+                    type="number"
+                    className="monospace tabular"
+                    style={inputStyle}
+                    value={form.min_price}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        min_price: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </Field>
+                <Field label="Max price">
+                  <input
+                    type="number"
+                    className="monospace tabular"
+                    style={inputStyle}
+                    value={form.max_price}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        max_price: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </Field>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+
+          <div
+            style={{
+              display: 'flex',
+              gap: '8px',
+              justifyContent: 'flex-end',
+              borderTop: '1px solid var(--ink-3)',
+              paddingTop: '16px',
+            }}
+          >
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                padding: '8px 16px',
+                background: 'var(--ink-1)',
+                color: 'var(--ink-fg-2)',
+                fontWeight: 500,
+                borderRadius: '8px',
+                border: '1px solid var(--ink-3)',
+                cursor: 'pointer',
+                fontSize: '0.8rem',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              style={{
+                padding: '8px 20px',
+                background: 'var(--brand-primary)',
+                color: '#ffffff',
+                fontWeight: 500,
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '0.8rem',
+              }}
+            >
+              {isNew ? 'Save product' : 'Save changes'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
