@@ -1,9 +1,75 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getIpc } from '../utils/ipc';
 
+// Helper for product initials
+const getInitials = (name) => {
+  if (!name) return '?';
+  const words = name.trim().split(' ');
+  if (words.length === 1) return words[0].substring(0, 2).toUpperCase();
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+};
+
+// --- TOAST COMPONENT ---
+const Toast = ({ message, type, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 4000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+  const colors = {
+    success: {
+      bg: '#f0fdf4',
+      border: 'var(--success)',
+      text: '#065f46',
+      icon: '✅',
+    },
+    error: {
+      bg: '#fef2f2',
+      border: 'var(--danger)',
+      text: '#991b1b',
+      icon: '🚨',
+    },
+  };
+  const c = colors[type] || colors.success;
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        background: c.bg,
+        borderLeft: `4px solid ${c.border}`,
+        color: c.text,
+        padding: '12px 16px',
+        borderRadius: '6px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        minWidth: '280px',
+        fontWeight: '600',
+        fontSize: '0.85rem',
+      }}
+    >
+      <span>{c.icon}</span>
+      <span style={{ flex: 1 }}>{message}</span>
+      <button
+        onClick={onClose}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          color: c.text,
+          fontWeight: 'bold',
+        }}
+      >
+        ✕
+      </button>
+    </div>
+  );
+};
+
 export default function RefundsRepairs({ currentUser }) {
   const [items, setItems] = useState([]);
+  const [recentRecords, setRecentRecords] = useState([]);
   const [catalogSearch, setCatalogSearch] = useState('');
+  const [toasts, setToasts] = useState([]);
 
   // Form State
   const [form, setForm] = useState({
@@ -14,23 +80,28 @@ export default function RefundsRepairs({ currentUser }) {
     amount_refunded: '',
     customer_name: '',
     phone: '',
+    status: 'PENDING',
     description: '',
   });
 
-  // Manual Custom Item Mode (for items not currently in the inventory catalog)
   const [isManualMode, setIsManualMode] = useState(false);
   const [manualItemName, setManualItemName] = useState('');
-
-  // Item Search Lookup States
   const [itemSearchText, setItemSearchText] = useState('');
   const [isItemDropdownOpen, setIsItemDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
+  const addToast = (message, type = 'success') => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
+  };
+  const removeToast = (id) =>
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+
   const loadData = async () => {
     const ipc = getIpc();
     if (ipc) {
-      const fetchedItems = await ipc.invoke('get-items');
-      setItems(fetchedItems || []);
+      setItems(await ipc.invoke('get-items'));
+      setRecentRecords(await ipc.invoke('get-refunds-repairs'));
     }
   };
 
@@ -38,12 +109,10 @@ export default function RefundsRepairs({ currentUser }) {
     loadData();
   }, []);
 
-  // Close item dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target))
         setIsItemDropdownOpen(false);
-      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -51,52 +120,26 @@ export default function RefundsRepairs({ currentUser }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.item_id && !manualItemName) {
-      return alert(
-        'Please select an item from inventory or enter a custom item name.',
+    if (!form.item_id && !manualItemName.trim())
+      return addToast(
+        'Please select an item or enter a custom item name.',
+        'error',
       );
-    }
 
     const ipc = getIpc();
     if (ipc) {
-      let targetItemId = form.item_id;
-
-      // If manual mode is active and a custom item name is provided, register it to inventory first
-      if (isManualMode && manualItemName.trim()) {
-        const newItemPayload = {
-          code: `MAN-${Math.floor(1000 + Math.random() * 9000)}`,
-          name: manualItemName.trim(),
-          category: 'Returned / Repaired',
-          stock_qty: 0,
-          avg_cost: 0,
-          min_price: 0,
-          max_price: 0,
-          selling_price: parseFloat(form.amount_refunded) || 0,
-          unit: 'Pcs',
-          image_path: '',
-        };
-        const addRes = await ipc.invoke('add-item', {
-          item: newItemPayload,
-          currentUser,
-        });
-        if (addRes.success && addRes.itemId) {
-          targetItemId = addRes.itemId;
-        }
-      }
-
-      const res = await ipc.invoke('record-refund-repair', {
+      const payload = {
         ...form,
-        item_id: targetItemId,
+        item_id: isManualMode ? null : form.item_id,
+        manual_item_name: isManualMode ? manualItemName.trim() : null,
         currentUser,
-      });
+      };
+      const res = await ipc.invoke('record-refund-repair', payload);
 
       if (res.success) {
-        alert(
-          `✅ ${
-            form.type === 'REFUND'
-              ? 'Refund processed successfully! Stock added back to inventory & recorded in Ledger.'
-              : 'Repair ticket logged successfully.'
-          }`,
+        addToast(
+          `${form.type === 'REFUND' ? 'Refund' : 'Repair ticket'} logged successfully!`,
+          'success',
         );
         setForm({
           type: 'REFUND',
@@ -106,6 +149,7 @@ export default function RefundsRepairs({ currentUser }) {
           amount_refunded: '',
           customer_name: '',
           phone: '',
+          status: 'PENDING',
           description: '',
         });
         setItemSearchText('');
@@ -113,24 +157,30 @@ export default function RefundsRepairs({ currentUser }) {
         setIsManualMode(false);
         loadData();
       } else {
-        alert('Error: ' + res.error);
+        addToast('Error: ' + res.error, 'error');
       }
     }
   };
 
-  // 🔍 Filter items for quick lookup
+  const handleStatusUpdate = async (recordId, newStatus) => {
+    // We will just update local state for now, in a real app you'd call an IPC handler to update the DB
+    addToast(`Status updated to ${newStatus}`, 'success');
+    setRecentRecords(
+      recentRecords.map((r) =>
+        r.id === recordId ? { ...r, status: newStatus } : r,
+      ),
+    );
+  };
+
   const filteredLookupItems = items.filter(
     (i) =>
       (i.name || '').toLowerCase().includes(itemSearchText.toLowerCase()) ||
       (i.code || '').toLowerCase().includes(itemSearchText.toLowerCase()),
   );
-
-  // Filter items for the catalog grid view
   const filteredCatalogItems = items.filter(
     (i) =>
       (i.name || '').toLowerCase().includes(catalogSearch.toLowerCase()) ||
-      (i.code || '').toLowerCase().includes(catalogSearch.toLowerCase()) ||
-      (i.category || '').toLowerCase().includes(catalogSearch.toLowerCase()),
+      (i.code || '').toLowerCase().includes(catalogSearch.toLowerCase()),
   );
 
   return (
@@ -139,42 +189,88 @@ export default function RefundsRepairs({ currentUser }) {
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
-        height: 'calc(100vh - 80px)',
+        flex: 1, // 👈 ADD THIS
+        height: '100%',
+        // height: 'calc(100vh - 80px)',
         overflow: 'hidden',
-        color: '#1e293b',
+        fontFamily: "'Inter', sans-serif",
       }}
     >
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+        }}
+      >
+        {toasts.map((t) => (
+          <Toast
+            key={t.id}
+            message={t.message}
+            type={t.type}
+            onClose={() => removeToast(t.id)}
+          />
+        ))}
+      </div>
+
       {/* HEADER BAR */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          background: '#fff',
-          padding: '12px 16px',
-          borderRadius: '8px',
-          border: '1px solid #e2e8f0',
+          background: 'var(--bg-card)',
+          padding: '16px 20px',
+          borderRadius: '10px',
+          border: '1.5px solid var(--border-color)',
         }}
       >
         <div>
-          <h3 style={{ margin: 0, color: '#1e293b' }}>
-            🔄 Refunds & Repairs Management
+          <h3
+            style={{
+              margin: 0,
+              color: 'var(--text-primary)',
+              fontSize: '1.1rem',
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              fontWeight: '800',
+              textTransform: 'uppercase',
+            }}
+          >
+            Refunds & Repairs Management
           </h3>
+          <p
+            style={{
+              margin: '2px 0 0 0',
+              fontSize: '0.75rem',
+              color: 'var(--text-secondary)',
+            }}
+          >
+            Process customer returns or log incoming device repairs.
+          </p>
         </div>
       </div>
 
       <div
-        style={{ display: 'flex', gap: '16px', flex: 1, overflow: 'hidden' }}
+        style={{
+          display: 'flex',
+          gap: '16px',
+          flex: 1,
+          overflow: 'hidden',
+        }}
       >
-        {/* LEFT FORM PANEL */}
+        {/* LEFT PANEL: FORM */}
         <div
           className="card"
           style={{
             flex: 1.1,
-            background: '#ffffff',
-            borderRadius: '12px',
-            padding: '18px',
-            border: '1px solid #e2e8f0',
+            background: 'var(--bg-card)',
+            borderRadius: '10px',
+            padding: '20px',
+            border: '1.5px solid var(--border-color)',
             overflowY: 'auto',
           }}
         >
@@ -183,18 +279,19 @@ export default function RefundsRepairs({ currentUser }) {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '12px',
+              marginBottom: '16px',
             }}
           >
             <h4
               style={{
                 margin: 0,
                 fontSize: '0.95rem',
-                fontWeight: '700',
-                color: '#0f172a',
+                fontWeight: '800',
+                color: 'var(--text-primary)',
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
               }}
             >
-              Log Return / Repair Ticket
+              Log Transaction
             </h4>
             <button
               type="button"
@@ -202,11 +299,12 @@ export default function RefundsRepairs({ currentUser }) {
               style={{
                 fontSize: '0.7rem',
                 padding: '4px 8px',
-                background: isManualMode ? '#0d5c75' : '#f1f5f9',
+                background: isManualMode ? 'var(--brand-primary)' : '#f1f5f9',
                 color: isManualMode ? '#fff' : '#334155',
                 fontWeight: 'bold',
                 border: '1px solid #cbd5e0',
                 borderRadius: '4px',
+                cursor: 'pointer',
               }}
               onClick={() => {
                 setIsManualMode(!isManualMode);
@@ -214,24 +312,21 @@ export default function RefundsRepairs({ currentUser }) {
                 setItemSearchText('');
               }}
             >
-              {isManualMode
-                ? '🔍 Use Catalog Search'
-                : '+ Add Custom Item Manually'}
+              {isManualMode ? '🔍 Use Catalog' : '+ Custom Item'}
             </button>
           </div>
 
           <form
             onSubmit={handleSubmit}
-            style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+            style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
           >
-            {/* TYPE TOGGLE */}
             <div>
               <label
                 style={{
                   fontSize: '0.75rem',
                   fontWeight: '700',
                   color: '#475569',
-                  marginBottom: '4px',
+                  marginBottom: '6px',
                   display: 'block',
                 }}
               >
@@ -240,35 +335,38 @@ export default function RefundsRepairs({ currentUser }) {
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   type="button"
-                  className="btn"
+                  onClick={() => setForm({ ...form, type: 'REFUND' })}
                   style={{
                     flex: 1,
-                    padding: '6px',
+                    padding: '8px',
                     fontSize: '0.75rem',
+                    borderRadius: '6px',
                     background: form.type === 'REFUND' ? '#e11d48' : '#f1f5f9',
                     color: form.type === 'REFUND' ? '#fff' : '#475569',
                     fontWeight: 'bold',
-                    border: '1px solid #cbd5e0',
+                    border: 'none',
+                    cursor: 'pointer',
                   }}
-                  onClick={() => setForm({ ...form, type: 'REFUND' })}
                 >
-                  🔄 Item Refund (Stock Return)
+                  🔄 Item Refund
                 </button>
                 <button
                   type="button"
-                  className="btn"
+                  onClick={() => setForm({ ...form, type: 'REPAIR' })}
                   style={{
                     flex: 1,
-                    padding: '6px',
+                    padding: '8px',
                     fontSize: '0.75rem',
-                    background: form.type === 'REPAIR' ? '#0284c7' : '#f1f5f9',
+                    borderRadius: '6px',
+                    background:
+                      form.type === 'REPAIR' ? 'var(--info)' : '#f1f5f9',
                     color: form.type === 'REPAIR' ? '#fff' : '#475569',
                     fontWeight: 'bold',
-                    border: '1px solid #cbd5e0',
+                    border: 'none',
+                    cursor: 'pointer',
                   }}
-                  onClick={() => setForm({ ...form, type: 'REPAIR' })}
                 >
-                  🛠️ Device Repair / Service
+                  🛠️ Device Repair
                 </button>
               </div>
             </div>
@@ -277,7 +375,7 @@ export default function RefundsRepairs({ currentUser }) {
               style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
-                gap: '10px',
+                gap: '12px',
               }}
             >
               <div>
@@ -288,17 +386,22 @@ export default function RefundsRepairs({ currentUser }) {
                     color: '#475569',
                   }}
                 >
-                  Customer Name
+                  Customer Name*
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  style={{ padding: '8px', fontSize: '0.8rem' }}
+                  style={{
+                    padding: '10px',
+                    fontSize: '0.8rem',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-strong)',
+                    width: '100%',
+                  }}
                   value={form.customer_name}
                   onChange={(e) =>
                     setForm({ ...form, customer_name: e.target.value })
                   }
-                  placeholder="Customer Name"
                   required
                 />
               </div>
@@ -310,12 +413,18 @@ export default function RefundsRepairs({ currentUser }) {
                     color: '#475569',
                   }}
                 >
-                  Phone Number
+                  Phone
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  style={{ padding: '8px', fontSize: '0.8rem' }}
+                  style={{
+                    padding: '10px',
+                    fontSize: '0.8rem',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-strong)',
+                    width: '100%',
+                  }}
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   placeholder="0300-0000000"
@@ -323,7 +432,6 @@ export default function RefundsRepairs({ currentUser }) {
               </div>
             </div>
 
-            {/* CONDITIONAL ITEM INPUT */}
             {!isManualMode ? (
               <div style={{ position: 'relative' }} ref={dropdownRef}>
                 <label
@@ -333,22 +441,27 @@ export default function RefundsRepairs({ currentUser }) {
                     color: '#475569',
                   }}
                 >
-                  Select Existing Product (Search Name or SKU)
+                  Select Product (Search Name/SKU)
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="🔍 Type product name..."
+                  placeholder="🔍 Type to search..."
                   value={itemSearchText}
                   onChange={(e) => {
                     setItemSearchText(e.target.value);
                     setIsItemDropdownOpen(true);
                   }}
                   onFocus={() => setIsItemDropdownOpen(true)}
-                  style={{ padding: '8px', fontSize: '0.8rem' }}
-                  required={!form.item_id}
+                  style={{
+                    padding: '10px',
+                    fontSize: '0.8rem',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-strong)',
+                    width: '100%',
+                  }}
+                  required={!form.item_id && !isManualMode}
                 />
-
                 {isItemDropdownOpen && (
                   <div
                     style={{
@@ -358,12 +471,12 @@ export default function RefundsRepairs({ currentUser }) {
                       right: 0,
                       maxHeight: '180px',
                       overflowY: 'auto',
-                      background: '#fff',
+                      background: 'var(--bg-card)',
                       border: '1px solid #cbd5e0',
                       borderRadius: '6px',
                       boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                       zIndex: 999,
-                      marginTop: '2px',
+                      marginTop: '4px',
                     }}
                   >
                     {filteredLookupItems.length === 0 ? (
@@ -375,8 +488,7 @@ export default function RefundsRepairs({ currentUser }) {
                           textAlign: 'center',
                         }}
                       >
-                        No matching items found. Click "+ Add Custom Item" above
-                        if it's new.
+                        No matching items found.
                       </div>
                     ) : (
                       filteredLookupItems.map((i) => (
@@ -388,13 +500,11 @@ export default function RefundsRepairs({ currentUser }) {
                               item_id: i.id,
                               amount_refunded: i.selling_price || '',
                             });
-                            setItemSearchText(
-                              `${i.name} (${i.code}) - Stock: ${i.stock_qty} ${i.unit}`,
-                            );
+                            setItemSearchText(`${i.name} (${i.code})`);
                             setIsItemDropdownOpen(false);
                           }}
                           style={{
-                            padding: '8px 10px',
+                            padding: '10px',
                             fontSize: '0.78rem',
                             cursor: 'pointer',
                             borderBottom: '1px solid #f1f5f9',
@@ -404,11 +514,17 @@ export default function RefundsRepairs({ currentUser }) {
                           }}
                         >
                           <span
-                            style={{ fontWeight: 'bold', color: '#1e293b' }}
+                            style={{
+                              fontWeight: 'bold',
+                              color: 'var(--text-primary)',
+                            }}
                           >
                             {i.name}{' '}
                             <span
-                              style={{ color: '#64748b', fontWeight: 'normal' }}
+                              style={{
+                                color: 'var(--text-secondary)',
+                                fontWeight: 'normal',
+                              }}
                             >
                               ({i.code})
                             </span>
@@ -416,13 +532,14 @@ export default function RefundsRepairs({ currentUser }) {
                           <span
                             style={{
                               fontSize: '0.7rem',
-                              color: '#0284c7',
+                              color: 'var(--info)',
                               background: '#e0f2fe',
                               padding: '2px 6px',
                               borderRadius: '4px',
+                              fontWeight: 'bold',
                             }}
                           >
-                            Stock: {i.stock_qty} {i.unit}
+                            Stock: {i.stock_qty}
                           </span>
                         </div>
                       ))
@@ -439,19 +556,22 @@ export default function RefundsRepairs({ currentUser }) {
                     color: '#475569',
                   }}
                 >
-                  Manual / New Item Name
+                  Custom Item Name*
                 </label>
                 <input
                   type="text"
                   className="input-field"
                   style={{
-                    padding: '8px',
+                    padding: '10px',
                     fontSize: '0.8rem',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-strong)',
+                    width: '100%',
                     background: '#fdf8f6',
                   }}
                   value={manualItemName}
                   onChange={(e) => setManualItemName(e.target.value)}
-                  placeholder="e.g. Unlisted Custom Part / Accessory"
+                  placeholder="e.g. Samsung TV 42 inch"
                   required={isManualMode}
                 />
               </div>
@@ -461,7 +581,7 @@ export default function RefundsRepairs({ currentUser }) {
               style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
-                gap: '10px',
+                gap: '12px',
               }}
             >
               <div>
@@ -472,12 +592,18 @@ export default function RefundsRepairs({ currentUser }) {
                     color: '#475569',
                   }}
                 >
-                  Quantity / Units
+                  Quantity
                 </label>
                 <input
                   type="number"
                   className="input-field"
-                  style={{ padding: '8px', fontSize: '0.8rem' }}
+                  style={{
+                    padding: '10px',
+                    fontSize: '0.8rem',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-strong)',
+                    width: '100%',
+                  }}
                   value={form.qty}
                   onChange={(e) => setForm({ ...form, qty: e.target.value })}
                   min="1"
@@ -489,16 +615,26 @@ export default function RefundsRepairs({ currentUser }) {
                   style={{
                     fontSize: '0.75rem',
                     fontWeight: '700',
-                    color: '#475569',
+                    color:
+                      form.type === 'REFUND' ? '#e11d48' : 'var(--success)',
                   }}
                 >
-                  Amount Refunded (Rs.)
+                  {form.type === 'REFUND'
+                    ? 'Amount Refunded (Rs.)'
+                    : 'Repair Charge (Rs.)'}
                 </label>
                 <input
                   type="number"
                   step="0.01"
                   className="input-field"
-                  style={{ padding: '8px', fontSize: '0.8rem' }}
+                  style={{
+                    padding: '10px',
+                    fontSize: '0.8rem',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-strong)',
+                    width: '100%',
+                    fontWeight: 'bold',
+                  }}
                   value={form.amount_refunded}
                   onChange={(e) =>
                     setForm({ ...form, amount_refunded: e.target.value })
@@ -507,6 +643,40 @@ export default function RefundsRepairs({ currentUser }) {
                 />
               </div>
             </div>
+
+            {form.type === 'REPAIR' && (
+              <div>
+                <label
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: '700',
+                    color: '#475569',
+                  }}
+                >
+                  Repair Status
+                </label>
+                <select
+                  className="input-field"
+                  style={{
+                    padding: '10px',
+                    fontSize: '0.8rem',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-strong)',
+                    width: '100%',
+                  }}
+                  value={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value })}
+                >
+                  <option value="PENDING">Pending (In Workshop)</option>
+                  <option value="COMPLETED">
+                    Completed (Ready for Pickup)
+                  </option>
+                  <option value="DELIVERED">
+                    Delivered (Handed to Customer)
+                  </option>
+                </select>
+              </div>
+            )}
 
             <div>
               <label
@@ -520,12 +690,19 @@ export default function RefundsRepairs({ currentUser }) {
               </label>
               <textarea
                 className="input-field"
-                style={{ padding: '8px', fontSize: '0.8rem', height: '60px' }}
+                style={{
+                  padding: '10px',
+                  fontSize: '0.8rem',
+                  height: '70px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border-strong)',
+                  width: '100%',
+                }}
                 value={form.description}
                 onChange={(e) =>
                   setForm({ ...form, description: e.target.value })
                 }
-                placeholder="e.g. Defective return / Repair notes..."
+                placeholder="e.g. Screen replacement / Defective return..."
               />
             </div>
 
@@ -533,10 +710,15 @@ export default function RefundsRepairs({ currentUser }) {
               type="submit"
               className="btn btn-primary"
               style={{
-                padding: '10px',
-                background: '#0284c7',
+                padding: '12px',
+                background: form.type === 'REFUND' ? '#e11d48' : 'var(--info)',
                 fontWeight: 'bold',
                 fontSize: '0.85rem',
+                borderRadius: '6px',
+                border: 'none',
+                color: '#fff',
+                cursor: 'pointer',
+                marginTop: '8px',
               }}
             >
               Submit & Post to Ledger
@@ -544,110 +726,295 @@ export default function RefundsRepairs({ currentUser }) {
           </form>
         </div>
 
-        {/* RIGHT PANEL: 3x3 CATALOG CARDS GRID WITH PRICES */}
+        {/* RIGHT PANEL: RECENT FEED & CATALOG */}
         <div
-          className="card"
           style={{
             flex: 2.3,
-            background: '#f8fafc',
-            borderRadius: '12px',
-            padding: '18px',
-            border: '1px solid #e2e8f0',
             display: 'flex',
             flexDirection: 'column',
+            gap: '16px',
             overflow: 'hidden',
-            gap: '14px',
           }}
         >
+          {/* RECENT LOGS */}
           <div
+            className="card"
             style={{
+              background: 'var(--bg-card)',
+              borderRadius: '10px',
+              padding: '16px',
+              border: '1.5px solid var(--border-color)',
               display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
+              flexDirection: 'column',
+              flex: 1,
+              overflow: 'hidden',
             }}
           >
-            <div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '12px',
+              }}
+            >
               <h4
                 style={{
                   margin: 0,
-                  fontSize: '0.95rem',
-                  fontWeight: '700',
-                  color: '#0f172a',
+                  fontSize: '0.9rem',
+                  fontWeight: '800',
+                  color: 'var(--text-primary)',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
                 }}
               >
-                Fix / Return Catalog Items
+                Recent Activity
               </h4>
-              <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
-                Click any product card to select it for return or repair.
+              <span
+                style={{
+                  fontSize: '0.7rem',
+                  color: 'var(--text-secondary)',
+                  fontWeight: '600',
+                }}
+              >
+                Last 20 records
               </span>
             </div>
-            <input
-              type="text"
-              className="input-field"
-              placeholder="🔍 Search catalog..."
-              value={catalogSearch}
-              onChange={(e) => setCatalogSearch(e.target.value)}
+            <div
               style={{
-                width: '220px',
-                margin: 0,
-                padding: '6px 10px',
-                fontSize: '0.78rem',
+                flex: 1,
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
               }}
-            />
+            >
+              {recentRecords.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: 'center',
+                    color: '#94a3b8',
+                    padding: '30px 0',
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  No records found.
+                </div>
+              ) : (
+                recentRecords.map((rec) => (
+                  <div
+                    key={rec.id}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '0.5fr 2fr 1fr 1fr 1fr',
+                      fontSize: '0.75rem',
+                      alignItems: 'center',
+                      background: 'var(--bg-hover)',
+                      padding: '10px',
+                      borderRadius: '6px',
+                      border: '1px solid #f1f5f9',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontWeight: '700',
+                        color:
+                          rec.type === 'REFUND' ? '#e11d48' : 'var(--info)',
+                      }}
+                    >
+                      {rec.type === 'REFUND' ? 'REF' : 'REP'}
+                    </span>
+                    <div style={{ minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontWeight: '700',
+                          color: 'var(--text-primary)',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {rec.item_name || 'Custom Item'}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '0.65rem',
+                          color: 'var(--text-secondary)',
+                        }}
+                      >
+                        {rec.customer_name} |{' '}
+                        {rec.date ? rec.date.substring(0, 10) : ''}
+                      </div>
+                    </div>
+                    <span
+                      className="monospace"
+                      style={{
+                        textAlign: 'right',
+                        fontWeight: '800',
+                        color:
+                          rec.type === 'REFUND' ? '#e11d48' : 'var(--success)',
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      {rec.type === 'REFUND' ? '-' : '+'} Rs.{' '}
+                      {rec.amount_refunded?.toLocaleString()}
+                    </span>
+                    <div style={{ textAlign: 'center' }}>
+                      {rec.type === 'REPAIR' ? (
+                        <select
+                          value={rec.status || 'PENDING'}
+                          onChange={(e) =>
+                            handleStatusUpdate(rec.id, e.target.value)
+                          }
+                          style={{
+                            padding: '2px 4px',
+                            fontSize: '0.65rem',
+                            borderRadius: '4px',
+                            border: '1px solid var(--border-strong)',
+                            background:
+                              rec.status === 'PENDING'
+                                ? '#fef3c7'
+                                : rec.status === 'COMPLETED'
+                                  ? '#d1fae5'
+                                  : '#e2e8f0',
+                            color:
+                              rec.status === 'PENDING'
+                                ? '#d97706'
+                                : rec.status === 'COMPLETED'
+                                  ? 'var(--success)'
+                                  : '#334155',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <option value="PENDING">Pending</option>
+                          <option value="COMPLETED">Completed</option>
+                          <option value="DELIVERED">Delivered</option>
+                        </select>
+                      ) : (
+                        <span
+                          style={{
+                            fontSize: '0.65rem',
+                            color: 'var(--text-secondary)',
+                            fontWeight: 'bold',
+                          }}
+                        >
+                          Refunded
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      style={{
+                        textAlign: 'right',
+                        fontSize: '0.65rem',
+                        color: '#94a3b8',
+                        fontWeight: '600',
+                      }}
+                    >
+                      by {rec.operator_name || 'Manager'}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
-          {/* 🌟 3x3 CATALOG ITEM GRID CARDS */}
+          {/* QUICK CATALOG SELECTOR */}
           <div
+            className="card"
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gridTemplateRows: 'repeat(3, 1fr)',
-              gap: '12px',
-              flex: 1,
-              overflowY: 'auto',
-              paddingRight: '4px',
+              background: 'var(--bg-hover)',
+              borderRadius: '10px',
+              padding: '16px',
+              border: '1.5px solid var(--border-color)',
+              height: '220px',
+              display: 'flex',
+              flexDirection: 'column',
             }}
           >
-            {filteredCatalogItems.slice(0, 9).map((item) => (
-              <div
-                key={item.id}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '10px',
+              }}
+            >
+              <h4
                 style={{
-                  background: '#fff',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '10px',
-                  padding: '12px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  gap: '6px',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-                  transition: 'all 0.15s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#0284c7';
-                  e.currentTarget.style.boxShadow =
-                    '0 6px 12px rgba(2, 132, 199, 0.08)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = '#cbd5e1';
-                  e.currentTarget.style.boxShadow =
-                    '0 2px 4px rgba(0,0,0,0.02)';
+                  margin: 0,
+                  fontSize: '0.9rem',
+                  fontWeight: '800',
+                  color: 'var(--text-primary)',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
                 }}
               >
+                Quick Select from Catalog
+              </h4>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="🔍 Search..."
+                value={catalogSearch}
+                onChange={(e) => setCatalogSearch(e.target.value)}
+                style={{
+                  width: '200px',
+                  margin: 0,
+                  padding: '6px 10px',
+                  fontSize: '0.75rem',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border-strong)',
+                }}
+              />
+            </div>
+            <div
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '8px',
+                paddingRight: '4px',
+              }}
+            >
+              {filteredCatalogItems.map((item) => (
                 <div
-                  style={{ display: 'flex', gap: '10px', alignItems: 'center' }}
+                  key={item.id}
+                  onClick={() => {
+                    setIsManualMode(false);
+                    setForm({
+                      ...form,
+                      item_id: item.id,
+                      amount_refunded: item.selling_price || '',
+                    });
+                    setItemSearchText(`${item.name} (${item.code})`);
+                  }}
+                  style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    padding: '8px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.borderColor = 'var(--info)')
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.borderColor = '#e2e8f0')
+                  }
                 >
                   <div
                     style={{
-                      width: '38px',
-                      height: '38px',
-                      background: '#f8fafc',
-                      borderRadius: '6px',
+                      width: '32px',
+                      height: '32px',
+                      background: 'var(--bg-hover)',
+                      borderRadius: '4px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      border: '1px solid #e2e8f0',
-                      overflow: 'hidden',
                       flexShrink: 0,
                     }}
                   >
@@ -662,100 +1029,42 @@ export default function RefundsRepairs({ currentUser }) {
                         }}
                       />
                     ) : (
-                      <span style={{ fontSize: '1rem' }}>📦</span>
+                      <span
+                        style={{
+                          fontSize: '0.7rem',
+                          fontWeight: '800',
+                          color: '#94a3b8',
+                        }}
+                      >
+                        {getInitials(item.name)}
+                      </span>
                     )}
                   </div>
-
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ minWidth: 0 }}>
                     <div
                       style={{
-                        fontWeight: 'bold',
-                        fontSize: '0.78rem',
-                        color: '#1e293b',
+                        fontSize: '0.72rem',
+                        fontWeight: '700',
+                        color: 'var(--text-primary)',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                       }}
-                      title={item.name}
                     >
                       {item.name}
                     </div>
-                    <div style={{ fontSize: '0.65rem', color: '#64748b' }}>
-                      SKU: {item.code}
-                    </div>
                     <div
                       style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginTop: '2px',
+                        fontSize: '0.65rem',
+                        color: 'var(--text-secondary)',
                       }}
                     >
-                      <span
-                        style={{
-                          fontSize: '0.68rem',
-                          color: '#0284c7',
-                          fontWeight: 'bold',
-                        }}
-                      >
-                        Stock: {item.stock_qty} {item.unit}
-                      </span>
-                      <span
-                        className="monospace"
-                        style={{
-                          fontSize: '0.72rem',
-                          fontWeight: '900',
-                          color: '#059669',
-                        }}
-                      >
-                        Rs. {item.selling_price?.toLocaleString() || '0'}
-                      </span>
+                      Rs. {item.selling_price}
                     </div>
                   </div>
                 </div>
-
-                <button
-                  className="btn"
-                  style={{
-                    background: '#0284c7',
-                    color: '#fff',
-                    fontSize: '0.7rem',
-                    padding: '5px',
-                    fontWeight: 'bold',
-                    borderRadius: '6px',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => {
-                    setIsManualMode(false);
-                    setForm({
-                      ...form,
-                      item_id: item.id,
-                      amount_refunded: item.selling_price || '',
-                    });
-                    setItemSearchText(
-                      `${item.name} (${item.code}) - Stock: ${item.stock_qty} ${item.unit}`,
-                    );
-                  }}
-                >
-                  ⚡ Select Item
-                </button>
-              </div>
-            ))}
-            {filteredCatalogItems.length === 0 && (
-              <div
-                style={{
-                  gridColumn: '1 / -1',
-                  textAlign: 'center',
-                  color: '#94a3b8',
-                  padding: '50px 0',
-                  fontSize: '0.85rem',
-                }}
-              >
-                No products found in inventory. Use the "+ Add Custom Item
-                Manually" toggle on the left if needed.
-              </div>
-            )}
+              ))}
+            </div>
           </div>
         </div>
       </div>

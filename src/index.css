@@ -1,44 +1,74 @@
 /* ==========================================
    🏛️ SHOPMATE ENTERPRISE DESIGN SYSTEM
-   Palette: Prussian Blue (#0a1128), Deep Navy (#001f54), 
-            Yale Blue (#034078), Cerulean (#1282a2), White (#fefcfb)
    ========================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
+/* =========================================================
+   1. THEME VARIABLES (Light & Dark)
+   ========================================================= */
 :root {
-  --prussian-blue: #0a1128;
-  --deep-navy: #001f54;
-  --yale-blue: #034078;
-  --cerulean: #1282a2;
-  --paper-white: #fefcfb;
+  /* Brand Colors */
+  --brand-primary: #0d5c75;
+  --brand-hover: #09485c;
 
+  /* LIGHT THEME (Default) */
+  --bg-app: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-hover: #f8fafc;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+  --border-strong: #cbd5e1;
   --sidebar-bg: #0a1128;
-  --sidebar-active: #1282a2;
-  --bg-main: #fefcfb;
-  --card-bg: #ffffff;
-  --text-main: #0a1128;
-  --text-muted: #53647c;
-  --border-color: #d1d9e2;
-  --primary-btn: #1282a2;
-  --primary-hover: #034078;
-  --success-color: #0f766e;
-  --danger-color: #991b1b;
-  --warning-color: #b45309;
+
+  /* Semantic Colors */
+  --success: #059669;
+  --success-bg: #d1fae5;
+  --danger: #dc2626;
+  --danger-bg: #fee2e2;
+  --warning: #d97706;
+  --warning-bg: #fef3c7;
+  --info: #0284c7;
+  --info-bg: #e0f2fe;
+
+  /* Typography */
+  --font-sans: 'Inter', sans-serif;
+  --font-heading: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
+[data-theme='dark'] {
+  /* DARK THEME */
+  --bg-app: #0f172a;
+  --bg-card: #1e293b;
+  --bg-hover: #334155;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --border-color: #334155;
+  --border-strong: #475569;
+  --sidebar-bg: #0f172a;
+
+  --brand-primary: #38bdf8;
+  --brand-hover: #7dd3fc;
+
+  --success: #34d399;
+  --success-bg: rgba(52, 211, 153, 0.15);
+  --danger: #f87171;
+  --danger-bg: rgba(248, 113, 113, 0.15);
+  --warning: #fbbf24;
+  --warning-bg: rgba(251, 191, 36, 0.15);
+  --info: #38bdf8;
+  --info-bg: rgba(56, 189, 248, 0.15);
+}
+
+/* =========================================================
+   2. GLOBAL RESETS
+   ========================================================= */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family:
-    'Plus Jakarta Sans',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
 }
 
 body,
@@ -47,51 +77,60 @@ html,
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background-color: var(--bg-main);
-  color: var(--text-main);
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
-/* 🌟 Custom Faded Background Watermark / Texture */
-body {
-  position: relative;
-  background-color: #f8fafc; /* Fallback neutral background */
-  min-height: 100vh;
-  background-image: url('./assets/login-bg.jpg');
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  color: var(--text-primary);
 }
 
-body::before {
-  /* ... */
-  background-image: url('./assets/login-bg.jpg');
-  opacity: 0.08; /* Keeps it subtle and faded */
-  /* ... */
+.monospace {
+  font-family: var(--font-mono);
 }
-/* App Shell Layout */
+
+/* =========================================================
+   3. APP SHELL LAYOUT (Sidebar & Content)
+   ========================================================= */
 .shopmate-container {
   display: flex;
   flex-direction: row;
   width: 100vw;
   height: 100vh;
-  background-color: var(--bg-main);
+  background-color: var(--bg-app);
   overflow: hidden;
 }
 
-/* Sidebar Drawer - Strict Editorial Hierarchy */
+/* Sidebar Drawer */
 .shopmate-sidebar {
   width: 256px;
   min-width: 256px;
   height: 100vh;
-  background: var(--prussian-blue);
-  color: var(--paper-white);
+  background: var(--sidebar-bg);
+  color: #ffffff;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  border-right: 1px solid rgba(254, 252, 251, 0.1);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
   z-index: 10;
+  transition: transform 0.3s ease;
 }
 
 .sidebar-header {
   padding: 24px 20px;
-  border-bottom: 1px solid rgba(254, 252, 251, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -101,7 +140,7 @@ body::before {
   font-size: 1.15rem;
   font-weight: 800;
   letter-spacing: -0.2px;
-  color: var(--paper-white);
+  color: #ffffff;
 }
 
 .sidebar-nav {
@@ -120,7 +159,7 @@ body::before {
   padding: 10px 14px;
   background: transparent;
   border: none;
-  color: #f3f4f6;
+  color: #94a3b8;
   font-size: 0.85rem;
   font-weight: 600;
   border-radius: 6px;
@@ -130,21 +169,21 @@ body::before {
 }
 
 .nav-item:hover {
-  background-color: rgba(18, 130, 162, 0.2);
-  color: var(--paper-white);
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
 .nav-item.active {
-  background-color: var(--sidebar-active);
-  color: var(--paper-white);
+  background-color: var(--brand-primary);
+  color: #ffffff;
   font-weight: 700;
-  box-shadow: 0 2px 6px rgba(18, 130, 162, 0.3);
+  box-shadow: 0 2px 6px rgba(13, 92, 117, 0.3);
 }
 
 .user-profile-badge {
   padding: 16px 20px;
-  background: rgba(3, 64, 120, 0.3);
-  border-top: 1px solid rgba(254, 252, 251, 0.08);
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -158,13 +197,13 @@ body::before {
   flex-direction: column;
   overflow-y: auto;
   padding: 32px;
-  background-color: var(--bg-main);
+  background-color: var(--bg-app);
 }
 
 .page-title {
   font-size: 1.4rem;
   font-weight: 800;
-  color: var(--text-main);
+  color: var(--text-primary);
   margin-bottom: 20px;
   display: flex;
   justify-content: space-between;
@@ -172,40 +211,57 @@ body::before {
   letter-spacing: -0.4px;
 }
 
-/* Form Cards & Inputs */
-/* .card {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(10, 17, 40, 0.03);
-} */
+/* =========================================================
+   4. COMPONENT UTILITIES (Cards, Inputs, Tables)
+   ========================================================= */
 .card {
-  background: linear-gradient(135deg, #0284c7 0%, #0d5c75 100%);
-  color: #fefcfb;
-  border: 1px solid rgba(254, 252, 251, 0.15);
-  border-radius: 8px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  border-radius: 10px;
   padding: 20px;
-  /* box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2); */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
 }
+
 .input-field {
   width: 100%;
-  padding: 9px 14px;
-  border: 1.5px solid var(--border-color);
+  padding: 10px 12px;
   border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
   font-size: 0.88rem;
-  margin-top: 6px;
-  background-color: #fff;
-  color: var(--text-main);
+  outline: none;
   transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
+    border-color 0.2s ease,
+    background-color 0.3s ease;
 }
 
 .input-field:focus {
-  outline: none;
-  border-color: var(--cerulean);
-  box-shadow: 0 0 0 3px rgba(18, 130, 162, 0.15);
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 2px rgba(13, 92, 117, 0.1);
+}
+
+.input-field::placeholder {
+  color: var(--text-secondary);
+}
+
+/* Force all inputs to respect the theme */
+input,
+select,
+textarea {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+  font-family: var(--font-sans);
+}
+
+[data-theme='dark'] option {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
 }
 
 /* Buttons */
@@ -213,12 +269,15 @@ body::before {
   padding: 9px 16px;
   border-radius: 6px;
   border: none;
+  font-family: var(--font-sans);
   font-weight: 700;
-  cursor: pointer;
   font-size: 0.82rem;
-  transition:
-    background 0.15s,
-    transform 0.05s;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .btn:active {
@@ -226,28 +285,28 @@ body::before {
 }
 
 .btn-primary {
-  background-color: var(--primary-btn);
-  color: var(--paper-white);
+  background-color: var(--brand-primary);
+  color: #ffffff;
 }
 
 .btn-primary:hover {
-  background-color: var(--primary-hover);
+  background-color: var(--brand-hover);
 }
 
 .btn-success {
-  background-color: var(--success-color);
-  color: var(--paper-white);
+  background-color: var(--success);
+  color: #ffffff;
 }
 
 .btn-danger {
-  background-color: var(--danger-color);
-  color: var(--paper-white);
+  background-color: var(--danger);
+  color: #ffffff;
 }
 
-/* Data Tables */
+/* Tables */
 .table-container {
   overflow-x: auto;
-  background: #fff;
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 8px;
 }
@@ -260,11 +319,11 @@ body::before {
 }
 
 .data-table th {
-  background-color: #f1f5f9;
+  background-color: var(--bg-hover);
   padding: 12px 16px;
   border-bottom: 2px solid var(--border-color);
   font-weight: 700;
-  color: var(--yale-blue);
+  color: var(--text-secondary);
   text-transform: uppercase;
   font-size: 0.75rem;
   letter-spacing: 0.5px;
@@ -273,16 +332,30 @@ body::before {
 .data-table td {
   padding: 12px 16px;
   border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
 
-.monospace {
-  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-  letter-spacing: -0.3px;
+/* =========================================================
+   5. SCROLLBAR STYLING
+   ========================================================= */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-app);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
 }
 
-/* ==========================================
-   🖨️ THERMAL PRINTER & MODAL STYLES
-   ========================================== */
+/* =========================================================
+   6. THERMAL PRINTER & MODAL STYLES
+   ========================================================= */
 .receipt-modal-backdrop {
   position: fixed;
   top: 0;
@@ -304,14 +377,14 @@ body::before {
   padding: 24px 20px 30px 20px;
   font-family: 'Courier New', Courier, monospace;
   box-shadow: 0 25px 50px -12px rgba(10, 17, 40, 0.4);
-  border-top: 8px solid var(--prussian-blue);
+  border-top: 8px solid var(--brand-primary);
   border-radius: 6px;
   position: relative;
   box-sizing: border-box;
 }
 
 .receipt-divider {
-  border-bottom: 1px ed #374151;
+  border-bottom: 1px dashed #cbd5e1;
   margin: 10px 0;
 }
 
@@ -322,21 +395,15 @@ body::before {
   line-height: 1.4;
 }
 
-.receipt-barcode {
-  height: 38px;
-  background: repeating-linear-gradient(
-    90deg,
-    #000 0px,
-    #000 2px,
-    #fff 2px,
-    #fff 4px,
-    #000 4px,
-    #000 7px,
-    #fff 7px,
-    #fff 9px
-  );
-  margin: 14px auto 6px auto;
-  width: 85%;
+@keyframes slideInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @media print {
@@ -368,11 +435,14 @@ body::before {
     border-top: none !important;
   }
 }
-/* Mobile Header Bar - hidden by default on desktop */
+
+/* =========================================================
+   7. MOBILE RESPONSIVE LAYOUT
+   ========================================================= */
 .mobile-header {
   display: none;
-  background: var(--sidebar-bg, #0a1128);
-  color: #fff;
+  background: var(--sidebar-bg);
+  color: #ffffff;
   padding: 10px 16px;
   align-items: center;
   justify-content: space-between;
@@ -382,13 +452,13 @@ body::before {
   left: 0;
   right: 0;
   z-index: 90;
-  border-bottom: 1px solid rgba(254, 252, 251, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .mobile-burger-btn {
   background: rgba(255, 255, 255, 0.1);
   border: none;
-  color: #fff;
+  color: #ffffff;
   padding: 6px 12px;
   border-radius: 6px;
   font-weight: bold;
@@ -401,24 +471,6 @@ body::before {
   font-size: 1rem;
 }
 
-/* Base layout adjustments */
-.shopmate-container {
-  display: flex;
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-  background-color: var(--app-bg, #f1f5f9);
-}
-
-.shopmate-content {
-  flex: 1;
-  height: 100vh;
-  overflow-y: auto;
-  padding: 16px;
-  box-sizing: border-box;
-}
-
-/* Responsive breakpoint for mobile screens */
 @media screen and (max-width: 768px) {
   .mobile-header {
     display: flex;
@@ -446,15 +498,5 @@ body::before {
     margin-top: 55px;
     height: calc(100vh - 55px);
     padding: 10px;
-  }
-}
-@keyframes slideInUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
   }
 }

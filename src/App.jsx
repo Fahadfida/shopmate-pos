@@ -17,7 +17,7 @@ import RefundsRepairs from './components/RefundsRepairs';
 import Sidebar from './components/Sidebar';
 import Toast from './components/Toast'; // 👈 Import Toast component
 import { getIpc } from './utils/ipc';
-
+// import './theme.css';
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');

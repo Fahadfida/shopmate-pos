@@ -1,0 +1,59 @@
+:root {
+  /* LIGHT THEME DEFAULTS */
+  --bg-card: #ffffff;
+  --bg-hover: #f8fafc;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --brand-primary: #0d5c75;
+  --info: #0284c7;
+  --danger: #dc2626;
+  --success: #059669;
+}
+
+/* DARK THEME OVERRIDES (Triggered by adding class="dark" to <html> or <body>) */
+
+[data-theme='dark'] {
+  /* DARK THEME */
+  --bg-app: #0f172a; /* Deep Slate Background */
+  --bg-card: #1e293b; /* Lighter Slate for Cards */
+  --bg-hover: #334155; /* Hover states */
+  --text-primary: #f8fafc; /* White text */
+  --text-secondary: #94a3b8; /* Muted slate text */
+  --border-color: #334155;
+  --border-strong: #475569;
+
+  --brand-primary: #38bdf8; /* Light blue for dark mode */
+  --brand-hover: #7dd3fc;
+
+  --success: #34d399;
+  --success-bg: rgba(52, 211, 153, 0.15);
+  --danger: #f87171;
+  --danger-bg: rgba(248, 113, 113, 0.15);
+  --warning: #fbbf24;
+  --warning-bg: rgba(251, 191, 36, 0.15);
+  --info: #38bdf8;
+  --info-bg: rgba(56, 189, 248, 0.15);
+}
+
+/* Global overrides to ensure body and standard inputs respect the theme */
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  margin: 0;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+/* The input-field class will now pull from variables */
+.input-field {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-strong) !important;
+}
+
+.input-field::placeholder {
+  color: var(--text-secondary) !important;
+}

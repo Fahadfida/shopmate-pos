@@ -1,91 +1,358 @@
 import React, { useState, useEffect } from 'react';
 import { getIpc } from '../utils/ipc';
+import '../index.css';
+
+// --- CLEAN SVG ICONS ---
+const RefreshIcon = ({ spinning }) => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{
+      transition: 'transform 0.5s ease',
+      transform: spinning ? 'rotate(360deg)' : 'rotate(0deg)',
+    }}
+  >
+    <polyline points="23 4 23 10 17 10"></polyline>
+    <polyline points="1 20 1 14 7 14"></polyline>
+    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+  </svg>
+);
+const TrendingUpIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+    <polyline points="17 6 23 6 23 12"></polyline>
+  </svg>
+);
+const WalletIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+    <path d="M6 8h12"></path>
+    <path d="M16 12h2"></path>
+  </svg>
+);
+const ReceiptIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"></path>
+    <line x1="8" y1="6" x2="16" y2="6"></line>
+    <line x1="8" y1="10" x2="16" y2="10"></line>
+    <line x1="8" y1="14" x2="12" y2="14"></line>
+  </svg>
+);
+const UsersIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+    <circle cx="9" cy="7" r="4"></circle>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+  </svg>
+);
+const TruckIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="1" y="3" width="15" height="13"></rect>
+    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+    <circle cx="5.5" cy="18.5" r="2.5"></circle>
+    <circle cx="18.5" cy="18.5" r="2.5"></circle>
+  </svg>
+);
+const PackageIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line>
+    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+  </svg>
+);
+const FlameIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3.5z"></path>
+  </svg>
+);
+const AlertIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+    <line x1="12" y1="9" x2="12" y2="13"></line>
+    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+  </svg>
+);
+const ToolIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+  </svg>
+);
+const CoinsIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="8" cy="8" r="6"></circle>
+    <path d="M18.09 10.37A6 6 0 1 1 10.34 18"></path>
+    <path d="M7 6h1v4"></path>
+    <path d="m16.71 13.88.7.71-2.82 2.82"></path>
+  </svg>
+);
+
+const LoadingUI = () => (
+  <div
+    style={{
+      display: 'flex',
+      height: '80vh',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'var(--bg-hover)',
+    }}
+  >
+    <div
+      style={{
+        textAlign: 'center',
+        background: 'var(--bg-card)',
+        padding: '32px 44px',
+        borderRadius: '12px',
+        border: '1px solid var(--border-color)',
+      }}
+    >
+      <div
+        style={{
+          display: 'inline-block',
+          width: '32px',
+          height: '32px',
+          border: '3px solid #e2e8f0',
+          borderTopColor: 'var(--brand-primary)',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }}
+      />
+      <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+      <div
+        style={{
+          marginTop: '14px',
+          fontSize: '0.9rem',
+          fontWeight: '700',
+          color: 'var(--text-primary)',
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+        }}
+      >
+        ShopMate Command Center
+      </div>
+      <div
+        style={{
+          fontSize: '0.75rem',
+          color: 'var(--text-secondary)',
+          marginTop: '4px',
+        }}
+      >
+        Loading business intelligence streams...
+      </div>
+    </div>
+  </div>
+);
+
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [analytics, setAnalytics] = useState(null);
+  const [shopLogo, setShopLogo] = useState('');
   const [expensesTotal, setExpensesTotal] = useState(0);
   const [purchasesTotal, setPurchasesTotal] = useState(0);
   const [refundsTotal, setRefundsTotal] = useState(0);
+  const [lifetimeNetSales, setLifetimeNetSales] = useState(0);
   const [repairsCount, setRepairsCount] = useState(0);
 
   const [timeframe, setTimeframe] = useState(7);
+  const [selectedYear, setSelectedYear] = useState(
+    new Date().getFullYear().toString(),
+  );
   const [hoveredPoint, setHoveredPoint] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  const loadDashboardData = async (days) => {
+  const loadDashboardData = async (days, year) => {
+    setIsSyncing(true);
     const ipc = getIpc();
     if (ipc) {
-      const basicStats = await ipc.invoke('get-dashboard-stats');
-      const advancedData = await ipc.invoke('get-dashboard-analytics', days);
-      const financialLedger = await ipc.invoke('get-financial-ledger');
-      const refundsRepairsList = await ipc.invoke('get-refunds-repairs');
+      try {
+        const basicStats = await ipc.invoke('get-dashboard-stats');
+        const advancedData = await ipc.invoke(
+          'get-dashboard-analytics',
+          days,
+          year,
+        );
+        const financialLedger = await ipc.invoke('get-financial-ledger');
+        const refundsRepairsList = await ipc.invoke('get-refunds-repairs');
+        const settingsList = await ipc.invoke('get-settings');
 
-      setStats(basicStats);
-      setAnalytics(advancedData);
+        if (Array.isArray(settingsList)) {
+          const logoSetting = settingsList.find((s) => s.key === 'shop_logo');
+          if (logoSetting) setShopLogo(logoSetting.value);
+        } else if (settingsList?.shop_logo) {
+          setShopLogo(settingsList.shop_logo);
+        }
 
-      const expSum = (financialLedger.expenses || []).reduce(
-        (acc, e) => acc + (e.amount || 0),
-        0,
-      );
-      const purSum = (financialLedger.purchases || []).reduce(
-        (acc, p) => acc + (p.qty_received || 0) * (p.unit_cost || 0),
-        0,
-      );
+        setStats(basicStats);
+        setAnalytics(advancedData);
 
-      const refundsList = (refundsRepairsList || []).filter(
-        (r) => r.type === 'REFUND',
-      );
-      const repairsList = (refundsRepairsList || []).filter(
-        (r) => r.type === 'REPAIR',
-      );
+        const expSum = (financialLedger?.expenses || []).reduce(
+          (acc, e) => acc + (parseFloat(e.amount) || 0),
+          0,
+        );
+        const purSum = (financialLedger?.purchases || []).reduce(
+          (acc, p) =>
+            acc +
+            parseFloat(p.qty_received || 0) * parseFloat(p.unit_cost || 0),
+          0,
+        );
+        const refundsList = (refundsRepairsList || []).filter(
+          (r) => r.type === 'REFUND',
+        );
+        const repairsList = (refundsRepairsList || []).filter(
+          (r) => r.type === 'REPAIR',
+        );
+        const refSum = refundsList.reduce(
+          (acc, r) => acc + (parseFloat(r.amount_refunded) || 0),
+          0,
+        );
 
-      const refSum = refundsList.reduce(
-        (acc, r) => acc + (r.amount_refunded || 0),
-        0,
-      );
+        const grossLifetime =
+          basicStats?.lifetimeSales || basicStats?.monthlySales?.total || 0;
 
-      setExpensesTotal(expSum);
-      setPurchasesTotal(purSum);
-      setRefundsTotal(refSum);
-      setRepairsCount(repairsList.length);
+        setLifetimeNetSales(grossLifetime - refSum);
+        setExpensesTotal(expSum);
+        setPurchasesTotal(purSum);
+        setRefundsTotal(refSum);
+        setRepairsCount(repairsList.length);
+      } catch (err) {
+        console.error('Failed to load dashboard telemetry:', err);
+      } finally {
+        setTimeout(() => setIsSyncing(false), 500);
+      }
     }
   };
 
   useEffect(() => {
-    loadDashboardData(timeframe);
-  }, [timeframe]);
+    loadDashboardData(timeframe, selectedYear);
+  }, [timeframe, selectedYear]);
 
-  if (!stats || !analytics) {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          height: '80vh',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#53647c',
-          fontWeight: '600',
-        }}
-      >
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '1.5rem', marginBottom: '8px' }}>⚡</div>
-          Loading ShopMate Business Intelligence...
-        </div>
-      </div>
-    );
-  }
+  if (!stats || !analytics) return <LoadingUI />;
 
-  // --- NATIVE SMOOTH BEZIER CURVE CALCULATOR ---
+  const dailyTotal = stats.dailySales?.total || 0;
+  const dailyCount = stats.dailySales?.count || 0;
+  const monthlyTotal = stats.monthlySales?.total || 0;
+  const monthlyCount = stats.monthlySales?.count || 0;
+  const stockValuation = stats.totalStockWorth || 0;
+  const customerDues = stats.customerDues || 0;
+  const supplierPayables = stats.supplierPayables || 0;
+
+  // Calculate Cash Counter (Approximation based on current month sales vs expenses)
+  const cashCounter =
+    (stats.dailySales?.total || 0) - expensesTotal * 0.1 + 50000; // Example formula
+
   const trendData = analytics.salesTrend || [];
-  const maxSale = Math.max(...trendData.map((d) => d.total), 1000);
+  const hotProducts = analytics.hotProducts || [];
+  const restockItems = analytics.restockItems || [];
+  const yearlyPerformance = analytics.yearlyPerformance || [];
+
+  // --- REVENUE TRAJECTORY CHART ---
   const chartHeight = 160;
-  const chartWidth = 720;
+  const chartWidth = 700;
+  const maxSale = Math.max(...trendData.map((d) => d.total || 0), 1000);
 
   const points = trendData.map((d, index) => {
     const x =
       trendData.length === 1
         ? chartWidth / 2
-        : (index / (trendData.length - 1)) * (chartWidth - 60) + 30;
-    const y = chartHeight - (d.total / maxSale) * (chartHeight - 40) - 20;
+        : (index / (trendData.length - 1)) * (chartWidth - 80) + 40;
+    const y =
+      chartHeight - ((d.total || 0) / maxSale) * (chartHeight - 40) - 20;
     return { x, y, ...d };
   });
 
@@ -107,18 +374,8 @@ export default function Dashboard() {
       ? `${smoothCurvePath} L ${points[points.length - 1].x},${chartHeight - 20} L ${points[0].x},${chartHeight - 20} Z`
       : '';
 
-  const monthlyComparison = analytics.monthlyComparison || [
-    { month: 'Jan', sales: stats.monthlySales.total * 0.7 },
-    { month: 'Feb', sales: stats.monthlySales.total * 0.85 },
-    { month: 'Mar', sales: stats.monthlySales.total * 0.65 },
-    { month: 'Apr', sales: stats.monthlySales.total * 0.9 },
-    { month: 'May', sales: stats.monthlySales.total * 0.95 },
-    { month: 'Jun', sales: stats.monthlySales.total },
-  ];
-  const maxMonthlyBar = Math.max(
-    ...monthlyComparison.map((m) => m.sales),
-    1000,
-  );
+  // --- YEARLY BAR CHART LOGIC ---
+  const maxBarVal = Math.max(...yearlyPerformance.map((m) => m.sales), 1000);
 
   return (
     <div
@@ -126,532 +383,760 @@ export default function Dashboard() {
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
-        paddingBottom: '24px',
-        color: '#0a1128',
+        paddingBottom: '30px',
         width: '100%',
         boxSizing: 'border-box',
+        fontFamily: "'Inter', sans-serif",
       }}
     >
-      {/* 💎 TIER 1: RESPONSIVE KPI METRIC CARDS GRID */}
+      {/* 1. HEADER BANNER */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          background: 'var(--bg-card)',
+          padding: '16px 20px',
+          borderRadius: '10px',
+          border: '1.5px solid var(--border-color)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          {shopLogo ? (
+            <img
+              src={shopLogo}
+              alt="Shop Logo"
+              style={{
+                width: '44px',
+                height: '44px',
+                objectFit: 'contain',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)',
+                background: 'var(--bg-hover)',
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: '44px',
+                height: '44px',
+                background: 'var(--brand-primary)',
+                color: '#fff',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: '900',
+                fontSize: '1.2rem',
+              }}
+            >
+              S
+            </div>
+          )}
+          <div>
+            <h3
+              style={{
+                margin: 0,
+                fontSize: '1.1rem',
+                fontWeight: '800',
+                color: 'var(--text-primary)',
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+              }}
+            >
+              Business Intelligence Dashboard
+            </h3>
+            <p
+              style={{
+                fontSize: '0.75rem',
+                color: 'var(--text-secondary)',
+                margin: '2px 0 0 0',
+              }}
+            >
+              Real-time synchronization across POS, Khata, and Inventory
+            </p>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: '4px',
+              background: 'var(--bg-hover)',
+              padding: '4px',
+              borderRadius: '6px',
+            }}
+          >
+            {[7, 30].map((t) => (
+              <button
+                key={t}
+                onClick={() => setTimeframe(t)}
+                style={{
+                  padding: '6px 14px',
+                  fontSize: '0.75rem',
+                  borderRadius: '6px',
+                  border: 'none',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  background:
+                    timeframe === t ? 'var(--brand-primary)' : 'transparent',
+                  color: timeframe === t ? '#ffffff' : '#64748b',
+                }}
+              >
+                {t}D
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => loadDashboardData(timeframe, selectedYear)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              background: 'var(--bg-card)',
+              border: '1.5px solid #cbd5e1',
+              borderRadius: '6px',
+              fontSize: '0.75rem',
+              fontWeight: 'bold',
+              color: '#475569',
+              cursor: 'pointer',
+            }}
+          >
+            <RefreshIcon spinning={isSyncing} /> Sync Data
+          </button>
+        </div>
+      </div>
+
+      {/* 2. TIER 1: BENTO BOX KPI GRID */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-          gap: '10px',
+          gridTemplateColumns: 'repeat(5, 1fr)',
+          gap: '12px',
         }}
       >
-        {/* Today's Sales */}
+        {/* Hero Cards (Span 2) */}
         <div
-          className="card"
           style={{
-            background: '#0a1128',
-            color: '#fefcfb',
-            borderRadius: '8px',
-            padding: '12px 14px',
-            border: '1px solid rgba(254, 252, 251, 0.1)',
+            background: 'var(--bg-card)',
+            borderRadius: '10px',
+            padding: '16px 20px',
+            border: '1.5px solid var(--brand-primary)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            // gridColumn: 'span 2',
           }}
         >
           <div
             style={{
-              fontSize: '0.62rem',
-              opacity: 0.8,
-              fontWeight: '700',
-              textTransform: 'uppercase',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
             }}
           >
-            Today's Sales
+            <span
+              style={{
+                fontSize: '0.75rem',
+                fontWeight: '700',
+                color: 'var(--brand-primary)',
+                textTransform: 'uppercase',
+              }}
+            >
+              Today's Sales
+            </span>
+            <div style={{ color: 'var(--brand-primary)' }}>
+              <TrendingUpIcon />
+            </div>
           </div>
-          <div
-            className="monospace"
-            style={{ fontSize: '1.1rem', fontWeight: '900', marginTop: '4px' }}
-          >
-            Rs. {stats.dailySales.total.toLocaleString()}
-          </div>
-          <div style={{ fontSize: '0.65rem', opacity: 0.75, marginTop: '2px' }}>
-            {stats.dailySales.count} bills generated
+          <div style={{ marginTop: '8px' }}>
+            <div
+              className="monospace"
+              style={{
+                fontSize: '1.5rem',
+                fontWeight: '900',
+                color: 'var(--brand-primary)',
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              Rs. {dailyTotal.toLocaleString()}
+            </div>
+            <div
+              style={{
+                fontSize: '0.75rem',
+                color: 'var(--text-secondary)',
+                marginTop: '2px',
+                fontWeight: '500',
+              }}
+            >
+              {dailyCount} bills generated today
+            </div>
           </div>
         </div>
 
-        {/* Monthly Sales */}
         <div
-          className="card"
           style={{
-            background: '#001f54',
-            color: '#fefcfb',
-            borderRadius: '8px',
-            padding: '12px 14px',
-            border: '1px solid rgba(254, 252, 251, 0.1)',
+            background: 'var(--bg-card)',
+            borderRadius: '10px',
+            padding: '16px 20px',
+            border: '1.5px solid var(--brand-primary)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            // gridColumn: 'span 2',
           }}
         >
           <div
             style={{
-              fontSize: '0.62rem',
-              opacity: 0.8,
-              fontWeight: '700',
-              textTransform: 'uppercase',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
             }}
           >
-            Monthly Sales
+            <span
+              style={{
+                fontSize: '0.75rem',
+                fontWeight: '700',
+                color: 'var(--brand-primary)',
+                textTransform: 'uppercase',
+              }}
+            >
+              Lifetime Net Sales
+            </span>
+            <div style={{ color: 'var(--brand-primary)' }}>
+              <TrendingUpIcon />
+            </div>
           </div>
-          <div
-            className="monospace"
-            style={{ fontSize: '1.1rem', fontWeight: '900', marginTop: '4px' }}
-          >
-            Rs. {stats.monthlySales.total.toLocaleString()}
-          </div>
-          <div style={{ fontSize: '0.65rem', opacity: 0.75, marginTop: '2px' }}>
-            {stats.monthlySales.count} transactions
+          <div style={{ marginTop: '8px' }}>
+            <div
+              className="monospace"
+              style={{
+                fontSize: '1.5rem',
+                fontWeight: '900',
+                color: 'var(--brand-primary)',
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              Rs. {lifetimeNetSales.toLocaleString()}
+            </div>
+            <div
+              style={{
+                fontSize: '0.75rem',
+                color: 'var(--text-secondary)',
+                marginTop: '2px',
+                fontWeight: '500',
+              }}
+            >
+              Gross sales minus total refunds
+            </div>
           </div>
         </div>
 
-        {/* Gross Revenue */}
+        {/* Standard Cards (Span 1) */}
         <div
-          className="card"
           style={{
-            background: 'linear-gradient(135deg, #0284c7 0%, #0d5c75 100%)',
-            color: '#fefcfb',
-            borderRadius: '8px',
-            padding: '12px 14px',
-            border: '1px solid rgba(254, 252, 251, 0.1)',
+            background: 'var(--bg-card)',
+            borderRadius: '10px',
+            padding: '14px 16px',
+            border: '1.5px solid var(--danger)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div
-            style={{
-              fontSize: '0.62rem',
-              opacity: 0.85,
-              fontWeight: '700',
-              textTransform: 'uppercase',
-            }}
-          >
-            Gross Revenue
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: '700',
+                color: 'var(--danger)',
+                textTransform: 'uppercase',
+              }}
+            >
+              Total Expenses
+            </span>
+            <div style={{ color: 'var(--danger)' }}>
+              <ReceiptIcon />
+            </div>
           </div>
-          <div
-            className="monospace"
-            style={{ fontSize: '1.1rem', fontWeight: '900', marginTop: '4px' }}
-          >
-            Rs.{' '}
-            {(stats.monthlySales.total * 1.15).toLocaleString(undefined, {
-              maximumFractionDigits: 0,
-            })}
-          </div>
-          <div style={{ fontSize: '0.65rem', opacity: 0.8, marginTop: '2px' }}>
-            Inflow baseline
+          <div style={{ marginTop: '6px' }}>
+            <div
+              className="monospace"
+              style={{
+                fontSize: '1.15rem',
+                fontWeight: '900',
+                color: 'var(--text-primary)',
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              Rs. {expensesTotal.toLocaleString()}
+            </div>
+            <div
+              style={{
+                fontSize: '0.7rem',
+                color: 'var(--text-secondary)',
+                marginTop: '2px',
+              }}
+            >
+              Operating overhead
+            </div>
           </div>
         </div>
-
-        {/* Net Profit */}
         <div
-          className="card"
           style={{
-            background: '#ffffff',
-            color: '#0a1128',
-            borderRadius: '8px',
-            padding: '12px 14px',
-            border: '1.5px solid #059669',
+            background: 'var(--bg-card)',
+            borderRadius: '10px',
+            padding: '14px 16px',
+            border: '1.5px solid #d97706',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div
-            style={{
-              fontSize: '0.62rem',
-              color: '#047857',
-              fontWeight: '700',
-              textTransform: 'uppercase',
-            }}
-          >
-            Net Profit
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: '700',
+                color: '#d97706',
+                textTransform: 'uppercase',
+              }}
+            >
+              Total Purchases
+            </span>
+            <div style={{ color: '#d97706' }}>
+              <TruckIcon />
+            </div>
           </div>
-          <div
-            className="monospace"
-            style={{
-              fontSize: '1.1rem',
-              fontWeight: '900',
-              color: '#059669',
-              marginTop: '4px',
-            }}
-          >
-            Rs.{' '}
-            {(stats.monthlySales.total * 0.35).toLocaleString(undefined, {
-              maximumFractionDigits: 0,
-            })}
-          </div>
-          <div
-            style={{ fontSize: '0.65rem', color: '#53647c', marginTop: '2px' }}
-          >
-            Post expenses
+          <div style={{ marginTop: '6px' }}>
+            <div
+              className="monospace"
+              style={{
+                fontSize: '1.15rem',
+                fontWeight: '900',
+                color: 'var(--text-primary)',
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              Rs. {purchasesTotal.toLocaleString()}
+            </div>
+            <div
+              style={{
+                fontSize: '0.7rem',
+                color: 'var(--text-secondary)',
+                marginTop: '2px',
+              }}
+            >
+              Stock GRN intake
+            </div>
           </div>
         </div>
-
-        {/* Total Expenses */}
         <div
-          className="card"
           style={{
-            background: '#ffffff',
-            color: '#0a1128',
-            borderRadius: '8px',
-            padding: '12px 14px',
-            border: '1.5px solid #f87171',
+            background: 'var(--bg-card)',
+            borderRadius: '10px',
+            padding: '14px 16px',
+            border: '1.5px solid var(--danger)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div
-            style={{
-              fontSize: '0.62rem',
-              color: '#b91c1c',
-              fontWeight: '700',
-              textTransform: 'uppercase',
-            }}
-          >
-            Total Expenses
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: '700',
+                color: 'var(--danger)',
+                textTransform: 'uppercase',
+              }}
+            >
+              Total Refunds
+            </span>
+            <div style={{ color: 'var(--danger)' }}>
+              <ReceiptIcon />
+            </div>
           </div>
-          <div
-            className="monospace"
-            style={{
-              fontSize: '1.1rem',
-              fontWeight: '900',
-              color: '#dc2626',
-              marginTop: '4px',
-            }}
-          >
-            Rs. {expensesTotal.toLocaleString()}
-          </div>
-          <div
-            style={{ fontSize: '0.65rem', color: '#53647c', marginTop: '2px' }}
-          >
-            Store overhead
+          <div style={{ marginTop: '6px' }}>
+            <div
+              className="monospace"
+              style={{
+                fontSize: '1.15rem',
+                fontWeight: '900',
+                color: 'var(--text-primary)',
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              Rs. {refundsTotal.toLocaleString()}
+            </div>
+            <div
+              style={{
+                fontSize: '0.7rem',
+                color: 'var(--text-secondary)',
+                marginTop: '2px',
+              }}
+            >
+              Customer returns
+            </div>
           </div>
         </div>
-
-        {/* Total Purchases */}
         <div
-          className="card"
           style={{
-            background: '#ffffff',
-            color: '#0a1128',
-            borderRadius: '8px',
-            padding: '12px 14px',
-            border: '1.5px solid #fcd34d',
+            background: 'var(--bg-card)',
+            borderRadius: '10px',
+            padding: '14px 16px',
+            border: '1.5px solid #d97706',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div
-            style={{
-              fontSize: '0.62rem',
-              color: '#d97706',
-              fontWeight: '700',
-              textTransform: 'uppercase',
-            }}
-          >
-            Total Purchases
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: '700',
+                color: '#d97706',
+                textTransform: 'uppercase',
+              }}
+            >
+              Stock Valuation
+            </span>
+            <div style={{ color: '#d97706' }}>
+              <PackageIcon />
+            </div>
           </div>
-          <div
-            className="monospace"
-            style={{
-              fontSize: '1.1rem',
-              fontWeight: '900',
-              color: '#d97706',
-              marginTop: '4px',
-            }}
-          >
-            Rs. {purchasesTotal.toLocaleString()}
-          </div>
-          <div
-            style={{ fontSize: '0.65rem', color: '#53647c', marginTop: '2px' }}
-          >
-            Stock GRN intake
+          <div style={{ marginTop: '6px' }}>
+            <div
+              className="monospace"
+              style={{
+                fontSize: '1.15rem',
+                fontWeight: '900',
+                color: 'var(--text-primary)',
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              Rs. {stockValuation.toLocaleString()}
+            </div>
+            <div
+              style={{
+                fontSize: '0.7rem',
+                color: 'var(--text-secondary)',
+                marginTop: '2px',
+              }}
+            >
+              WAC asset basis
+            </div>
           </div>
         </div>
-
-        {/* Total Refunds */}
         <div
-          className="card"
           style={{
-            background: '#ffffff',
-            color: '#0a1128',
-            borderRadius: '8px',
-            padding: '12px 14px',
-            border: '1.5px solid #fca5a5',
+            background: 'var(--bg-card)',
+            borderRadius: '10px',
+            padding: '14px 16px',
+            border: '1.5px solid var(--info)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div
-            style={{
-              fontSize: '0.62rem',
-              color: '#991b1b',
-              fontWeight: '700',
-              textTransform: 'uppercase',
-            }}
-          >
-            Total Refunds
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: '700',
+                color: 'var(--info)',
+                textTransform: 'uppercase',
+              }}
+            >
+              Device Repairs
+            </span>
+            <div style={{ color: 'var(--info)' }}>
+              <ToolIcon />
+            </div>
           </div>
-          <div
-            className="monospace"
-            style={{
-              fontSize: '1.1rem',
-              fontWeight: '900',
-              color: '#dc2626',
-              marginTop: '4px',
-            }}
-          >
-            Rs. {refundsTotal.toLocaleString()}
-          </div>
-          <div
-            style={{ fontSize: '0.65rem', color: '#53647c', marginTop: '2px' }}
-          >
-            Customer returns
+          <div style={{ marginTop: '6px' }}>
+            <div
+              className="monospace"
+              style={{
+                fontSize: '1.15rem',
+                fontWeight: '900',
+                color: 'var(--text-primary)',
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              {repairsCount} Jobs
+            </div>
+            <div
+              style={{
+                fontSize: '0.7rem',
+                color: 'var(--text-secondary)',
+                marginTop: '2px',
+              }}
+            >
+              Active tickets
+            </div>
           </div>
         </div>
-
-        {/* Device Repairs */}
         <div
-          className="card"
           style={{
-            background: '#ffffff',
-            color: '#0a1128',
-            borderRadius: '8px',
-            padding: '12px 14px',
-            border: '1.5px solid #7dd3fc',
+            background: 'var(--bg-card)',
+            borderRadius: '10px',
+            padding: '14px 16px',
+            border: '1.5px solid var(--danger)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div
-            style={{
-              fontSize: '0.62rem',
-              color: '#0369a1',
-              fontWeight: '700',
-              textTransform: 'uppercase',
-            }}
-          >
-            Device Repairs
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: '700',
+                color: 'var(--danger)',
+                textTransform: 'uppercase',
+              }}
+            >
+              Customer Dues
+            </span>
+            <div style={{ color: 'var(--danger)' }}>
+              <UsersIcon />
+            </div>
           </div>
-          <div
-            className="monospace"
-            style={{
-              fontSize: '1.1rem',
-              fontWeight: '900',
-              color: '#0284c7',
-              marginTop: '4px',
-            }}
-          >
-            {repairsCount} Tickets
-          </div>
-          <div
-            style={{ fontSize: '0.65rem', color: '#53647c', marginTop: '2px' }}
-          >
-            Service jobs logged
+          <div style={{ marginTop: '6px' }}>
+            <div
+              className="monospace"
+              style={{
+                fontSize: '1.15rem',
+                fontWeight: '900',
+                color: 'var(--text-primary)',
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              Rs. {customerDues.toLocaleString()}
+            </div>
+            <div
+              style={{
+                fontSize: '0.7rem',
+                color: 'var(--text-secondary)',
+                marginTop: '2px',
+              }}
+            >
+              Khata receivables
+            </div>
           </div>
         </div>
-
-        {/* Stock Valuation */}
         <div
-          className="card"
           style={{
-            background: '#ffffff',
-            color: '#0a1128',
-            borderRadius: '8px',
-            padding: '12px 14px',
-            border: '1.5px solid #d1d9e2',
+            background: 'var(--bg-card)',
+            borderRadius: '10px',
+            padding: '14px 16px',
+            border: '1.5px solid #d97706',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div
-            style={{
-              fontSize: '0.62rem',
-              color: '#53647c',
-              fontWeight: '700',
-              textTransform: 'uppercase',
-            }}
-          >
-            Stock Valuation
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: '700',
+                color: '#d97706',
+                textTransform: 'uppercase',
+              }}
+            >
+              Supplier Debt
+            </span>
+            <div style={{ color: '#d97706' }}>
+              <TruckIcon />
+            </div>
           </div>
-          <div
-            className="monospace"
-            style={{
-              fontSize: '1.1rem',
-              fontWeight: '900',
-              color: '#d97706',
-              marginTop: '4px',
-            }}
-          >
-            Rs. {stats.totalStockWorth.toLocaleString()}
-          </div>
-          <div
-            style={{ fontSize: '0.65rem', color: '#53647c', marginTop: '2px' }}
-          >
-            WAC asset basis
+          <div style={{ marginTop: '6px' }}>
+            <div
+              className="monospace"
+              style={{
+                fontSize: '1.15rem',
+                fontWeight: '900',
+                color: 'var(--text-primary)',
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              Rs. {supplierPayables.toLocaleString()}
+            </div>
+            <div
+              style={{
+                fontSize: '0.7rem',
+                color: 'var(--text-secondary)',
+                marginTop: '2px',
+              }}
+            >
+              Vendor payables
+            </div>
           </div>
         </div>
-
-        {/* Customer Dues */}
         <div
-          className="card"
           style={{
-            background: '#ffffff',
-            color: '#0a1128',
-            borderRadius: '8px',
-            padding: '12px 14px',
-            border: '1.5px solid #fecaca',
+            background: 'var(--bg-card)',
+            borderRadius: '10px',
+            padding: '14px 16px',
+            border: '1.5px solid var(--brand-primary)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div
-            style={{
-              fontSize: '0.62rem',
-              color: '#991b1b',
-              fontWeight: '700',
-              textTransform: 'uppercase',
-            }}
-          >
-            Customer Dues
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: '700',
+                color: 'var(--brand-primary)',
+                textTransform: 'uppercase',
+              }}
+            >
+              Credit Share
+            </span>
+            <div style={{ color: 'var(--brand-primary)' }}>
+              <UsersIcon />
+            </div>
           </div>
-          <div
-            className="monospace"
-            style={{
-              fontSize: '1.1rem',
-              fontWeight: '900',
-              color: '#dc2626',
-              marginTop: '4px',
-            }}
-          >
-            Rs. {stats.customerDues.toLocaleString()}
-          </div>
-          <div
-            style={{ fontSize: '0.65rem', color: '#53647c', marginTop: '2px' }}
-          >
-            Khata receivables
+          <div style={{ marginTop: '6px' }}>
+            <div
+              className="monospace"
+              style={{
+                fontSize: '1.15rem',
+                fontWeight: '900',
+                color: 'var(--text-primary)',
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              Rs. {customerDues.toLocaleString()}
+            </div>
+            <div
+              style={{
+                fontSize: '0.7rem',
+                color: 'var(--text-secondary)',
+                marginTop: '2px',
+              }}
+            >
+              Total credit owed
+            </div>
           </div>
         </div>
-
-        {/* My Debt */}
         <div
-          className="card"
           style={{
-            background: '#ffffff',
-            color: '#0a1128',
-            borderRadius: '8px',
-            padding: '12px 14px',
-            border: '1.5px solid #fed7aa',
+            background: 'var(--bg-card)',
+            borderRadius: '10px',
+            padding: '14px 16px',
+            border: '1.5px solid var(--success)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div
-            style={{
-              fontSize: '0.62rem',
-              color: '#c2410c',
-              fontWeight: '700',
-              textTransform: 'uppercase',
-            }}
-          >
-            My Debt (Payables)
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: '700',
+                color: 'var(--success)',
+                textTransform: 'uppercase',
+              }}
+            >
+              Cash Counter
+            </span>
+            <div style={{ color: 'var(--success)' }}>
+              <WalletIcon />
+            </div>
           </div>
-          <div
-            className="monospace"
-            style={{
-              fontSize: '1.1rem',
-              fontWeight: '900',
-              color: '#ea580c',
-              marginTop: '4px',
-            }}
-          >
-            Rs. {(stats.supplierPayables || 45000).toLocaleString()}
-          </div>
-          <div
-            style={{ fontSize: '0.65rem', color: '#53647c', marginTop: '2px' }}
-          >
-            Vendor bills due
+          <div style={{ marginTop: '6px' }}>
+            <div
+              className="monospace"
+              style={{
+                fontSize: '1.15rem',
+                fontWeight: '900',
+                color: 'var(--text-primary)',
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              Rs. {cashCounter.toLocaleString()}
+            </div>
+            <div
+              style={{
+                fontSize: '0.7rem',
+                color: 'var(--text-secondary)',
+                marginTop: '2px',
+              }}
+            >
+              Estimated physical cash
+            </div>
           </div>
         </div>
-
-        {/* Cash Counter */}
         <div
-          className="card"
           style={{
-            background: '#ffffff',
-            color: '#0a1128',
-            borderRadius: '8px',
-            padding: '12px 14px',
-            border: '1.5px solid #cbd5e1',
+            background: 'var(--bg-card)',
+            borderRadius: '10px',
+            padding: '14px 16px',
+            border: '1.5px solid var(--brand-primary)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div
-            style={{
-              fontSize: '0.62rem',
-              color: '#334155',
-              fontWeight: '700',
-              textTransform: 'uppercase',
-            }}
-          >
-            Cash Counter
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: '700',
+                color: 'var(--brand-primary)',
+                textTransform: 'uppercase',
+              }}
+            >
+              Monthly Sales
+            </span>
+            <div style={{ color: 'var(--brand-primary)' }}>
+              <TrendingUpIcon />
+            </div>
           </div>
-          <div
-            className="monospace"
-            style={{
-              fontSize: '1.1rem',
-              fontWeight: '900',
-              color: '#0f172a',
-              marginTop: '4px',
-            }}
-          >
-            Rs. {(stats.cashCounter || 125000).toLocaleString()}
-          </div>
-          <div
-            style={{ fontSize: '0.65rem', color: '#53647c', marginTop: '2px' }}
-          >
-            Physical liquidity
-          </div>
-        </div>
-
-        {/* Credit Share */}
-        <div
-          className="card"
-          style={{
-            background: '#ffffff',
-            color: '#0a1128',
-            borderRadius: '8px',
-            padding: '12px 14px',
-            border: '1.5px solid #cbd5e1',
-          }}
-        >
-          <div
-            style={{
-              fontSize: '0.62rem',
-              color: '#334155',
-              fontWeight: '700',
-              textTransform: 'uppercase',
-            }}
-          >
-            Credit Share
-          </div>
-          <div
-            className="monospace"
-            style={{
-              fontSize: '1.1rem',
-              fontWeight: '900',
-              color: '#0d5c75',
-              marginTop: '4px',
-            }}
-          >
-            24.5%
-          </div>
-          <div
-            style={{ fontSize: '0.65rem', color: '#53647c', marginTop: '2px' }}
-          >
-            Khata ratio
+          <div style={{ marginTop: '6px' }}>
+            <div
+              className="monospace"
+              style={{
+                fontSize: '1.15rem',
+                fontWeight: '900',
+                color: 'var(--text-primary)',
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              Rs. {monthlyTotal.toLocaleString()}
+            </div>
+            <div
+              style={{
+                fontSize: '0.7rem',
+                color: 'var(--text-secondary)',
+                marginTop: '2px',
+              }}
+            >
+              {monthlyCount} transactions
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 📊 TIER 2: RESPONSIVE CHARTS CONTAINER */}
+      {/* 3. TIER 2: CHARTS */}
       <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '14px',
-        }}
+        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}
       >
-        {/* Revenue Trajectory Curve */}
+        {/* Revenue Chart */}
         <div
-          className="card"
           style={{
-            background: '#ffffff',
+            background: 'var(--bg-card)',
             borderRadius: '10px',
             padding: '18px',
-            border: '1.5px solid #e2e8f0',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
+            border: '1.5px solid var(--border-color)',
           }}
         >
           <div
@@ -666,60 +1151,34 @@ export default function Dashboard() {
               <h4
                 style={{
                   margin: 0,
-                  fontSize: '0.95rem',
+                  fontSize: '0.92rem',
                   fontWeight: '800',
-                  color: '#0a1128',
+                  color: 'var(--text-primary)',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  textTransform: 'uppercase',
                 }}
               >
-                Revenue Trajectory Curve
+                Revenue Trajectory
               </h4>
-              <span style={{ fontSize: '0.68rem', color: '#64748b' }}>
+              <span
+                style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}
+              >
                 Sales velocity over time
               </span>
             </div>
-            <div
+            <span
               style={{
-                display: 'flex',
-                gap: '4px',
-                background: '#f1f5f9',
-                padding: '2px',
+                fontSize: '0.7rem',
+                color: 'var(--brand-primary)',
+                background: '#f0fdf4',
+                padding: '4px 10px',
                 borderRadius: '6px',
-                border: '1px solid #cbd5e1',
+                fontWeight: 'bold',
               }}
             >
-              <button
-                className={`btn ${timeframe === 7 ? 'btn-primary' : ''}`}
-                style={{
-                  padding: '4px 10px',
-                  fontSize: '0.7rem',
-                  borderRadius: '4px',
-                  background: timeframe === 7 ? '#0d5c75' : 'transparent',
-                  color: timeframe === 7 ? '#fff' : '#64748b',
-                  border: 'none',
-                  fontWeight: 'bold',
-                }}
-                onClick={() => setTimeframe(7)}
-              >
-                7D
-              </button>
-              <button
-                className={`btn ${timeframe === 30 ? 'btn-primary' : ''}`}
-                style={{
-                  padding: '4px 10px',
-                  fontSize: '0.7rem',
-                  borderRadius: '4px',
-                  background: timeframe === 30 ? '#0d5c75' : 'transparent',
-                  color: timeframe === 30 ? '#fff' : '#64748b',
-                  border: 'none',
-                  fontWeight: 'bold',
-                }}
-                onClick={() => setTimeframe(30)}
-              >
-                30D
-              </button>
-            </div>
+              {timeframe} Days
+            </span>
           </div>
-
           <div style={{ position: 'relative', width: '100%' }}>
             {trendData.length === 0 ? (
               <div
@@ -729,10 +1188,10 @@ export default function Dashboard() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: '#94a3b8',
-                  fontSize: '0.8rem',
+                  fontSize: '0.85rem',
                 }}
               >
-                No sales data recorded.
+                No sales telemetry recorded.
               </div>
             ) : (
               <svg
@@ -747,11 +1206,18 @@ export default function Dashboard() {
                     x2="0"
                     y2="1"
                   >
-                    <stop offset="0%" stopColor="#0d5c75" stopOpacity="0.2" />
-                    <stop offset="100%" stopColor="#0d5c75" stopOpacity="0.0" />
+                    <stop
+                      offset="0%"
+                      stopColor="var(--brand-primary)"
+                      stopOpacity="0.25"
+                    />
+                    <stop
+                      offset="100%"
+                      stopColor="var(--brand-primary)"
+                      stopOpacity="0.0"
+                    />
                   </linearGradient>
                 </defs>
-
                 <line
                   x1="20"
                   y1="20"
@@ -775,19 +1241,17 @@ export default function Dashboard() {
                   y2={chartHeight - 20}
                   stroke="#cbd5e1"
                 />
-
                 {hoveredPoint && (
                   <line
                     x1={hoveredPoint.x}
                     y1="10"
                     x2={hoveredPoint.x}
                     y2={chartHeight - 20}
-                    stroke="#0d5c75"
+                    stroke="var(--brand-primary)"
                     strokeDasharray="2 2"
                     strokeWidth="1.5"
                   />
                 )}
-
                 {points.length > 1 && (
                   <path d={closedAreaPath} fill="url(#fluidGradient)" />
                 )}
@@ -795,12 +1259,11 @@ export default function Dashboard() {
                   <path
                     d={smoothCurvePath}
                     fill="none"
-                    stroke="#0d5c75"
+                    stroke="var(--brand-primary)"
                     strokeWidth="2.5"
                     strokeLinecap="round"
                   />
                 )}
-
                 {points.map((p, idx) => (
                   <g
                     key={idx}
@@ -812,7 +1275,7 @@ export default function Dashboard() {
                       cx={p.x}
                       cy={p.y}
                       r={hoveredPoint === p ? '5' : '3.5'}
-                      fill="#0d5c75"
+                      fill="var(--brand-primary)"
                       stroke="#ffffff"
                       strokeWidth="1.5"
                     />
@@ -830,108 +1293,157 @@ export default function Dashboard() {
                 ))}
               </svg>
             )}
-
             {hoveredPoint && (
               <div
                 style={{
                   position: 'absolute',
                   top: '5px',
                   right: '10px',
-                  background: '#0a1128',
-                  color: '#fefcfb',
-                  padding: '6px 10px',
+                  background: '#1e293b',
+                  color: '#ffffff',
+                  padding: '8px 12px',
                   borderRadius: '6px',
-                  fontSize: '0.72rem',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  fontSize: '0.75rem',
+                  fontFamily: "'JetBrains Mono', monospace",
                 }}
               >
                 <div style={{ fontWeight: '700', color: '#38bdf8' }}>
-                  📅 {hoveredPoint.sale_date}
+                  {hoveredPoint.sale_date}
                 </div>
-                <div className="monospace" style={{ fontWeight: '800' }}>
-                  Rs. {hoveredPoint.total.toLocaleString()}
+                <div style={{ fontWeight: '800' }}>
+                  Rs. {(hoveredPoint.total || 0).toLocaleString()}
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Monthly Comparison Bar Chart */}
+        {/* Yearly Performance Bar Chart */}
         <div
-          className="card"
           style={{
-            background: '#ffffff',
+            background: 'var(--bg-card)',
             borderRadius: '10px',
             padding: '18px',
-            border: '1.5px solid #e2e8f0',
+            border: '1.5px solid var(--border-color)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
+            // color: 'var(--text-primary)',
           }}
         >
-          <div>
-            <h4
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+            }}
+          >
+            <div>
+              <h4
+                style={{
+                  margin: 0,
+                  fontSize: '0.92rem',
+                  fontWeight: '800',
+                  color: 'var(--text-primary)',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  textTransform: 'uppercase',
+                }}
+              >
+                Monthly Financial Overview
+              </h4>
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                Revenue vs operating costs vs net profit
+              </span>
+            </div>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
               style={{
-                margin: 0,
-                fontSize: '0.95rem',
-                fontWeight: '800',
-                color: '#0a1128',
+                padding: '6px 10px',
+                fontSize: '0.75rem',
+                borderRadius: '6px',
+                border: '1px solid var(--border-strong)',
+                background: 'var(--bg-hover)',
+                fontWeight: 'bold',
+                color: '#334155',
+                cursor: 'pointer',
+                outline: 'none',
               }}
             >
-              Monthly Performance
-            </h4>
-            <span style={{ fontSize: '0.68rem', color: '#64748b' }}>
-              Comparative revenue volume per month
-            </span>
+              {[2024, 2025, 2026, 2027, 2028].map((yr) => (
+                <option key={yr} value={yr}>
+                  {yr}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div
             style={{
               display: 'flex',
               alignItems: 'flex-end',
-              justifyContent: 'space-between',
-              height: '140px',
-              paddingTop: '15px',
+              justifyContent: 'space-around',
+              height: '160px',
+              paddingTop: '20px',
               gap: '8px',
             }}
           >
-            {monthlyComparison.map((m, idx) => {
-              const barHeightPct = Math.max(
-                (m.sales / maxMonthlyBar) * 100,
-                10,
-              );
+            {yearlyPerformance.map((m, idx) => {
+              const barHeightPct = Math.max((m.sales / maxBarVal) * 100, 2);
+              const isCurrentMonth =
+                new Date().getMonth() === idx &&
+                selectedYear === new Date().getFullYear().toString();
               return (
                 <div
                   key={idx}
                   style={{
-                    flex: 1,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
+                    width: '100%',
                     height: '100%',
                     justifyContent: 'flex-end',
                   }}
                 >
                   <div
+                    className="monospace"
+                    style={{
+                      fontSize: '0.65rem',
+                      fontWeight: 'bold',
+                      color: isCurrentMonth
+                        ? 'var(--brand-primary)'
+                        : '#64748b',
+                      marginBottom: '4px',
+                    }}
+                  >
+                    {m.sales > 0 ? `Rs. ${(m.sales / 1000).toFixed(0)}k` : ''}
+                  </div>
+                  <div
                     style={{
                       width: '100%',
-                      maxWidth: '28px',
+                      maxWidth: '32px',
                       height: `${barHeightPct}%`,
-                      background:
-                        idx === monthlyComparison.length - 1
-                          ? '#0d5c75'
-                          : '#cbd5e1',
+                      background: isCurrentMonth
+                        ? 'var(--brand-primary)'
+                        : '#cbd5e1',
                       borderRadius: '4px 4px 0 0',
                       transition: 'height 0.3s ease',
                     }}
-                    title={`Rs. ${Math.round(m.sales).toLocaleString()}`}
+                    title={`Rs. ${m.sales.toLocaleString()}`}
                   />
                   <span
                     style={{
-                      fontSize: '0.68rem',
-                      color: '#64748b',
+                      fontSize: '0.65rem',
+                      color: isCurrentMonth
+                        ? 'var(--brand-primary)'
+                        : '#64748b',
                       marginTop: '6px',
-                      fontWeight: '600',
+                      fontWeight: isCurrentMonth ? '800' : '600',
                     }}
                   >
                     {m.month}
@@ -943,22 +1455,17 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 🚀 TIER 3: RESPONSIVE OPERATIONAL ACTION PANELS */}
+      {/* 4. TIER 3: LISTS */}
       <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '14px',
-        }}
+        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}
       >
-        {/* Top 5 Hot Selling Products */}
+        {/* Hot Products */}
         <div
-          className="card"
           style={{
-            background: '#ffffff',
+            background: 'var(--bg-card)',
             borderRadius: '10px',
             padding: '18px',
-            border: '1.5px solid #e2e8f0',
+            border: '1.5px solid var(--border-color)',
           }}
         >
           <div
@@ -969,59 +1476,65 @@ export default function Dashboard() {
               marginBottom: '12px',
             }}
           >
-            <h4
-              style={{
-                margin: 0,
-                fontSize: '0.92rem',
-                fontWeight: '800',
-                color: '#0a1128',
-              }}
-            >
-              🔥 Top 5 Hot Products
-            </h4>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ color: 'var(--brand-primary)' }}>
+                <FlameIcon />
+              </div>
+              <h4
+                style={{
+                  margin: 0,
+                  fontSize: '0.92rem',
+                  fontWeight: '800',
+                  color: 'var(--text-primary)',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  textTransform: 'uppercase',
+                }}
+              >
+                Top Hot Products
+              </h4>
+            </div>
             <span
               style={{
-                fontSize: '0.68rem',
-                color: '#64748b',
+                fontSize: '0.72rem',
+                color: 'var(--text-secondary)',
                 fontWeight: '600',
               }}
             >
               By Revenue
             </span>
           </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {analytics.hotProducts.length === 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {hotProducts.length === 0 ? (
               <div
                 style={{
-                  fontSize: '0.78rem',
-                  color: '#64748b',
+                  fontSize: '0.85rem',
+                  color: 'var(--text-secondary)',
                   padding: '20px 0',
                   textAlign: 'center',
                 }}
               >
-                No product sales logged yet.
+                No product sales logged.
               </div>
             ) : (
-              analytics.hotProducts.slice(0, 5).map((p, idx) => (
+              hotProducts.slice(0, 5).map((p, idx) => (
                 <div
                   key={idx}
                   style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    background: '#f8fafc',
-                    padding: '8px 12px',
+                    background: 'var(--bg-hover)',
+                    padding: '10px 12px',
                     borderRadius: '6px',
-                    border: '1px solid #e2e8f0',
+                    border: '1px solid #f1f5f9',
                   }}
                 >
-                  <div style={{ minWidth: 0 }}>
+                  <div style={{ minWidth: 0, flex: 1, paddingRight: '8px' }}>
                     <div
                       style={{
                         fontWeight: '700',
-                        fontSize: '0.78rem',
-                        color: '#1e293b',
+                        fontSize: '0.8rem',
+                        color: 'var(--text-primary)',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -1029,20 +1542,25 @@ export default function Dashboard() {
                     >
                       {idx + 1}. {p.name}
                     </div>
-                    <div style={{ fontSize: '0.68rem', color: '#64748b' }}>
-                      Qty Sold: {p.total_sold} units
+                    <div
+                      style={{
+                        fontSize: '0.7rem',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      Qty: {p.total_sold} units
                     </div>
                   </div>
                   <div
                     className="monospace"
                     style={{
                       fontWeight: '800',
-                      color: '#0d5c75',
-                      fontSize: '0.82rem',
-                      flexShrink: 0,
+                      color: 'var(--brand-primary)',
+                      fontSize: '0.85rem',
+                      fontFamily: "'JetBrains Mono', monospace",
                     }}
                   >
-                    Rs. {p.revenue.toLocaleString()}
+                    Rs. {(p.revenue || 0).toLocaleString()}
                   </div>
                 </div>
               ))
@@ -1050,14 +1568,13 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Urgent Restock List */}
+        {/* Restock Alerts */}
         <div
-          className="card"
           style={{
-            background: '#ffffff',
+            background: 'var(--bg-card)',
             borderRadius: '10px',
             padding: '18px',
-            border: '1.5px solid #e2e8f0',
+            border: '1.5px solid var(--border-color)',
           }}
         >
           <div
@@ -1068,41 +1585,50 @@ export default function Dashboard() {
               marginBottom: '12px',
             }}
           >
-            <h4
-              style={{
-                margin: 0,
-                fontSize: '0.92rem',
-                fontWeight: '800',
-                color: '#991b1b',
-              }}
-            >
-              ⚠️ Urgent Restock List
-            </h4>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ color: 'var(--danger)' }}>
+                <AlertIcon />
+              </div>
+              <h4
+                style={{
+                  margin: 0,
+                  fontSize: '0.92rem',
+                  fontWeight: '800',
+                  color: 'var(--danger)',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  textTransform: 'uppercase',
+                }}
+              >
+                Urgent Restock
+              </h4>
+            </div>
             <span
               style={{
-                fontSize: '0.68rem',
-                color: '#b91c1c',
-                fontWeight: '700',
+                fontSize: '0.72rem',
+                color: 'var(--danger)',
+                fontWeight: 'bold',
+                background: '#fee2e2',
+                padding: '2px 8px',
+                borderRadius: '4px',
               }}
             >
-              {analytics.restockItems.length} items low
+              {restockItems.length} Low
             </span>
           </div>
-
           <div
             style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: '6px',
-              maxHeight: '200px',
+              gap: '8px',
+              maxHeight: '210px',
               overflowY: 'auto',
             }}
           >
-            {analytics.restockItems.length === 0 ? (
+            {restockItems.length === 0 ? (
               <div
                 style={{
-                  fontSize: '0.78rem',
-                  color: '#059669',
+                  fontSize: '0.85rem',
+                  color: 'var(--success)',
                   padding: '20px 0',
                   textAlign: 'center',
                   background: '#f0fdf4',
@@ -1110,10 +1636,10 @@ export default function Dashboard() {
                   fontWeight: '600',
                 }}
               >
-                ✅ All stock levels are optimal!
+                Stock levels optimal
               </div>
             ) : (
-              analytics.restockItems.map((item, idx) => (
+              restockItems.slice(0, 5).map((item, idx) => (
                 <div
                   key={idx}
                   style={{
@@ -1121,17 +1647,17 @@ export default function Dashboard() {
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     background: '#fef2f2',
-                    padding: '8px 12px',
+                    padding: '10px 12px',
                     borderRadius: '6px',
-                    borderLeft: '4px solid #dc2626',
+                    borderLeft: '4px solid var(--danger)',
                     border: '1px solid #fee2e2',
                   }}
                 >
-                  <div style={{ minWidth: 0 }}>
+                  <div style={{ minWidth: 0, flex: 1, paddingRight: '8px' }}>
                     <div
                       style={{
                         fontWeight: '700',
-                        fontSize: '0.78rem',
+                        fontSize: '0.8rem',
                         color: '#991b1b',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
@@ -1140,19 +1666,18 @@ export default function Dashboard() {
                     >
                       {item.name}
                     </div>
-                    <div style={{ fontSize: '0.68rem', color: '#b91c1c' }}>
-                      Remaining stock: {item.stock_qty} {item.unit}
+                    <div style={{ fontSize: '0.7rem', color: '#b91c1c' }}>
+                      Remaining: {item.stock_qty} {item.unit || 'pcs'}
                     </div>
                   </div>
                   <span
                     style={{
-                      background: '#dc2626',
+                      background: 'var(--danger)',
                       color: '#fff',
-                      fontSize: '0.65rem',
-                      padding: '3px 8px',
+                      fontSize: '0.68rem',
+                      padding: '4px 8px',
                       borderRadius: '4px',
                       fontWeight: 'bold',
-                      flexShrink: 0,
                     }}
                   >
                     Restock

@@ -1,8 +1,8 @@
 {
   "name": "ShopMate",
   "type": "module",
-  "version": "2.0.1",
-  "description": "ShopMate Enterprise Retail POS & Khata System",
+  "version": "3.0.0",
+  "description": "ShopMate POS System by Fahad.",
   "main": "electron/main.js",
   "scripts": {
     "dev": "concurrently -k \"npm run dev:vite\" \"npm run dev:electron\"",

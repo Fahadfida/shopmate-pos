@@ -31,7 +31,10 @@ const validInvokeChannels = [
   'record-customer-debt',
   'update-ledger-note',
   'print-customer-statement',
-  'toggle-archive-customer', // 👈 Added this
+  'toggle-archive-customer',
+  'delete-customer', // 👈 ADD THIS
+  'update-ledger-entry', // 👈 ADD THIS
+  'delete-ledger-entry', // 👈 Added this
   // Suppliers
   'get-suppliers',
   'add-supplier',
@@ -41,6 +44,10 @@ const validInvokeChannels = [
   'get-supplier-ledger',
   'record-supplier-payment',
   'record-purchase',
+  //expences
+  'add-expense',
+  'delete-expense',
+  'get-expenses',
   // Ledger & Expenses
   'get-financial-ledger',
   'get-master-general-ledger',
