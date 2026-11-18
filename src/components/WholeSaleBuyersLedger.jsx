@@ -66,6 +66,7 @@ export default function KhataLedger({ currentUser }) {
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [ledgerEntries, setLedgerEntries] = useState([]);
+  const [inventoryItems, setInventoryItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [toasts, setToasts] = useState([]);
 
@@ -73,6 +74,7 @@ export default function KhataLedger({ currentUser }) {
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
   const [ledgerSearch, setLedgerSearch] = useState('');
+  const [sortOrder, setSortOrder] = useState('desc'); // 👈 NEW: 'desc' | 'asc'
 
   // Modals State
   const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false);
@@ -80,13 +82,15 @@ export default function KhataLedger({ currentUser }) {
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
 
   // Form States
-  const [entryType, setEntryType] = useState('DEBIT'); // 'DEBIT' | 'CREDIT'
+  const [entryType, setEntryType] = useState('DEBIT');
   const [entryData, setEntryData] = useState({
     amount: '',
     date: new Date().toISOString().split('T')[0],
     notes: '',
     method: 'CASH',
     ref: '',
+    item_id: '',
+    qty: 1,
   });
   const [editingRecord, setEditingRecord] = useState(null);
   const [editingCustomer, setEditingCustomer] = useState(null);
@@ -113,6 +117,10 @@ export default function KhataLedger({ currentUser }) {
         (c) => c.is_active === 1 || c.is_active === undefined,
       );
       setCustomers(activeCustomers);
+
+      const fetchedItems = await ipc.invoke('get-items');
+      setInventoryItems(fetchedItems || []);
+
       if (selectedCustomer) {
         const refreshed = activeCustomers.find(
           (c) => c.id === selectedCustomer.id,
@@ -186,16 +194,35 @@ export default function KhataLedger({ currentUser }) {
     const fullNotes = entryData.ref
       ? `${entryData.notes} (Ref: ${entryData.ref})`
       : entryData.notes;
+    const selectedItem = inventoryItems.find(
+      (i) => i.id === parseInt(entryData.item_id),
+    );
 
     if (ipc) {
       let res;
       if (entryType === 'DEBIT') {
-        res = await ipc.invoke('record-customer-debt', {
-          customer_id: selectedCustomer.id,
-          amount: amt,
-          notes: fullNotes,
-          currentUser,
-        });
+        if (selectedItem) {
+          res = await ipc.invoke('create-sale', {
+            customer_id: selectedCustomer.id,
+            items: [
+              {
+                ...selectedItem,
+                qty: parseInt(entryData.qty),
+                price: selectedItem.selling_price,
+              },
+            ],
+            payment_type: 'CREDIT',
+            cod_meta: null,
+            currentUser,
+          });
+        } else {
+          res = await ipc.invoke('record-customer-debt', {
+            customer_id: selectedCustomer.id,
+            amount: amt,
+            notes: fullNotes,
+            currentUser,
+          });
+        }
       } else {
         res = await ipc.invoke('record-customer-payment', {
           customer_id: selectedCustomer.id,
@@ -203,7 +230,7 @@ export default function KhataLedger({ currentUser }) {
           payment_method: entryData.method,
           notes: fullNotes,
           currentUser,
-          date: entryData.date, // If you update backend to accept date
+          date: entryData.date,
         });
       }
 
@@ -215,6 +242,8 @@ export default function KhataLedger({ currentUser }) {
           notes: '',
           method: 'CASH',
           ref: '',
+          item_id: '',
+          qty: 1,
         });
         loadCustomers();
         loadLedger(selectedCustomer.id);
@@ -327,7 +356,6 @@ export default function KhataLedger({ currentUser }) {
     const ipc = getIpc();
     if (!ipc || !selectedCustomer) return;
 
-    // Build the table rows
     const rowsHtml = filteredLedger
       .map((e) => {
         const dateStr = e.created_at ? e.created_at.substring(0, 10) : '';
@@ -348,7 +376,6 @@ export default function KhataLedger({ currentUser }) {
       })
       .join('');
 
-    // Build the HTML document
     const html = `
       <!DOCTYPE html>
       <html>
@@ -425,28 +452,34 @@ export default function KhataLedger({ currentUser }) {
       </html>
     `;
 
-    // Send to Electron to save as PDF
     const res = await ipc.invoke('export-ledger-pdf', html);
-    if (res.success && !res.canceled) {
+    if (res.success && !res.canceled)
       addToast('Khata statement exported to PDF successfully', 'success');
-    } else if (!res.canceled) {
+    else if (!res.canceled)
       addToast('PDF Export failed: ' + res.error, 'error');
-    }
   };
 
-  // Filtering Ledger
-  const filteredLedger = ledgerEntries.filter((entry) => {
-    const matchesSearch = (entry.description || '')
-      .toLowerCase()
-      .includes(ledgerSearch.toLowerCase());
-    let matchesDate = true;
-    const entryDate = entry.created_at ? entry.created_at.substring(0, 10) : '';
-    if (filterStartDate && entryDate < filterStartDate) matchesDate = false;
-    if (filterEndDate && entryDate > filterEndDate) matchesDate = false;
-    return matchesSearch && matchesDate;
-  });
+  // 🔄 FIXED SORTING LOGIC
+  const filteredLedger = ledgerEntries
+    .filter((entry) => {
+      const matchesSearch = (entry.description || '')
+        .toLowerCase()
+        .includes(ledgerSearch.toLowerCase());
+      let matchesDate = true;
+      const entryDate = entry.created_at
+        ? entry.created_at.substring(0, 10)
+        : '';
+      if (filterStartDate && entryDate < filterStartDate) matchesDate = false;
+      if (filterEndDate && entryDate > filterEndDate) matchesDate = false;
+      return matchesSearch && matchesDate;
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.created_at || 0).getTime();
+      const dateB = new Date(b.created_at || 0).getTime();
+      // If sortOrder is 'desc' (newest first), we want b - a
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
 
-  // KPI Calculations
   const totalSales = ledgerEntries.reduce((sum, e) => sum + (e.debit || 0), 0);
   const totalReceived = ledgerEntries.reduce(
     (sum, e) => sum + (e.credit || 0),
@@ -460,7 +493,7 @@ export default function KhataLedger({ currentUser }) {
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
-        flex: 1, // 👈 ADD THIS
+        flex: 1,
         height: '100%',
         overflow: 'hidden',
         position: 'relative',
@@ -552,10 +585,10 @@ export default function KhataLedger({ currentUser }) {
               key={cust.id}
               onClick={() => setSelectedCustomer(cust)}
               style={{
-                background: isSelected ? '#f0f9ff' : '#ffffff',
+                background: isSelected ? 'var(--info-bg)' : 'var(--bg-card)',
                 border: isSelected
                   ? '2px solid var(--brand-primary)'
-                  : '1px solid #e2e8f0',
+                  : '1px solid var(--border-color)',
                 borderRadius: '8px',
                 padding: '12px',
                 cursor: 'pointer',
@@ -621,7 +654,9 @@ export default function KhataLedger({ currentUser }) {
                       padding: '2px 6px',
                       borderRadius: '4px',
                       fontWeight: 'bold',
-                      background: hasDebt ? '#fee2e2' : '#d1fae5',
+                      background: hasDebt
+                        ? 'var(--danger-bg)'
+                        : 'var(--success-bg)',
                       color: hasDebt ? 'var(--danger)' : 'var(--success)',
                     }}
                   >
@@ -661,7 +696,7 @@ export default function KhataLedger({ currentUser }) {
               justifyContent: 'space-between',
               alignItems: 'center',
               padding: '16px',
-              borderBottom: '1px solid #e2e8f0',
+              borderBottom: '1px solid var(--border-color)',
             }}
           >
             <div style={{ display: 'flex', gap: '12px' }}>
@@ -766,7 +801,7 @@ export default function KhataLedger({ currentUser }) {
                 className="btn"
                 style={{
                   padding: '8px 12px',
-                  background: '#e0f2fe',
+                  background: 'var(--info-bg)',
                   color: 'var(--info)',
                   fontWeight: 'bold',
                   border: 'none',
@@ -780,6 +815,8 @@ export default function KhataLedger({ currentUser }) {
                     amount: '',
                     notes: '',
                     ref: '',
+                    item_id: '',
+                    qty: 1,
                   });
                   setIsAddEntryModalOpen(true);
                 }}
@@ -805,7 +842,7 @@ export default function KhataLedger({ currentUser }) {
                 className="btn"
                 style={{
                   padding: '8px 12px',
-                  background: '#fee2e2',
+                  background: 'var(--danger-bg)',
                   color: 'var(--danger)',
                   fontWeight: 'bold',
                   border: 'none',
@@ -819,6 +856,8 @@ export default function KhataLedger({ currentUser }) {
                     amount: '',
                     notes: '',
                     ref: '',
+                    item_id: '',
+                    qty: 1,
                   });
                   setIsAddEntryModalOpen(true);
                 }}
@@ -844,7 +883,6 @@ export default function KhataLedger({ currentUser }) {
               >
                 ✏️ Edit
               </button>
-
               {currentUser?.role === 'ADMIN' && (
                 <>
                   {ledgerEntries.length === 0 ? (
@@ -852,7 +890,7 @@ export default function KhataLedger({ currentUser }) {
                       className="btn"
                       style={{
                         padding: '8px 12px',
-                        background: '#fef2f2',
+                        background: 'var(--danger-bg)',
                         color: 'var(--danger)',
                         fontWeight: 'bold',
                         border: '1px solid #fca5a5',
@@ -868,8 +906,8 @@ export default function KhataLedger({ currentUser }) {
                       className="btn"
                       style={{
                         padding: '8px 12px',
-                        background: '#fef3c7',
-                        color: '#d97706',
+                        background: 'var(--warning-bg)',
+                        color: 'var(--warning)',
                         fontWeight: 'bold',
                         border: 'none',
                         borderRadius: '6px',
@@ -892,7 +930,7 @@ export default function KhataLedger({ currentUser }) {
               gap: '12px',
               padding: '12px 16px',
               background: 'var(--bg-hover)',
-              borderBottom: '1px solid #e2e8f0',
+              borderBottom: '1px solid var(--border-color)',
               alignItems: 'center',
             }}
           >
@@ -938,6 +976,57 @@ export default function KhataLedger({ currentUser }) {
                 style={{ border: 'none', outline: 'none', fontSize: '0.72rem' }}
               />
             </div>
+
+            {/* 👇 NEW SORT TOGGLE 👇 */}
+            <div
+              style={{
+                display: 'flex',
+                gap: '4px',
+                background: 'var(--bg-card)',
+                padding: '4px',
+                borderRadius: '6px',
+                border: '1px solid var(--border-strong)',
+              }}
+            >
+              <button
+                onClick={() => setSortOrder('desc')}
+                style={{
+                  padding: '4px 10px',
+                  fontSize: '0.72rem',
+                  borderRadius: '4px',
+                  border: 'none',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  background:
+                    sortOrder === 'desc'
+                      ? 'var(--brand-primary)'
+                      : 'transparent',
+                  color:
+                    sortOrder === 'desc' ? '#fff' : 'var(--text-secondary)',
+                }}
+              >
+                Newest
+              </button>
+              <button
+                onClick={() => setSortOrder('asc')}
+                style={{
+                  padding: '4px 10px',
+                  fontSize: '0.72rem',
+                  borderRadius: '4px',
+                  border: 'none',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  background:
+                    sortOrder === 'asc'
+                      ? 'var(--brand-primary)'
+                      : 'transparent',
+                  color: sortOrder === 'asc' ? '#fff' : 'var(--text-secondary)',
+                }}
+              >
+                Oldest
+              </button>
+            </div>
+            {/* 👆 END NEW 👆 */}
           </div>
 
           {/* TABLE */}
@@ -952,7 +1041,7 @@ export default function KhataLedger({ currentUser }) {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 2.5fr 1fr 1fr 1fr',
+                gridTemplateColumns: '1fr 1.5fr 1.5fr 0.5fr 1fr 1fr 1fr',
                 background: 'var(--brand-primary)',
                 color: '#fff',
                 padding: '12px 16px',
@@ -965,7 +1054,9 @@ export default function KhataLedger({ currentUser }) {
               }}
             >
               <span>Date</span>
+              <span>Inventory Item</span>
               <span>Particulars / Notes</span>
+              <span style={{ textAlign: 'center' }}>Qty</span>
               <span style={{ textAlign: 'right' }}>Udhaar (Debit +)</span>
               <span style={{ textAlign: 'right' }}>Jama (Credit -)</span>
               <span style={{ textAlign: 'right' }}>Balance</span>
@@ -995,17 +1086,20 @@ export default function KhataLedger({ currentUser }) {
                       notes: entry.description,
                       amount: entry.debit || entry.credit,
                       ref: '',
+                      item_id: '',
+                      qty: 1,
                     });
                     setIsEditRecordModalOpen(true);
                   }}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '1fr 2.5fr 1fr 1fr 1fr',
+                    gridTemplateColumns: '1fr 1.5fr 1.5fr 0.5fr 1fr 1fr 1fr',
                     padding: '12px 16px',
                     fontSize: '0.8rem',
-                    borderBottom: '1px solid #f1f5f9',
+                    borderBottom: '1px solid var(--border-color)',
                     cursor: 'pointer',
-                    background: idx % 2 === 0 ? '#fff' : '#f8fafc',
+                    background:
+                      idx % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-hover)',
                   }}
                   className="hover:bg-slate-50 transition-colors"
                 >
@@ -1015,7 +1109,21 @@ export default function KhataLedger({ currentUser }) {
                   <span
                     style={{ color: 'var(--text-primary)', fontWeight: '500' }}
                   >
+                    {entry.item_name || '—'}
+                  </span>
+                  <span
+                    style={{ color: 'var(--text-primary)', fontWeight: '500' }}
+                  >
                     {entry.description}
+                  </span>
+                  <span
+                    className="monospace"
+                    style={{
+                      textAlign: 'center',
+                      color: 'var(--text-secondary)',
+                    }}
+                  >
+                    {entry.qty || 1}
                   </span>
                   <span
                     className="monospace"
@@ -1049,7 +1157,7 @@ export default function KhataLedger({ currentUser }) {
                       color:
                         entry.balance_after === 0
                           ? 'var(--success)'
-                          : '#1e293b',
+                          : 'var(--text-primary)',
                     }}
                   >
                     Rs. {entry.balance_after?.toLocaleString()}
@@ -1098,7 +1206,7 @@ export default function KhataLedger({ currentUser }) {
           <div
             className="card"
             style={{
-              width: '400px',
+              width: '450px',
               background: 'var(--bg-card)',
               padding: '24px',
               borderRadius: '10px',
@@ -1132,7 +1240,8 @@ export default function KhataLedger({ currentUser }) {
                   padding: '8px',
                   background:
                     entryType === 'DEBIT' ? 'var(--danger)' : 'transparent',
-                  color: entryType === 'DEBIT' ? '#fff' : '#64748b',
+                  color:
+                    entryType === 'DEBIT' ? '#fff' : 'var(--text-secondary)',
                   border: 'none',
                   borderRadius: '4px',
                   fontWeight: 'bold',
@@ -1148,7 +1257,8 @@ export default function KhataLedger({ currentUser }) {
                   padding: '8px',
                   background:
                     entryType === 'CREDIT' ? 'var(--success)' : 'transparent',
-                  color: entryType === 'CREDIT' ? '#fff' : '#64748b',
+                  color:
+                    entryType === 'CREDIT' ? '#fff' : 'var(--text-secondary)',
                   border: 'none',
                   borderRadius: '4px',
                   fontWeight: 'bold',
@@ -1164,12 +1274,96 @@ export default function KhataLedger({ currentUser }) {
               onSubmit={handleAddEntry}
               style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
             >
+              {entryType === 'DEBIT' && (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '2fr 1fr',
+                    gap: '12px',
+                  }}
+                >
+                  <div>
+                    <label
+                      style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 'bold',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      Inventory Item (Optional)
+                    </label>
+                    <select
+                      className="input-field"
+                      value={entryData.item_id}
+                      onChange={(e) => {
+                        const selected = inventoryItems.find(
+                          (i) => i.id === parseInt(e.target.value),
+                        );
+                        const newAmount = selected
+                          ? selected.selling_price * entryData.qty
+                          : entryData.amount;
+                        setEntryData({
+                          ...entryData,
+                          item_id: e.target.value,
+                          amount: newAmount,
+                        });
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-strong)',
+                      }}
+                    >
+                      <option value="">-- Manual Entry --</option>
+                      {inventoryItems.map((i) => (
+                        <option key={i.id} value={i.id}>
+                          {i.name} (Rs. {i.selling_price})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 'bold',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      Quantity
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={entryData.qty}
+                      onChange={(e) => {
+                        const qty = parseInt(e.target.value) || 1;
+                        const selected = inventoryItems.find(
+                          (i) => i.id === parseInt(entryData.item_id),
+                        );
+                        const newAmount = selected
+                          ? selected.selling_price * qty
+                          : entryData.amount;
+                        setEntryData({ ...entryData, qty, amount: newAmount });
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-strong)',
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label
                   style={{
                     fontSize: '0.7rem',
                     fontWeight: 'bold',
-                    color: '#475569',
+                    color: 'var(--text-secondary)',
                   }}
                 >
                   Amount (Rs.)*
@@ -1195,7 +1389,7 @@ export default function KhataLedger({ currentUser }) {
                   style={{
                     fontSize: '0.7rem',
                     fontWeight: 'bold',
-                    color: '#475569',
+                    color: 'var(--text-secondary)',
                   }}
                 >
                   Date
@@ -1222,7 +1416,7 @@ export default function KhataLedger({ currentUser }) {
                     style={{
                       fontSize: '0.7rem',
                       fontWeight: 'bold',
-                      color: '#475569',
+                      color: 'var(--text-secondary)',
                     }}
                   >
                     Payment Method
@@ -1252,7 +1446,7 @@ export default function KhataLedger({ currentUser }) {
                   style={{
                     fontSize: '0.7rem',
                     fontWeight: 'bold',
-                    color: '#475569',
+                    color: 'var(--text-secondary)',
                   }}
                 >
                   Invoice # / Reference (Optional)
@@ -1276,7 +1470,7 @@ export default function KhataLedger({ currentUser }) {
                   style={{
                     fontSize: '0.7rem',
                     fontWeight: 'bold',
-                    color: '#475569',
+                    color: 'var(--text-secondary)',
                   }}
                 >
                   Notes / Particulars*
@@ -1322,8 +1516,9 @@ export default function KhataLedger({ currentUser }) {
                   onClick={() => setIsAddEntryModalOpen(false)}
                   style={{
                     padding: '10px 16px',
-                    background: '#e2e8f0',
-                    border: 'none',
+                    background: 'var(--bg-hover)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: '6px',
                     fontWeight: 'bold',
                     cursor: 'pointer',
@@ -1390,7 +1585,6 @@ export default function KhataLedger({ currentUser }) {
                 ✕
               </button>
             </div>
-
             <form
               onSubmit={handleEditRecord}
               style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
@@ -1400,7 +1594,7 @@ export default function KhataLedger({ currentUser }) {
                   style={{
                     fontSize: '0.7rem',
                     fontWeight: 'bold',
-                    color: '#475569',
+                    color: 'var(--text-secondary)',
                   }}
                 >
                   Amount (Locked)
@@ -1415,7 +1609,7 @@ export default function KhataLedger({ currentUser }) {
                     borderRadius: '6px',
                     border: '1px solid var(--border-strong)',
                     background: 'var(--bg-hover)',
-                    color: '#94a3b8',
+                    color: 'var(--text-secondary)',
                     cursor: 'not-allowed',
                   }}
                 />
@@ -1425,7 +1619,7 @@ export default function KhataLedger({ currentUser }) {
                   style={{
                     fontSize: '0.7rem',
                     fontWeight: 'bold',
-                    color: '#475569',
+                    color: 'var(--text-secondary)',
                   }}
                 >
                   Date
@@ -1450,7 +1644,7 @@ export default function KhataLedger({ currentUser }) {
                   style={{
                     fontSize: '0.7rem',
                     fontWeight: 'bold',
-                    color: '#475569',
+                    color: 'var(--text-secondary)',
                   }}
                 >
                   Notes / Particulars
@@ -1470,7 +1664,6 @@ export default function KhataLedger({ currentUser }) {
                   }}
                 />
               </div>
-
               <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                 <button
                   type="submit"
@@ -1492,7 +1685,7 @@ export default function KhataLedger({ currentUser }) {
                   onClick={() => handleDeleteRecord(editingRecord.id)}
                   style={{
                     padding: '10px 16px',
-                    background: '#fee2e2',
+                    background: 'var(--danger-bg)',
                     color: 'var(--danger)',
                     border: 'none',
                     borderRadius: '6px',
@@ -1573,12 +1766,12 @@ export default function KhataLedger({ currentUser }) {
                       width: '44px',
                       height: '44px',
                       borderRadius: '50%',
-                      background: '#cbd5e1',
+                      background: 'var(--border-color)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: '0.7rem',
-                      color: '#475569',
+                      color: 'var(--text-secondary)',
                     }}
                   >
                     No Pic
@@ -1589,7 +1782,7 @@ export default function KhataLedger({ currentUser }) {
                     style={{
                       fontSize: '0.7rem',
                       fontWeight: 'bold',
-                      color: '#475569',
+                      color: 'var(--text-secondary)',
                     }}
                   >
                     Avatar
@@ -1694,11 +1887,11 @@ export default function KhataLedger({ currentUser }) {
                   type="button"
                   className="btn"
                   style={{
-                    background: '#e2e8f0',
+                    background: 'var(--bg-hover)',
                     color: 'var(--text-primary)',
                     padding: '10px 16px',
                     borderRadius: '6px',
-                    border: 'none',
+                    border: '1px solid var(--border-color)',
                     cursor: 'pointer',
                     fontWeight: 'bold',
                   }}

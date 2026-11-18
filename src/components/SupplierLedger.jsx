@@ -66,6 +66,7 @@ export default function SupplierLedger({ currentUser }) {
   const [suppliers, setSuppliers] = useState([]);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [ledgerEntries, setLedgerEntries] = useState([]);
+  const [inventoryItems, setInventoryItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [toasts, setToasts] = useState([]);
 
@@ -73,6 +74,7 @@ export default function SupplierLedger({ currentUser }) {
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
   const [ledgerSearch, setLedgerSearch] = useState('');
+  const [sortOrder, setSortOrder] = useState('desc'); // 👈 NEW: 'desc' | 'asc'
 
   // Modals State
   const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false);
@@ -80,13 +82,15 @@ export default function SupplierLedger({ currentUser }) {
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
 
   // Form States
-  const [entryType, setEntryType] = useState('DEBIT'); // 'DEBIT' (Billed) | 'CREDIT' (Paid)
+  const [entryType, setEntryType] = useState('DEBIT');
   const [entryData, setEntryData] = useState({
     amount: '',
     date: new Date().toISOString().split('T')[0],
     notes: '',
     method: 'CASH',
     ref: '',
+    item_id: '',
+    qty: 1, // 👈 NEW
   });
   const [editingRecord, setEditingRecord] = useState(null);
   const [editingSupplier, setEditingSupplier] = useState(null);
@@ -116,6 +120,9 @@ export default function SupplierLedger({ currentUser }) {
         (s) => s.is_active === 1 || s.is_active === undefined,
       );
       setSuppliers(activeSuppliers);
+
+      const fetchedItems = await ipc.invoke('get-items'); // 👈 NEW
+      setInventoryItems(fetchedItems || []);
 
       if (selectedSupplier) {
         const refreshed = activeSuppliers.find(
@@ -192,16 +199,19 @@ export default function SupplierLedger({ currentUser }) {
     const fullNotes = entryData.ref
       ? `${entryData.notes} (Ref: ${entryData.ref})`
       : entryData.notes;
+    const selectedItem = inventoryItems.find(
+      (i) => i.id === parseInt(entryData.item_id),
+    );
 
     if (ipc) {
       let res;
       if (entryType === 'DEBIT') {
-        // In Supplier Ledger, Debit = We owe them more (Purchase)
+        // In Supplier Ledger, Debit = We owe them more (Purchase / Bill)
         res = await ipc.invoke('record-purchase', {
           supplier_id: selectedSupplier.id,
-          item_id: null,
-          qty_received: 1,
-          unit_cost: amt,
+          item_id: selectedItem ? selectedItem.id : null,
+          qty_received: selectedItem ? parseInt(entryData.qty) : 1,
+          unit_cost: selectedItem ? amt / parseInt(entryData.qty) : amt, // Reverse math for unit cost
           payment_type: 'CREDIT',
           invoice_no: entryData.ref || 'MANUAL-DEBIT',
           date: entryData.date,
@@ -226,6 +236,8 @@ export default function SupplierLedger({ currentUser }) {
           notes: '',
           method: 'CASH',
           ref: '',
+          item_id: '',
+          qty: 1,
         });
         loadSuppliers();
         loadLedger(selectedSupplier.id);
@@ -284,6 +296,7 @@ export default function SupplierLedger({ currentUser }) {
       }
     }
   };
+
   const handleDeleteSupplier = async () => {
     if (ledgerEntries.length > 0)
       return addToast(
@@ -332,7 +345,7 @@ export default function SupplierLedger({ currentUser }) {
     }
   };
 
-  // Export PDF (Built natively)
+  // Export PDF
   const handleExportPDF = async () => {
     const ipc = getIpc();
     if (ipc && selectedSupplier) {
@@ -376,22 +389,27 @@ export default function SupplierLedger({ currentUser }) {
     return matchesSearch;
   });
 
-  const filteredLedger = ledgerEntries.filter((entry) => {
-    const matchesSearch = (entry.description || '')
-      .toLowerCase()
-      .includes(ledgerSearch.toLowerCase());
-    let matchesDate = true;
-    const entryDate = entry.created_at
-      ? entry.created_at.substring(0, 10)
-      : entry.date
-        ? entry.date.substring(0, 10)
-        : '';
-    if (filterStartDate && entryDate < filterStartDate) matchesDate = false;
-    if (filterEndDate && entryDate > filterEndDate) matchesDate = false;
-    return matchesSearch && matchesDate;
-  });
+  const filteredLedger = ledgerEntries
+    .filter((entry) => {
+      const matchesSearch = (entry.description || '')
+        .toLowerCase()
+        .includes(ledgerSearch.toLowerCase());
+      let matchesDate = true;
+      const entryDate = entry.created_at
+        ? entry.created_at.substring(0, 10)
+        : entry.date
+          ? entry.date.substring(0, 10)
+          : '';
+      if (filterStartDate && entryDate < filterStartDate) matchesDate = false;
+      if (filterEndDate && entryDate > filterEndDate) matchesDate = false;
+      return matchesSearch && matchesDate;
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.date || a.created_at || 0).getTime();
+      const dateB = new Date(b.date || b.created_at || 0).getTime();
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
 
-  // KPI Calculations
   const totalBilled = ledgerEntries.reduce((sum, e) => sum + (e.debit || 0), 0);
   const totalPaid = ledgerEntries.reduce((sum, e) => sum + (e.credit || 0), 0);
   const currentBalance = selectedSupplier?.balance || 0;
@@ -402,7 +420,7 @@ export default function SupplierLedger({ currentUser }) {
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
-        flex: 1, // 👈 ADD THIS
+        flex: 1,
         height: '100%',
         overflow: 'hidden',
         position: 'relative',
@@ -497,10 +515,10 @@ export default function SupplierLedger({ currentUser }) {
               key={supp.id}
               onClick={() => setSelectedSupplier(supp)}
               style={{
-                background: isSelected ? '#f0f9ff' : '#ffffff',
+                background: isSelected ? 'var(--info-bg)' : 'var(--bg-card)',
                 border: isSelected
                   ? '2px solid var(--brand-primary)'
-                  : '1px solid #e2e8f0',
+                  : '1px solid var(--border-color)',
                 borderRadius: '8px',
                 padding: '12px',
                 cursor: 'pointer',
@@ -529,7 +547,7 @@ export default function SupplierLedger({ currentUser }) {
                     width: '40px',
                     height: '40px',
                     borderRadius: '50%',
-                    background: '#f59e0b',
+                    background: 'var(--warning)',
                     color: '#fff',
                     display: 'flex',
                     alignItems: 'center',
@@ -566,7 +584,9 @@ export default function SupplierLedger({ currentUser }) {
                       padding: '2px 6px',
                       borderRadius: '4px',
                       fontWeight: 'bold',
-                      background: hasPayable ? '#fee2e2' : '#d1fae5',
+                      background: hasPayable
+                        ? 'var(--danger-bg)'
+                        : 'var(--success-bg)',
                       color: hasPayable ? 'var(--danger)' : 'var(--success)',
                     }}
                   >
@@ -606,7 +626,7 @@ export default function SupplierLedger({ currentUser }) {
               justifyContent: 'space-between',
               alignItems: 'center',
               padding: '16px',
-              borderBottom: '1px solid #e2e8f0',
+              borderBottom: '1px solid var(--border-color)',
             }}
           >
             <div style={{ display: 'flex', gap: '12px' }}>
@@ -711,7 +731,7 @@ export default function SupplierLedger({ currentUser }) {
                 className="btn"
                 style={{
                   padding: '8px 12px',
-                  background: '#e0f2fe',
+                  background: 'var(--info-bg)',
                   color: 'var(--info)',
                   fontWeight: 'bold',
                   border: 'none',
@@ -725,6 +745,8 @@ export default function SupplierLedger({ currentUser }) {
                     amount: '',
                     notes: '',
                     ref: '',
+                    item_id: '',
+                    qty: 1,
                   });
                   setIsAddEntryModalOpen(true);
                 }}
@@ -735,7 +757,7 @@ export default function SupplierLedger({ currentUser }) {
                 className="btn"
                 style={{
                   padding: '8px 12px',
-                  background: '#fee2e2',
+                  background: 'var(--danger-bg)',
                   color: 'var(--danger)',
                   fontWeight: 'bold',
                   border: 'none',
@@ -749,6 +771,8 @@ export default function SupplierLedger({ currentUser }) {
                     amount: '',
                     notes: '',
                     ref: '',
+                    item_id: '',
+                    qty: 1,
                   });
                   setIsAddEntryModalOpen(true);
                 }}
@@ -774,7 +798,6 @@ export default function SupplierLedger({ currentUser }) {
               >
                 Edit
               </button>
-
               <button
                 className="btn btn-primary"
                 style={{
@@ -790,7 +813,6 @@ export default function SupplierLedger({ currentUser }) {
               >
                 Export PDF
               </button>
-
               {currentUser?.role === 'ADMIN' && (
                 <>
                   {ledgerEntries.length === 0 ? (
@@ -798,7 +820,7 @@ export default function SupplierLedger({ currentUser }) {
                       className="btn"
                       style={{
                         padding: '8px 12px',
-                        background: '#fef2f2',
+                        background: 'var(--danger-bg)',
                         color: 'var(--danger)',
                         fontWeight: 'bold',
                         border: '1px solid #fca5a5',
@@ -814,8 +836,8 @@ export default function SupplierLedger({ currentUser }) {
                       className="btn"
                       style={{
                         padding: '8px 12px',
-                        background: '#fef3c7',
-                        color: '#d97706',
+                        background: 'var(--warning-bg)',
+                        color: 'var(--warning)',
                         fontWeight: 'bold',
                         border: 'none',
                         borderRadius: '6px',
@@ -838,7 +860,7 @@ export default function SupplierLedger({ currentUser }) {
               gap: '12px',
               padding: '12px 16px',
               background: 'var(--bg-hover)',
-              borderBottom: '1px solid #e2e8f0',
+              borderBottom: '1px solid var(--border-color)',
               alignItems: 'center',
             }}
           >
@@ -884,6 +906,56 @@ export default function SupplierLedger({ currentUser }) {
                 style={{ border: 'none', outline: 'none', fontSize: '0.72rem' }}
               />
             </div>
+
+            {/* SORT TOGGLE */}
+            <div
+              style={{
+                display: 'flex',
+                gap: '4px',
+                background: 'var(--bg-card)',
+                padding: '4px',
+                borderRadius: '6px',
+                border: '1px solid var(--border-strong)',
+              }}
+            >
+              <button
+                onClick={() => setSortOrder('desc')}
+                style={{
+                  padding: '4px 10px',
+                  fontSize: '0.72rem',
+                  borderRadius: '4px',
+                  border: 'none',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  background:
+                    sortOrder === 'desc'
+                      ? 'var(--brand-primary)'
+                      : 'transparent',
+                  color:
+                    sortOrder === 'desc' ? '#fff' : 'var(--text-secondary)',
+                }}
+              >
+                Newest
+              </button>
+              <button
+                onClick={() => setSortOrder('asc')}
+                style={{
+                  padding: '4px 10px',
+                  fontSize: '0.72rem',
+                  borderRadius: '4px',
+                  border: 'none',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  background:
+                    sortOrder === 'asc'
+                      ? 'var(--brand-primary)'
+                      : 'transparent',
+                  color: sortOrder === 'asc' ? '#fff' : 'var(--text-secondary)',
+                }}
+              >
+                Oldest
+              </button>
+            </div>
           </div>
 
           {/* TABLE */}
@@ -898,7 +970,7 @@ export default function SupplierLedger({ currentUser }) {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 2.5fr 1fr 1fr 1fr',
+                gridTemplateColumns: '1fr 1.5fr 1.5fr 0.5fr 1fr 1fr 1fr',
                 background: 'var(--brand-primary)',
                 color: '#fff',
                 padding: '12px 16px',
@@ -911,7 +983,9 @@ export default function SupplierLedger({ currentUser }) {
               }}
             >
               <span>Date</span>
+              <span>Inventory Item</span>
               <span>Description / Reference</span>
+              <span style={{ textAlign: 'center' }}>Qty</span>
               <span style={{ textAlign: 'right' }}>Paid (Debit -)</span>
               <span style={{ textAlign: 'right' }}>Billed (Credit +)</span>
               <span style={{ textAlign: 'right' }}>Balance</span>
@@ -934,8 +1008,6 @@ export default function SupplierLedger({ currentUser }) {
                   key={entry.id}
                   onClick={() => {
                     setEditingRecord(entry);
-                    // If it's a GRN/Purchase, the entry might have a different ID structure.
-                    // We pass the whole entry so the modal knows what to do.
                     setEntryData({
                       date: entry.created_at
                         ? entry.created_at.substring(0, 10)
@@ -945,17 +1017,20 @@ export default function SupplierLedger({ currentUser }) {
                       notes: entry.description,
                       amount: entry.debit || entry.credit,
                       ref: entry.invoice_no || '',
+                      item_id: '',
+                      qty: 1,
                     });
                     setIsEditRecordModalOpen(true);
                   }}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '1fr 2.5fr 1fr 1fr 1fr',
+                    gridTemplateColumns: '1fr 1.5fr 1.5fr 0.5fr 1fr 1fr 1fr',
                     padding: '12px 16px',
                     fontSize: '0.8rem',
-                    borderBottom: '1px solid #f1f5f9',
+                    borderBottom: '1px solid var(--border-color)',
                     cursor: 'pointer',
-                    background: idx % 2 === 0 ? '#fff' : '#f8fafc',
+                    background:
+                      idx % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-hover)',
                   }}
                   className="hover:bg-slate-50 transition-colors"
                 >
@@ -967,7 +1042,21 @@ export default function SupplierLedger({ currentUser }) {
                   <span
                     style={{ color: 'var(--text-primary)', fontWeight: '500' }}
                   >
+                    {entry.item_name || '—'}
+                  </span>
+                  <span
+                    style={{ color: 'var(--text-primary)', fontWeight: '500' }}
+                  >
                     {entry.description}
+                  </span>
+                  <span
+                    className="monospace"
+                    style={{
+                      textAlign: 'center',
+                      color: 'var(--text-secondary)',
+                    }}
+                  >
+                    {entry.qty || 1}
                   </span>
                   <span
                     className="monospace"
@@ -1001,7 +1090,7 @@ export default function SupplierLedger({ currentUser }) {
                       color:
                         entry.balance_after === 0
                           ? 'var(--success)'
-                          : '#1e293b',
+                          : 'var(--text-primary)',
                     }}
                   >
                     Rs. {entry.balance_after?.toLocaleString()}
@@ -1052,7 +1141,7 @@ export default function SupplierLedger({ currentUser }) {
           <div
             className="card"
             style={{
-              width: '400px',
+              width: '450px',
               background: 'var(--bg-card)',
               padding: '24px',
               borderRadius: '10px',
@@ -1086,7 +1175,8 @@ export default function SupplierLedger({ currentUser }) {
                   padding: '8px',
                   background:
                     entryType === 'DEBIT' ? 'var(--danger)' : 'transparent',
-                  color: entryType === 'DEBIT' ? '#fff' : '#64748b',
+                  color:
+                    entryType === 'DEBIT' ? '#fff' : 'var(--text-secondary)',
                   border: 'none',
                   borderRadius: '4px',
                   fontWeight: 'bold',
@@ -1102,7 +1192,8 @@ export default function SupplierLedger({ currentUser }) {
                   padding: '8px',
                   background:
                     entryType === 'CREDIT' ? 'var(--success)' : 'transparent',
-                  color: entryType === 'CREDIT' ? '#fff' : '#64748b',
+                  color:
+                    entryType === 'CREDIT' ? '#fff' : 'var(--text-secondary)',
                   border: 'none',
                   borderRadius: '4px',
                   fontWeight: 'bold',
@@ -1118,12 +1209,97 @@ export default function SupplierLedger({ currentUser }) {
               onSubmit={handleAddEntry}
               style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
             >
+              {/* ITEM DROPDOWN & QTY (Only for Debit) */}
+              {entryType === 'DEBIT' && (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '2fr 1fr',
+                    gap: '12px',
+                  }}
+                >
+                  <div>
+                    <label
+                      style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 'bold',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      Inventory Item (Optional)
+                    </label>
+                    <select
+                      className="input-field"
+                      value={entryData.item_id}
+                      onChange={(e) => {
+                        const selected = inventoryItems.find(
+                          (i) => i.id === parseInt(e.target.value),
+                        );
+                        const newAmount = selected
+                          ? selected.avg_cost * entryData.qty
+                          : entryData.amount;
+                        setEntryData({
+                          ...entryData,
+                          item_id: e.target.value,
+                          amount: newAmount,
+                        });
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-strong)',
+                      }}
+                    >
+                      <option value="">-- Manual Entry --</option>
+                      {inventoryItems.map((i) => (
+                        <option key={i.id} value={i.id}>
+                          {i.name} (Cost: Rs. {i.avg_cost})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 'bold',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      Quantity
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={entryData.qty}
+                      onChange={(e) => {
+                        const qty = parseInt(e.target.value) || 1;
+                        const selected = inventoryItems.find(
+                          (i) => i.id === parseInt(entryData.item_id),
+                        );
+                        const newAmount = selected
+                          ? selected.avg_cost * qty
+                          : entryData.amount;
+                        setEntryData({ ...entryData, qty, amount: newAmount });
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-strong)',
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label
                   style={{
                     fontSize: '0.7rem',
                     fontWeight: 'bold',
-                    color: '#475569',
+                    color: 'var(--text-secondary)',
                   }}
                 >
                   Amount (Rs.)*
@@ -1149,7 +1325,7 @@ export default function SupplierLedger({ currentUser }) {
                   style={{
                     fontSize: '0.7rem',
                     fontWeight: 'bold',
-                    color: '#475569',
+                    color: 'var(--text-secondary)',
                   }}
                 >
                   Date
@@ -1176,7 +1352,7 @@ export default function SupplierLedger({ currentUser }) {
                     style={{
                       fontSize: '0.7rem',
                       fontWeight: 'bold',
-                      color: '#475569',
+                      color: 'var(--text-secondary)',
                     }}
                   >
                     Payment Method
@@ -1206,7 +1382,7 @@ export default function SupplierLedger({ currentUser }) {
                   style={{
                     fontSize: '0.7rem',
                     fontWeight: 'bold',
-                    color: '#475569',
+                    color: 'var(--text-secondary)',
                   }}
                 >
                   Invoice # / Reference (Optional)
@@ -1230,7 +1406,7 @@ export default function SupplierLedger({ currentUser }) {
                   style={{
                     fontSize: '0.7rem',
                     fontWeight: 'bold',
-                    color: '#475569',
+                    color: 'var(--text-secondary)',
                   }}
                 >
                   Notes / Particulars*
@@ -1276,8 +1452,9 @@ export default function SupplierLedger({ currentUser }) {
                   onClick={() => setIsAddEntryModalOpen(false)}
                   style={{
                     padding: '10px 16px',
-                    background: '#e2e8f0',
-                    border: 'none',
+                    background: 'var(--bg-hover)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: '6px',
                     fontWeight: 'bold',
                     cursor: 'pointer',
@@ -1344,7 +1521,6 @@ export default function SupplierLedger({ currentUser }) {
                 ✕
               </button>
             </div>
-
             <form
               onSubmit={handleEditRecord}
               style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
@@ -1354,7 +1530,7 @@ export default function SupplierLedger({ currentUser }) {
                   style={{
                     fontSize: '0.7rem',
                     fontWeight: 'bold',
-                    color: '#475569',
+                    color: 'var(--text-secondary)',
                   }}
                 >
                   Amount (Locked)
@@ -1369,7 +1545,7 @@ export default function SupplierLedger({ currentUser }) {
                     borderRadius: '6px',
                     border: '1px solid var(--border-strong)',
                     background: 'var(--bg-hover)',
-                    color: '#94a3b8',
+                    color: 'var(--text-secondary)',
                     cursor: 'not-allowed',
                   }}
                 />
@@ -1379,7 +1555,7 @@ export default function SupplierLedger({ currentUser }) {
                   style={{
                     fontSize: '0.7rem',
                     fontWeight: 'bold',
-                    color: '#475569',
+                    color: 'var(--text-secondary)',
                   }}
                 >
                   Date
@@ -1404,7 +1580,7 @@ export default function SupplierLedger({ currentUser }) {
                   style={{
                     fontSize: '0.7rem',
                     fontWeight: 'bold',
-                    color: '#475569',
+                    color: 'var(--text-secondary)',
                   }}
                 >
                   Notes / Particulars
@@ -1424,7 +1600,6 @@ export default function SupplierLedger({ currentUser }) {
                   }}
                 />
               </div>
-
               <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                 <button
                   type="submit"
@@ -1446,7 +1621,7 @@ export default function SupplierLedger({ currentUser }) {
                   onClick={() => handleDeleteRecord(editingRecord.id)}
                   style={{
                     padding: '10px 16px',
-                    background: '#fee2e2',
+                    background: 'var(--danger-bg)',
                     color: 'var(--danger)',
                     border: 'none',
                     borderRadius: '6px',
@@ -1527,12 +1702,12 @@ export default function SupplierLedger({ currentUser }) {
                       width: '44px',
                       height: '44px',
                       borderRadius: '50%',
-                      background: '#cbd5e1',
+                      background: 'var(--border-color)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: '0.7rem',
-                      color: '#475569',
+                      color: 'var(--text-secondary)',
                     }}
                   >
                     No Pic
@@ -1543,7 +1718,7 @@ export default function SupplierLedger({ currentUser }) {
                     style={{
                       fontSize: '0.7rem',
                       fontWeight: 'bold',
-                      color: '#475569',
+                      color: 'var(--text-secondary)',
                     }}
                   >
                     Avatar
@@ -1725,11 +1900,11 @@ export default function SupplierLedger({ currentUser }) {
                   type="button"
                   className="btn"
                   style={{
-                    background: '#e2e8f0',
+                    background: 'var(--bg-hover)',
                     color: 'var(--text-primary)',
                     padding: '10px 16px',
                     borderRadius: '6px',
-                    border: 'none',
+                    border: '1px solid var(--border-color)',
                     cursor: 'pointer',
                     fontWeight: 'bold',
                   }}
