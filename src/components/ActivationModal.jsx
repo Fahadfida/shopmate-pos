@@ -1,126 +1,135 @@
 import React, { useState, useEffect } from 'react';
 import { getIpc } from '../utils/ipc';
 
-// --- CUSTOM TOAST COMPONENT ---
+// ─────────────────────────────────────────────────────────────
+// Icons (Lucide 14px/16px/18px/24px 1.5 stroke)
+// ─────────────────────────────────────────────────────────────
+const iconBase = {
+  width: 16,
+  height: 16,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.5,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+};
+
+const LockIcon = () => (
+  <svg {...iconBase} width={24} height={24}>
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+
+const CopyIcon = () => (
+  <svg {...iconBase} width={14} height={14}>
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg {...iconBase} width={14} height={14} strokeWidth={2}>
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+const KeyIcon = () => (
+  <svg {...iconBase} width={16} height={16}>
+    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+  </svg>
+);
+
+const CloseIcon = () => (
+  <svg {...iconBase} width={16} height={16}>
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+// ─────────────────────────────────────────────────────────────
+// Toast Component
+// ─────────────────────────────────────────────────────────────
 const Toast = ({ message, type, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(onClose, 4000);
     return () => clearTimeout(timer);
   }, [onClose]);
 
-  const colors = {
-    success: {
-      bg: 'var(--success-bg)',
-      border: 'var(--success)',
-      text: 'var(--success)',
-      icon: '✅',
-    },
-    error: {
-      bg: 'var(--danger-bg)',
-      border: 'var(--danger)',
-      text: 'var(--danger)',
-      icon: '🚨',
-    },
-  };
-  const c = colors[type] || colors.error;
+  const isError = type === 'error';
 
   return (
     <div
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
-        background: c.bg,
-        borderLeft: `4px solid ${c.border}`,
-        color: c.text,
-        padding: '16px 20px',
+        gap: '10px',
+        background: 'var(--ink-0)',
+        border: '1px solid var(--ink-3)',
+        borderLeft: `4px solid ${isError ? 'var(--ink-danger)' : 'var(--ink-success)'}`,
+        color: 'var(--ink-fg)',
+        padding: '12px 16px',
         borderRadius: '8px',
-        boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-        minWidth: '320px',
-        fontWeight: '600',
-        fontSize: '0.85rem',
-        animation: 'slideInUp 0.3s ease-out',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        minWidth: '280px',
+        fontWeight: 500,
+        fontSize: '0.82rem',
       }}
     >
-      <span>{c.icon}</span>
       <span style={{ flex: 1 }}>{message}</span>
       <button
         onClick={onClose}
+        aria-label="Dismiss"
         style={{
           background: 'transparent',
           border: 'none',
           cursor: 'pointer',
-          color: c.text,
-          fontWeight: 'bold',
-          fontSize: '1rem',
+          color: 'var(--ink-fg-2)',
+          display: 'flex',
+          padding: 0,
         }}
       >
-        ✕
+        <CloseIcon />
       </button>
     </div>
   );
 };
 
-// --- SVG ICONS ---
-const LockIcon = () => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-  </svg>
-);
-const CopyIcon = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-  </svg>
-);
-const CheckIcon = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polyline points="20 6 9 17 4 12"></polyline>
-  </svg>
-);
-const KeyIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
-  </svg>
+// ─────────────────────────────────────────────────────────────
+// Primitives
+// ─────────────────────────────────────────────────────────────
+const Field = ({ label, children }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+    <label
+      style={{
+        fontSize: '0.75rem',
+        fontWeight: 500,
+        color: 'var(--ink-fg-2)',
+        letterSpacing: '0.01em',
+      }}
+    >
+      {label}
+    </label>
+    {children}
+  </div>
 );
 
+const inputStyle = {
+  padding: '9px 12px',
+  borderRadius: '6px',
+  border: '1px solid var(--ink-3)',
+  background: 'var(--ink-0)',
+  color: 'var(--ink-fg)',
+  fontSize: '0.85rem',
+  width: '100%',
+  outline: 'none',
+  fontFamily: 'inherit',
+};
+
+// ─────────────────────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────────────────────
 export default function ActivationModal({ onActivated }) {
   const [machineId, setMachineId] = useState('');
   const [licenseKeyInput, setLicenseKeyInput] = useState('');
@@ -183,17 +192,29 @@ export default function ActivationModal({ onActivated }) {
   };
 
   return (
-    <div className="receipt-modal-backdrop">
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0, 0, 0, 0.55)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 50,
+        padding: '16px',
+        fontFamily: "'Inter', sans-serif",
+      }}
+    >
       {/* TOASTS */}
       <div
         style={{
           position: 'fixed',
-          bottom: '32px',
-          right: '32px',
+          bottom: '24px',
+          right: '24px',
           zIndex: 9999,
           display: 'flex',
           flexDirection: 'column',
-          gap: '12px',
+          gap: '8px',
         }}
       >
         {toasts.map((t) => (
@@ -208,32 +229,35 @@ export default function ActivationModal({ onActivated }) {
 
       <div
         style={{
-          width: '520px',
-          background: 'var(--bg-card)',
-          borderRadius: '16px',
-          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+          width: '480px',
+          maxWidth: '100%',
+          background: 'var(--ink-0)',
+          borderRadius: '12px',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
           overflow: 'hidden',
-          border: '1px solid var(--border-color)',
+          border: '1px solid var(--ink-3)',
+          color: 'var(--ink-fg)',
         }}
       >
         {/* Header Banner */}
         <div
           style={{
-            background: 'var(--sidebar-bg)',
-            padding: '32px',
+            background: 'var(--sidebar-bg, #0a1128)',
+            padding: '28px 24px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            borderBottom: '1px solid var(--border-color)',
+            borderBottom: '1px solid var(--ink-3)',
           }}
         >
           <div
             style={{
-              background: 'rgba(255,255,255,0.1)',
-              padding: '16px',
+              background: 'rgba(255,255,255,0.08)',
+              padding: '12px',
               borderRadius: '50%',
-              color: '#fff',
-              marginBottom: '16px',
+              color: '#ffffff',
+              marginBottom: '12px',
+              border: '1px solid rgba(255,255,255,0.1)',
             }}
           >
             <LockIcon />
@@ -241,21 +265,23 @@ export default function ActivationModal({ onActivated }) {
           <h2
             style={{
               margin: 0,
-              color: '#fff',
-              fontSize: '1.4rem',
+              color: '#ffffff',
+              fontSize: '1.25rem',
               fontFamily: "'Plus Jakarta Sans', sans-serif",
-              fontWeight: '800',
+              fontWeight: 600,
+              letterSpacing: '-0.01em',
             }}
           >
             Software Activation
           </h2>
           <p
             style={{
-              margin: '8px 0 0 0',
+              margin: '6px 0 0 0',
               color: '#94a3b8',
-              fontSize: '0.85rem',
+              fontSize: '0.82rem',
               textAlign: 'center',
-              maxWidth: '340px',
+              maxWidth: '320px',
+              lineHeight: 1.5,
             }}
           >
             This terminal requires a valid cryptographic license key to unlock
@@ -264,24 +290,25 @@ export default function ActivationModal({ onActivated }) {
         </div>
 
         {/* Content Body */}
-        <div style={{ padding: '32px' }}>
+        <div style={{ padding: '24px' }}>
           {/* Hardware ID Box */}
           <div
             style={{
-              background: 'var(--bg-hover)',
-              padding: '20px',
-              borderRadius: '10px',
-              border: '1.5px solid var(--border-color)',
-              marginBottom: '24px',
+              background: 'var(--ink-1)',
+              padding: '16px',
+              borderRadius: '8px',
+              border: '1px solid var(--ink-3)',
+              marginBottom: '20px',
             }}
           >
             <div
               style={{
-                fontSize: '0.75rem',
-                fontWeight: '700',
-                color: 'var(--text-secondary)',
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                color: 'var(--ink-fg-2)',
                 textTransform: 'uppercase',
-                marginBottom: '8px',
+                letterSpacing: '0.03em',
+                marginBottom: '6px',
               }}
             >
               Your Terminal Hardware ID
@@ -291,15 +318,15 @@ export default function ActivationModal({ onActivated }) {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                gap: '16px',
+                gap: '12px',
               }}
             >
               <code
                 className="monospace"
                 style={{
-                  fontSize: '0.85rem',
-                  fontWeight: 'bold',
-                  color: 'var(--text-primary)',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  color: 'var(--ink-fg)',
                   wordBreak: 'break-all',
                   flex: 1,
                 }}
@@ -313,18 +340,19 @@ export default function ActivationModal({ onActivated }) {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  padding: '8px 14px',
+                  gap: '5px',
+                  padding: '6px 12px',
                   background: copied
-                    ? 'var(--success)'
+                    ? 'var(--ink-success)'
                     : 'var(--brand-primary)',
-                  color: '#fff',
+                  color: '#ffffff',
                   border: 'none',
                   borderRadius: '6px',
-                  fontWeight: '700',
+                  fontWeight: 500,
                   fontSize: '0.75rem',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
+                  transition: 'background 120ms ease',
+                  flexShrink: 0,
                 }}
               >
                 {copied ? (
@@ -340,9 +368,9 @@ export default function ActivationModal({ onActivated }) {
             </div>
             <p
               style={{
-                margin: '12px 0 0 0',
+                margin: '10px 0 0 0',
                 fontSize: '0.7rem',
-                color: 'var(--text-secondary)',
+                color: 'var(--ink-fg-3)',
               }}
             >
               Send this ID to your vendor to receive your activation key.
@@ -352,42 +380,39 @@ export default function ActivationModal({ onActivated }) {
           {/* Activation Form */}
           <form
             onSubmit={handleActivate}
-            style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+            style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
           >
-            <div>
-              <label
-                style={{
-                  fontSize: '0.8rem',
-                  fontWeight: '700',
-                  color: 'var(--text-primary)',
-                  marginBottom: '8px',
-                  display: 'block',
-                }}
-              >
-                Paste Activation Key
-              </label>
+            <Field label="Paste Activation Key">
               <textarea
-                className="input-field monospace"
-                rows="4"
+                className="monospace"
+                rows="3"
                 value={licenseKeyInput}
                 onChange={(e) => setLicenseKeyInput(e.target.value)}
                 placeholder="Paste the signed license key (e.g. eyJjdXN0b21lciI6...)"
                 required
-                style={{ fontSize: '0.8rem', padding: '12px', resize: 'none' }}
+                style={{
+                  ...inputStyle,
+                  fontSize: '0.78rem',
+                  resize: 'none',
+                  lineHeight: '1.4',
+                }}
               />
-            </div>
+            </Field>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="btn btn-primary"
               style={{
-                padding: '14px',
-                fontWeight: '700',
-                fontSize: '0.95rem',
-                marginTop: '8px',
-                opacity: isLoading ? 0.7 : 1,
+                padding: '11px 16px',
+                fontWeight: 500,
+                fontSize: '0.85rem',
+                marginTop: '4px',
+                background: 'var(--brand-primary)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '6px',
                 cursor: isLoading ? 'wait' : 'pointer',
+                opacity: isLoading ? 0.7 : 1,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

@@ -1,18 +1,18 @@
 /* ==========================================
-   🏛️ SHOPMATE ENTERPRISE DESIGN SYSTEM
+   SHOPMATE ENTERPRISE DESIGN SYSTEM
    ========================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
 /* =========================================================
-   1. THEME VARIABLES (Light & Dark)
+   1. THEME VARIABLES
    ========================================================= */
 :root {
-  /* Brand Colors */
+  /* Brand */
   --brand-primary: #0d5c75;
   --brand-hover: #09485c;
 
-  /* LIGHT THEME (Default) */
+  /* Legacy light theme (used by unrefactored pages) */
   --bg-app: #f1f5f9;
   --bg-card: #ffffff;
   --bg-hover: #f8fafc;
@@ -22,7 +22,6 @@
   --border-strong: #cbd5e1;
   --sidebar-bg: #0a1128;
 
-  /* Semantic Colors */
   --success: #059669;
   --success-bg: #d1fae5;
   --danger: #dc2626;
@@ -36,10 +35,34 @@
   --font-sans: 'Inter', sans-serif;
   --font-heading: 'Plus Jakarta Sans', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+
+  /* ─── INK SYSTEM (Dashboard / POS / Sidebar) ─── */
+  --ink-0: #ffffff;
+  --ink-1: #faf9f6;
+  --ink-2: #f4f2ec;
+  --ink-3: #e7e4db;
+  --ink-4: #d6d2c6;
+  --ink-fg: #1c1b17;
+  --ink-fg-2: #5c5a52;
+  --ink-fg-3: #8a877c;
+
+  --ink-success: #3f7a52;
+  --ink-danger: #9b3a32;
+  --ink-warning: #94651b;
+  --ink-info: #2f6076;
+
+  --chart-grid: #e7e4db;
+
+  --ink-sidebar: #171612;
+  --ink-sidebar-fg: #b8b4a8;
+  --ink-sidebar-fg-strong: #f1efe8;
+  --ink-sidebar-hairline: rgba(241, 239, 232, 0.08);
+  --ink-sidebar-surface: rgba(241, 239, 232, 0.04);
+  --ink-sidebar-surface-hover: rgba(241, 239, 232, 0.07);
 }
 
 [data-theme='dark'] {
-  /* DARK THEME */
+  /* Legacy dark theme */
   --bg-app: #0f172a;
   --bg-card: #1e293b;
   --bg-hover: #334155;
@@ -60,6 +83,30 @@
   --warning-bg: rgba(251, 191, 36, 0.15);
   --info: #38bdf8;
   --info-bg: rgba(56, 189, 248, 0.15);
+
+  /* ─── INK SYSTEM (dark) ─── */
+  --ink-0: #1a1917;
+  --ink-1: #121110;
+  --ink-2: #1f1e1b;
+  --ink-3: #2e2c28;
+  --ink-4: #3e3b35;
+  --ink-fg: #f1efe8;
+  --ink-fg-2: #a8a49a;
+  --ink-fg-3: #74716a;
+
+  --ink-success: #6bb37f;
+  --ink-danger: #e0837a;
+  --ink-warning: #d6a44b;
+  --ink-info: #7db2c7;
+
+  --chart-grid: #2e2c28;
+
+  --ink-sidebar: #0e0d0b;
+  --ink-sidebar-fg: #a8a49a;
+  --ink-sidebar-fg-strong: #f1efe8;
+  --ink-sidebar-hairline: rgba(241, 239, 232, 0.06);
+  --ink-sidebar-surface: rgba(241, 239, 232, 0.03);
+  --ink-sidebar-surface-hover: rgba(241, 239, 232, 0.06);
 }
 
 /* =========================================================
@@ -77,13 +124,13 @@ html,
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background-color: var(--bg-app);
+  background-color: var(--ink-1) !important;
   color: var(--text-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   transition:
-    background-color 0.3s ease,
-    color 0.3s ease;
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 h1,
@@ -93,7 +140,6 @@ h4,
 h5,
 h6 {
   font-family: var(--font-heading);
-  font-weight: 800;
   color: var(--text-primary);
 }
 
@@ -101,19 +147,23 @@ h6 {
   font-family: var(--font-mono);
 }
 
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
 /* =========================================================
-   3. APP SHELL LAYOUT (Sidebar & Content)
+   3. APP SHELL
    ========================================================= */
 .shopmate-container {
   display: flex;
   flex-direction: row;
   width: 100vw;
   height: 100vh;
-  background-color: var(--bg-app);
+  background-color: var(--ink-1) !important;
   overflow: hidden;
 }
 
-/* Sidebar Drawer */
 .shopmate-sidebar {
   width: 256px;
   min-width: 256px;
@@ -123,106 +173,72 @@ h6 {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 1px solid var(--ink-sidebar-hairline);
   z-index: 10;
-  transition: transform 0.3s ease;
+  transition: transform 0.25s ease;
 }
 
-.sidebar-header {
-  padding: 24px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.sidebar-header h2 {
-  font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: -0.2px;
-  color: #ffffff;
-}
-
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  padding: 16px 12px;
-  gap: 8px;
-  flex: 1;
-  overflow-y: auto;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  background: transparent;
-  border: none;
-  color: #94a3b8;
-  font-size: 0.85rem;
-  font-weight: 600;
-  border-radius: 6px;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.15s ease-in-out;
-}
-
-.nav-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-}
-
-.nav-item.active {
-  background-color: var(--brand-primary);
-  color: #ffffff;
-  font-weight: 700;
-  box-shadow: 0 2px 6px rgba(13, 92, 117, 0.3);
-}
-
-.user-profile-badge {
-  padding: 16px 20px;
-  background: rgba(0, 0, 0, 0.2);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-/* Main Content Area */
 .shopmate-content {
   flex: 1;
   height: 100vh;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  padding: 32px;
-  background-color: var(--bg-app);
+  padding: 24px;
+  /* background-color: var(--bg-app); */
+  background-color: var(--ink-1) !important;
 }
 
-.page-title {
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  margin-bottom: 20px;
+/* Nav items — used by Sidebar.jsx */
+.nav-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  letter-spacing: -0.4px;
+  gap: 10px;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  color: var(--ink-sidebar-fg);
+  font-size: 0.82rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.nav-item:hover {
+  background-color: var(--ink-sidebar-surface-hover);
+  color: var(--ink-sidebar-fg-strong);
+}
+
+.nav-item.active {
+  background-color: var(--ink-sidebar-surface);
+  color: var(--ink-sidebar-fg-strong);
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--brand-primary);
 }
 
 /* =========================================================
-   4. COMPONENT UTILITIES (Cards, Inputs, Tables)
+   4. LEGACY COMPONENT UTILITIES
+   (kept for unrefactored pages)
    ========================================================= */
 .card {
   background: var(--bg-card);
-  border: 1.5px solid var(--border-color);
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-  transition:
-    background-color 0.3s ease,
-    border-color 0.3s ease;
 }
 
 .input-field {
@@ -236,8 +252,8 @@ h6 {
   font-size: 0.88rem;
   outline: none;
   transition:
-    border-color 0.2s ease,
-    background-color 0.3s ease;
+    border-color 0.15s ease,
+    background-color 0.2s ease;
 }
 
 .input-field:focus {
@@ -249,7 +265,6 @@ h6 {
   color: var(--text-secondary);
 }
 
-/* Force all inputs to respect the theme */
 input,
 select,
 textarea {
@@ -264,16 +279,15 @@ textarea {
   color: var(--text-primary);
 }
 
-/* Buttons */
 .btn {
   padding: 9px 16px;
   border-radius: 6px;
   border: none;
   font-family: var(--font-sans);
-  font-weight: 700;
+  font-weight: 500;
   font-size: 0.82rem;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -288,22 +302,19 @@ textarea {
   background-color: var(--brand-primary);
   color: #ffffff;
 }
-
 .btn-primary:hover {
   background-color: var(--brand-hover);
 }
-
 .btn-success {
   background-color: var(--success);
   color: #ffffff;
 }
-
 .btn-danger {
   background-color: var(--danger);
   color: #ffffff;
 }
 
-/* Tables */
+/* Tables (used by ledger pages) */
 .table-container {
   overflow-x: auto;
   background: var(--bg-card);
@@ -321,12 +332,10 @@ textarea {
 .data-table th {
   background-color: var(--bg-hover);
   padding: 12px 16px;
-  border-bottom: 2px solid var(--border-color);
-  font-weight: 700;
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 500;
   color: var(--text-secondary);
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.5px;
+  font-size: 0.72rem;
 }
 
 .data-table td {
@@ -336,7 +345,7 @@ textarea {
 }
 
 /* =========================================================
-   5. SCROLLBAR STYLING
+   5. SCROLLBAR
    ========================================================= */
 ::-webkit-scrollbar {
   width: 8px;
@@ -354,16 +363,12 @@ textarea {
 }
 
 /* =========================================================
-   6. THERMAL PRINTER & MODAL STYLES
+   6. RECEIPT (thermal print preview) — used by POS + others
    ========================================================= */
 .receipt-modal-backdrop {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(10, 17, 40, 0.75);
-  backdrop-filter: blur(2px);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -372,32 +377,22 @@ textarea {
 
 .receipt-paper {
   width: 320px;
-  background: #ffffff;
-  color: #111827;
-  padding: 24px 20px 30px 20px;
-  font-family: 'Courier New', Courier, monospace;
-  box-shadow: 0 25px 50px -12px rgba(10, 17, 40, 0.4);
-  border-top: 8px solid var(--brand-primary);
-  border-radius: 6px;
-  position: relative;
-  box-sizing: border-box;
+  background: var(--ink-1);
+  color: var(--ink-fg);
+  padding: 24px 20px 28px 20px;
+  font-family: 'JetBrains Mono', monospace;
+  border: 1px solid var(--ink-3);
+  border-radius: 10px;
 }
 
 .receipt-divider {
-  border-bottom: 1px dashed #cbd5e1;
+  border-bottom: 1px solid var(--ink-3);
   margin: 10px 0;
-}
-
-.receipt-item-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.8rem;
-  line-height: 1.4;
 }
 
 @keyframes slideInUp {
   from {
-    transform: translateY(20px);
+    transform: translateY(12px);
     opacity: 0;
   }
   to {
@@ -414,10 +409,7 @@ textarea {
   }
   .receipt-modal-backdrop {
     position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
+    inset: 0 !important;
     background: transparent !important;
     display: block !important;
     z-index: 999999 !important;
@@ -431,55 +423,49 @@ textarea {
     padding: 4mm !important;
     background: #ffffff !important;
     color: #000000 !important;
-    box-shadow: none !important;
-    border-top: none !important;
+    border: none !important;
+    border-radius: 0 !important;
   }
 }
 
 /* =========================================================
-   7. MOBILE RESPONSIVE LAYOUT
+   7. MOBILE
    ========================================================= */
 .mobile-header {
   display: none;
-  background: var(--sidebar-bg);
-  color: #ffffff;
+  background: var(--ink-sidebar);
+  color: var(--ink-sidebar-fg-strong);
   padding: 10px 16px;
   align-items: center;
   justify-content: space-between;
-  height: 55px;
+  height: 56px;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 90;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--ink-sidebar-hairline);
 }
 
 .mobile-burger-btn {
-  background: rgba(255, 255, 255, 0.1);
+  background: transparent;
   border: none;
-  color: #ffffff;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-weight: bold;
+  color: var(--ink-sidebar-fg-strong);
   cursor: pointer;
-  font-size: 0.85rem;
 }
 
 .mobile-header-title {
-  font-weight: 800;
-  font-size: 1rem;
+  font-weight: 500;
+  font-size: 0.9rem;
 }
 
 @media screen and (max-width: 768px) {
   .mobile-header {
     display: flex;
   }
-
   .shopmate-container {
     flex-direction: column;
   }
-
   .shopmate-sidebar {
     position: fixed !important;
     top: 0;
@@ -489,14 +475,12 @@ textarea {
     width: 256px !important;
     min-width: 256px !important;
   }
-
   .shopmate-sidebar.mobile-open {
     transform: translateX(0);
   }
-
   .shopmate-content {
-    margin-top: 55px;
-    height: calc(100vh - 55px);
-    padding: 10px;
+    margin-top: 56px;
+    height: calc(100vh - 56px);
+    padding: 12px;
   }
 }

@@ -2,185 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { getIpc } from '../utils/ipc';
 import '../index.css';
 
-// --- CLEAN SVG ICONS ---
-const RefreshIcon = ({ spinning }) => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    style={{
-      transition: 'transform 0.5s ease',
-      transform: spinning ? 'rotate(360deg)' : 'rotate(0deg)',
-    }}
-  >
-    <polyline points="23 4 23 10 17 10"></polyline>
-    <polyline points="1 20 1 14 7 14"></polyline>
-    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-  </svg>
-);
-const TrendingUpIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-    <polyline points="17 6 23 6 23 12"></polyline>
-  </svg>
-);
-const WalletIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="2" y="4" width="20" height="16" rx="2"></rect>
-    <path d="M6 8h12"></path>
-    <path d="M16 12h2"></path>
-  </svg>
-);
-const ReceiptIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"></path>
-    <line x1="8" y1="6" x2="16" y2="6"></line>
-    <line x1="8" y1="10" x2="16" y2="10"></line>
-    <line x1="8" y1="14" x2="12" y2="14"></line>
-  </svg>
-);
-const UsersIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-    <circle cx="9" cy="7" r="4"></circle>
-    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-  </svg>
-);
-const TruckIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="1" y="3" width="15" height="13"></rect>
-    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
-    <circle cx="5.5" cy="18.5" r="2.5"></circle>
-    <circle cx="18.5" cy="18.5" r="2.5"></circle>
-  </svg>
-);
-const PackageIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line>
-    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-    <line x1="12" y1="22.08" x2="12" y2="12"></line>
-  </svg>
-);
-const FlameIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3.5z"></path>
-  </svg>
-);
-const AlertIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-    <line x1="12" y1="9" x2="12" y2="13"></line>
-    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-  </svg>
-);
-const ToolIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
-  </svg>
-);
-const CoinsIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="8" cy="8" r="6"></circle>
-    <path d="M18.09 10.37A6 6 0 1 1 10.34 18"></path>
-    <path d="M7 6h1v4"></path>
-    <path d="m16.71 13.88.7.71-2.82 2.82"></path>
+// ─────────────────────────────────────────────────────────────
+// Icons — one set, 16px, 1.5 stroke, muted color. Skill §3.
+// ─────────────────────────────────────────────────────────────
+const iconProps = {
+  width: 16,
+  height: 16,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.5,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+};
+
+const RefreshIcon = () => (
+  <svg {...iconProps}>
+    <polyline points="23 4 23 10 17 10" />
+    <polyline points="1 20 1 14 7 14" />
+    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
   </svg>
 );
 
@@ -191,24 +31,15 @@ const LoadingUI = () => (
       height: '80vh',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'var(--bg-hover)',
     }}
   >
-    <div
-      style={{
-        textAlign: 'center',
-        background: 'var(--bg-card)',
-        padding: '32px 44px',
-        borderRadius: '12px',
-        border: '1px solid var(--border-color)',
-      }}
-    >
+    <div style={{ textAlign: 'center' }}>
       <div
         style={{
           display: 'inline-block',
-          width: '32px',
-          height: '32px',
-          border: '3px solid #e2e8f0',
+          width: '28px',
+          height: '28px',
+          border: '2px solid var(--ink-3)',
           borderTopColor: 'var(--brand-primary)',
           borderRadius: '50%',
           animation: 'spin 0.8s linear infinite',
@@ -217,133 +48,207 @@ const LoadingUI = () => (
       <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
       <div
         style={{
-          marginTop: '14px',
-          fontSize: '0.9rem',
-          fontWeight: '700',
-          color: 'var(--text-primary)',
-          fontFamily: "'Plus Jakarta Sans', sans-serif",
+          marginTop: '12px',
+          fontSize: '0.8rem',
+          fontWeight: 500,
+          color: 'var(--ink-fg-2)',
         }}
       >
-        ShopMate Command Center
-      </div>
-      <div
-        style={{
-          fontSize: '0.75rem',
-          color: 'var(--text-secondary)',
-          marginTop: '4px',
-        }}
-      >
-        Loading business intelligence streams...
+        Loading
       </div>
     </div>
   </div>
 );
 
+// ─────────────────────────────────────────────────────────────
+// Small primitives
+// ─────────────────────────────────────────────────────────────
+const Card = ({ children, style }) => (
+  <div
+    style={{
+      background: 'var(--ink-0)',
+      border: '1px solid var(--ink-3)',
+      borderRadius: '12px',
+      padding: '20px',
+      ...style,
+    }}
+  >
+    {children}
+  </div>
+);
+
+const CardTitle = ({ children, accent }) => (
+  <div
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      fontSize: '0.78rem',
+      fontWeight: 500,
+      color: 'var(--ink-fg-2)',
+      marginBottom: '12px',
+    }}
+  >
+    {accent && (
+      <span
+        style={{
+          display: 'inline-block',
+          width: '6px',
+          height: '6px',
+          borderRadius: '50%',
+          background: accent,
+        }}
+      />
+    )}
+    {children}
+  </div>
+);
+
+const Figure = ({ children, size = '1.15rem', color = 'var(--ink-fg)' }) => (
+  <div
+    className="monospace tabular"
+    style={{
+      fontSize: size,
+      fontWeight: 600,
+      color,
+      letterSpacing: '-0.01em',
+      lineHeight: 1.2,
+    }}
+  >
+    {children}
+  </div>
+);
+
+const Hairline = () => (
+  <div
+    style={{
+      height: '1px',
+      background: 'var(--ink-3)',
+      width: '100%',
+      margin: '8px 0',
+    }}
+  />
+);
+
+// ─────────────────────────────────────────────────────────────
+// Dashboard
+// ─────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [analytics, setAnalytics] = useState(null);
-  const [shopLogo, setShopLogo] = useState('');
-  const [expensesTotal, setExpensesTotal] = useState(0);
-  const [purchasesTotal, setPurchasesTotal] = useState(0);
-  const [refundsTotal, setRefundsTotal] = useState(0);
-  const [lifetimeNetSales, setLifetimeNetSales] = useState(0);
-  const [repairsCount, setRepairsCount] = useState(0);
-
+  const [summary, setSummary] = useState(null);
+  const [refundsList, setRefundsList] = useState([]);
   const [timeframe, setTimeframe] = useState(7);
   const [selectedYear, setSelectedYear] = useState(
     new Date().getFullYear().toString(),
   );
   const [hoveredPoint, setHoveredPoint] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSync, setLastSync] = useState(null);
+  const [error, setError] = useState(null);
 
   const loadDashboardData = async (days, year) => {
     setIsSyncing(true);
+    setError(null);
     const ipc = getIpc();
-    if (ipc) {
-      try {
-        const basicStats = await ipc.invoke('get-dashboard-stats');
-        const advancedData = await ipc.invoke(
-          'get-dashboard-analytics',
-          days,
-          year,
-        );
-        const financialLedger = await ipc.invoke('get-financial-ledger');
-        const refundsRepairsList = await ipc.invoke('get-refunds-repairs');
-        const settingsList = await ipc.invoke('get-settings');
+    if (!ipc) return;
 
-        if (Array.isArray(settingsList)) {
-          const logoSetting = settingsList.find((s) => s.key === 'shop_logo');
-          if (logoSetting) setShopLogo(logoSetting.value);
-        } else if (settingsList?.shop_logo) {
-          setShopLogo(settingsList.shop_logo);
-        }
+    try {
+      const [basicStats, advancedData, financial, refundsRepairs] =
+        await Promise.all([
+          ipc.invoke('get-dashboard-stats'),
+          ipc.invoke('get-dashboard-analytics', days, year),
+          ipc.invoke('get-financial-ledger'),
+          ipc.invoke('get-refunds-repairs'),
+        ]);
 
-        setStats(basicStats);
-        setAnalytics(advancedData);
+      setStats(basicStats);
+      setAnalytics(advancedData);
+      setSummary(financial?.summary || null);
 
-        const expSum = (financialLedger?.expenses || []).reduce(
-          (acc, e) => acc + (parseFloat(e.amount) || 0),
-          0,
-        );
-        const purSum = (financialLedger?.purchases || []).reduce(
-          (acc, p) =>
-            acc +
-            parseFloat(p.qty_received || 0) * parseFloat(p.unit_cost || 0),
-          0,
-        );
-        const refundsList = (refundsRepairsList || []).filter(
-          (r) => r.type === 'REFUND',
-        );
-        const repairsList = (refundsRepairsList || []).filter(
-          (r) => r.type === 'REPAIR',
-        );
-        const refSum = refundsList.reduce(
-          (acc, r) => acc + (parseFloat(r.amount_refunded) || 0),
-          0,
-        );
-
-        const grossLifetime =
-          basicStats?.lifetimeSales || basicStats?.monthlySales?.total || 0;
-
-        setLifetimeNetSales(grossLifetime - refSum);
-        setExpensesTotal(expSum);
-        setPurchasesTotal(purSum);
-        setRefundsTotal(refSum);
-        setRepairsCount(repairsList.length);
-      } catch (err) {
-        console.error('Failed to load dashboard telemetry:', err);
-      } finally {
-        setTimeout(() => setIsSyncing(false), 500);
-      }
+      const repairs = (refundsRepairs || []).filter((r) => r.type === 'REPAIR');
+      setRefundsList(repairs);
+      setLastSync(new Date());
+    } catch (err) {
+      console.error('Dashboard load failed:', err);
+      setError(err?.message || 'Could not load dashboard data.');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
   useEffect(() => {
     loadDashboardData(timeframe, selectedYear);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeframe, selectedYear]);
+
+  if (error) {
+    return (
+      <div
+        role="alert"
+        style={{
+          background: 'var(--ink-danger)',
+          color: '#ffffff',
+          padding: '14px 18px',
+          borderRadius: '10px',
+          fontSize: '0.85rem',
+          fontWeight: 500,
+        }}
+      >
+        {error} —{' '}
+        <button
+          onClick={() => loadDashboardData(timeframe, selectedYear)}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#ffffff',
+            textDecoration: 'underline',
+            cursor: 'pointer',
+            fontWeight: 600,
+          }}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   if (!stats || !analytics) return <LoadingUI />;
 
-  const dailyTotal = stats.dailySales?.total || 0;
-  const dailyCount = stats.dailySales?.count || 0;
+  // ── Data (with local date fix for UTC offset mismatch)
+  // ── Data (with local date fix for UTC offset mismatch)
+  const localTodayStr = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })();
+
+  const matchingTodayTrend = (analytics.salesTrend || []).find(
+    (d) => d.sale_date === localTodayStr,
+  );
+
+  // 🛡️ Fallback to stats.dailySales if trend array lags behind local time query
+  const dailyTotal = matchingTodayTrend?.total ?? stats.dailySales?.total ?? 0;
+  const dailyCount = matchingTodayTrend?.count ?? stats.dailySales?.count ?? 0;
+
   const monthlyTotal = stats.monthlySales?.total || 0;
   const monthlyCount = stats.monthlySales?.count || 0;
   const stockValuation = stats.totalStockWorth || 0;
   const customerDues = stats.customerDues || 0;
   const supplierPayables = stats.supplierPayables || 0;
 
-  // Calculate Cash Counter (Approximation based on current month sales vs expenses)
-  const cashCounter =
-    (stats.dailySales?.total || 0) - expensesTotal * 0.1 + 50000; // Example formula
+  const expensesTotal = summary?.totalExpenses ?? 0;
+  const purchasesTotal = summary?.totalPurchases ?? 0;
+  const refundsTotal = summary?.totalRefunds ?? 0;
+  const repairsCount = refundsList.length;
 
   const trendData = analytics.salesTrend || [];
   const hotProducts = analytics.hotProducts || [];
   const restockItems = analytics.restockItems || [];
   const yearlyPerformance = analytics.yearlyPerformance || [];
 
-  // --- REVENUE TRAJECTORY CHART ---
-  const chartHeight = 160;
-  const chartWidth = 700;
+  // ── Chart geometry
+  const chartHeight = 180;
+  const chartWidth = 720;
   const maxSale = Math.max(...trendData.map((d) => d.total || 0), 1000);
 
   const points = trendData.map((d, index) => {
@@ -356,26 +261,35 @@ export default function Dashboard() {
     return { x, y, ...d };
   });
 
-  const getSmoothPath = (pts) => {
-    if (pts.length < 2) return '';
-    return pts.reduce((acc, point, i, a) => {
-      if (i === 0) return `M ${point.x},${point.y}`;
-      const cp1X = a[i - 1].x + (point.x - a[i - 1].x) / 2;
-      const cp1Y = a[i - 1].y;
-      const cp2X = a[i - 1].x + (point.x - a[i - 1].x) / 2;
-      const cp2Y = point.y;
-      return `${acc} C ${cp1X},${cp1Y} ${cp2X},${cp2Y} ${point.x},${point.y}`;
+  const smoothPath = (() => {
+    if (points.length < 2) return '';
+    return points.reduce((acc, p, i, a) => {
+      if (i === 0) return `M ${p.x},${p.y}`;
+      const c1x = a[i - 1].x + (p.x - a[i - 1].x) / 2;
+      const c1y = a[i - 1].y;
+      const c2x = a[i - 1].x + (p.x - a[i - 1].x) / 2;
+      const c2y = p.y;
+      return `${acc} C ${c1x},${c1y} ${c2x},${c2y} ${p.x},${p.y}`;
     }, '');
-  };
+  })();
 
-  const smoothCurvePath = getSmoothPath(points);
-  const closedAreaPath =
-    points.length > 1
-      ? `${smoothCurvePath} L ${points[points.length - 1].x},${chartHeight - 20} L ${points[0].x},${chartHeight - 20} Z`
-      : '';
+  const maxBarVal = Math.max(
+    ...yearlyPerformance.map((m) => m.sales || 0),
+    1000,
+  );
 
-  // --- YEARLY BAR CHART LOGIC ---
-  const maxBarVal = Math.max(...yearlyPerformance.map((m) => m.sales), 1000);
+  const today = new Date();
+  const dateLabel = today.toLocaleDateString(undefined, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+  });
+  const syncLabel = lastSync
+    ? lastSync.toLocaleTimeString(undefined, {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : '—';
 
   return (
     <div
@@ -383,762 +297,442 @@ export default function Dashboard() {
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
-        paddingBottom: '30px',
+        paddingBottom: '32px',
         width: '100%',
         boxSizing: 'border-box',
         fontFamily: "'Inter', sans-serif",
+        color: 'var(--ink-fg)',
       }}
     >
-      {/* 1. HEADER BANNER */}
+      {/* ─────────── HEADER ─────────── */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center',
-          background: 'var(--bg-card)',
-          padding: '16px 20px',
-          borderRadius: '10px',
-          border: '1.5px solid var(--border-color)',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+          alignItems: 'flex-end',
+          paddingBottom: '4px',
+          flexWrap: 'wrap',
+          gap: '12px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          {shopLogo ? (
-            <img
-              src={shopLogo}
-              alt="Shop Logo"
-              style={{
-                width: '44px',
-                height: '44px',
-                objectFit: 'contain',
-                borderRadius: '8px',
-                border: '1px solid var(--border-color)',
-                background: 'var(--bg-hover)',
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                width: '44px',
-                height: '44px',
-                background: 'var(--brand-primary)',
-                color: '#fff',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: '900',
-                fontSize: '1.2rem',
-              }}
-            >
-              S
-            </div>
-          )}
-          <div>
-            <h3
-              style={{
-                margin: 0,
-                fontSize: '1.1rem',
-                fontWeight: '800',
-                color: 'var(--text-primary)',
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-              }}
-            >
-              Business Intelligence Dashboard
-            </h3>
-            <p
-              style={{
-                fontSize: '0.75rem',
-                color: 'var(--text-secondary)',
-                margin: '2px 0 0 0',
-              }}
-            >
-              Real-time synchronization across POS, Khata, and Inventory
-            </p>
-          </div>
+        <div>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: '1.25rem',
+              fontWeight: 600,
+              color: 'var(--ink-fg)',
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              letterSpacing: '-0.02em',
+            }}
+          >
+            {dateLabel}
+          </h1>
+          <p
+            style={{
+              margin: '2px 0 0 0',
+              fontSize: '0.78rem',
+              color: 'var(--ink-fg-3)',
+            }}
+          >
+            Offline · Last sync {syncLabel}
+          </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div
             style={{
               display: 'flex',
-              gap: '4px',
-              background: 'var(--bg-hover)',
-              padding: '4px',
-              borderRadius: '6px',
+              gap: '2px',
+              background: 'var(--ink-2)',
+              padding: '2px',
+              borderRadius: '8px',
+              border: '1px solid var(--ink-3)',
             }}
           >
-            {[7, 30].map((t) => (
-              <button
-                key={t}
-                onClick={() => setTimeframe(t)}
-                style={{
-                  padding: '6px 14px',
-                  fontSize: '0.75rem',
-                  borderRadius: '6px',
-                  border: 'none',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  background:
-                    timeframe === t ? 'var(--brand-primary)' : 'transparent',
-                  color: timeframe === t ? '#ffffff' : '#64748b',
-                }}
-              >
-                {t}D
-              </button>
-            ))}
+            {[7, 30].map((t) => {
+              const active = timeframe === t;
+              return (
+                <button
+                  key={t}
+                  onClick={() => setTimeframe(t)}
+                  style={{
+                    padding: '5px 12px',
+                    fontSize: '0.75rem',
+                    borderRadius: '6px',
+                    border: 'none',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    background: active ? 'var(--brand-primary)' : 'transparent',
+                    color: active ? '#ffffff' : 'var(--ink-fg-2)',
+                    transition: 'background-color 120ms ease, color 120ms ease',
+                  }}
+                >
+                  {t}d
+                </button>
+              );
+            })}
           </div>
+
           <button
             onClick={() => loadDashboardData(timeframe, selectedYear)}
+            disabled={isSyncing}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               padding: '8px 14px',
-              background: 'var(--bg-card)',
-              border: '1.5px solid #cbd5e1',
-              borderRadius: '6px',
+              background: 'var(--ink-2)',
+              border: '1px solid var(--ink-3)',
+              borderRadius: '8px',
               fontSize: '0.75rem',
-              fontWeight: 'bold',
-              color: '#475569',
-              cursor: 'pointer',
+              fontWeight: 500,
+              color: 'var(--ink-fg)',
+              cursor: isSyncing ? 'default' : 'pointer',
+              opacity: isSyncing ? 0.7 : 1,
+              transition: 'background-color 120ms ease',
             }}
           >
-            <RefreshIcon spinning={isSyncing} /> Sync Data
+            {!isSyncing && <RefreshIcon />}
+            {isSyncing ? 'Syncing…' : 'Sync'}
           </button>
         </div>
       </div>
 
-      {/* 2. TIER 1: BENTO BOX KPI GRID */}
+      {/* ─────────── TIER 1: HERO + 4 ─────────── */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(5, 1fr)',
-          gap: '12px',
+          gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
+          gap: '16px',
         }}
       >
-        {/* Hero Cards (Span 2) */}
-        <div
-          style={{
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            padding: '16px 20px',
-            border: '1.5px solid var(--brand-primary)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            // gridColumn: 'span 2',
-          }}
-        >
+        {/* HERO — Today's Sales */}
+        <Card style={{ display: 'flex', flexDirection: 'column' }}>
+          <CardTitle accent="var(--brand-primary)">Today's sales</CardTitle>
+          <Figure size="2.25rem" color="var(--ink-fg)">
+            Rs. {dailyTotal.toLocaleString()}
+          </Figure>
           <div
             style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
+              height: '1px',
+              width: '48px',
+              background: 'var(--brand-primary)',
+              margin: '10px 0 8px 0',
             }}
-          >
-            <span
-              style={{
-                fontSize: '0.75rem',
-                fontWeight: '700',
-                color: 'var(--brand-primary)',
-                textTransform: 'uppercase',
-              }}
-            >
-              Today's Sales
-            </span>
-            <div style={{ color: 'var(--brand-primary)' }}>
-              <TrendingUpIcon />
-            </div>
+          />
+          <div style={{ fontSize: '0.75rem', color: 'var(--ink-fg-2)' }}>
+            {dailyCount} bill{dailyCount === 1 ? '' : 's'} today
           </div>
-          <div style={{ marginTop: '8px' }}>
-            <div
-              className="monospace"
-              style={{
-                fontSize: '1.5rem',
-                fontWeight: '900',
-                color: 'var(--brand-primary)',
-                fontFamily: "'JetBrains Mono', monospace",
-              }}
-            >
-              Rs. {dailyTotal.toLocaleString()}
-            </div>
-            <div
-              style={{
-                fontSize: '0.75rem',
-                color: 'var(--text-secondary)',
-                marginTop: '2px',
-                fontWeight: '500',
-              }}
-            >
-              {dailyCount} bills generated today
-            </div>
-          </div>
-        </div>
+        </Card>
 
-        <div
-          style={{
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            padding: '16px 20px',
-            border: '1.5px solid var(--brand-primary)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            // gridColumn: 'span 2',
-          }}
-        >
+        {/* Compact 1 — Monthly */}
+        <Card>
+          <CardTitle>This month</CardTitle>
+          <Figure>Rs. {monthlyTotal.toLocaleString()}</Figure>
           <div
             style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
+              fontSize: '0.72rem',
+              color: 'var(--ink-fg-3)',
+              marginTop: '4px',
             }}
           >
-            <span
-              style={{
-                fontSize: '0.75rem',
-                fontWeight: '700',
-                color: 'var(--brand-primary)',
-                textTransform: 'uppercase',
-              }}
-            >
-              Lifetime Net Sales
-            </span>
-            <div style={{ color: 'var(--brand-primary)' }}>
-              <TrendingUpIcon />
-            </div>
+            {monthlyCount} transactions
           </div>
-          <div style={{ marginTop: '8px' }}>
-            <div
-              className="monospace"
-              style={{
-                fontSize: '1.5rem',
-                fontWeight: '900',
-                color: 'var(--brand-primary)',
-                fontFamily: "'JetBrains Mono', monospace",
-              }}
-            >
-              Rs. {lifetimeNetSales.toLocaleString()}
-            </div>
-            <div
-              style={{
-                fontSize: '0.75rem',
-                color: 'var(--text-secondary)',
-                marginTop: '2px',
-                fontWeight: '500',
-              }}
-            >
-              Gross sales minus total refunds
-            </div>
-          </div>
-        </div>
+        </Card>
 
-        {/* Standard Cards (Span 1) */}
-        <div
-          style={{
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            padding: '14px 16px',
-            border: '1.5px solid var(--danger)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span
-              style={{
-                fontSize: '0.7rem',
-                fontWeight: '700',
-                color: 'var(--danger)',
-                textTransform: 'uppercase',
-              }}
-            >
-              Total Expenses
-            </span>
-            <div style={{ color: 'var(--danger)' }}>
-              <ReceiptIcon />
-            </div>
+        {/* Compact 2 — Customer Dues */}
+        <Card>
+          <CardTitle accent="var(--ink-danger)">Customer dues</CardTitle>
+          <Figure color="var(--ink-danger)">
+            Rs. {customerDues.toLocaleString()}
+          </Figure>
+          <div
+            style={{
+              fontSize: '0.72rem',
+              color: 'var(--ink-fg-3)',
+              marginTop: '4px',
+            }}
+          >
+            Khata receivables
           </div>
-          <div style={{ marginTop: '6px' }}>
-            <div
-              className="monospace"
-              style={{
-                fontSize: '1.15rem',
-                fontWeight: '900',
-                color: 'var(--text-primary)',
-                fontFamily: "'JetBrains Mono', monospace",
-              }}
-            >
-              Rs. {expensesTotal.toLocaleString()}
-            </div>
-            <div
-              style={{
-                fontSize: '0.7rem',
-                color: 'var(--text-secondary)',
-                marginTop: '2px',
-              }}
-            >
-              Operating overhead
-            </div>
+        </Card>
+
+        {/* Compact 3 — Supplier Payables */}
+        <Card>
+          <CardTitle accent="var(--ink-warning)">Supplier debt</CardTitle>
+          <Figure color="var(--ink-warning)">
+            Rs. {supplierPayables.toLocaleString()}
+          </Figure>
+          <div
+            style={{
+              fontSize: '0.72rem',
+              color: 'var(--ink-fg-3)',
+              marginTop: '4px',
+            }}
+          >
+            Vendor payables
           </div>
-        </div>
-        <div
-          style={{
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            padding: '14px 16px',
-            border: '1.5px solid #d97706',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span
-              style={{
-                fontSize: '0.7rem',
-                fontWeight: '700',
-                color: '#d97706',
-                textTransform: 'uppercase',
-              }}
-            >
-              Total Purchases
-            </span>
-            <div style={{ color: '#d97706' }}>
-              <TruckIcon />
-            </div>
+        </Card>
+
+        {/* Compact 4 — Stock Valuation */}
+        <Card>
+          <CardTitle>Stock value</CardTitle>
+          <Figure>Rs. {stockValuation.toLocaleString()}</Figure>
+          <div
+            style={{
+              fontSize: '0.72rem',
+              color: 'var(--ink-fg-3)',
+              marginTop: '4px',
+            }}
+          >
+            WAC basis
           </div>
-          <div style={{ marginTop: '6px' }}>
-            <div
-              className="monospace"
-              style={{
-                fontSize: '1.15rem',
-                fontWeight: '900',
-                color: 'var(--text-primary)',
-                fontFamily: "'JetBrains Mono', monospace",
-              }}
-            >
-              Rs. {purchasesTotal.toLocaleString()}
-            </div>
-            <div
-              style={{
-                fontSize: '0.7rem',
-                color: 'var(--text-secondary)',
-                marginTop: '2px',
-              }}
-            >
-              Stock GRN intake
-            </div>
-          </div>
-        </div>
-        <div
-          style={{
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            padding: '14px 16px',
-            border: '1.5px solid var(--danger)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span
-              style={{
-                fontSize: '0.7rem',
-                fontWeight: '700',
-                color: 'var(--danger)',
-                textTransform: 'uppercase',
-              }}
-            >
-              Total Refunds
-            </span>
-            <div style={{ color: 'var(--danger)' }}>
-              <ReceiptIcon />
-            </div>
-          </div>
-          <div style={{ marginTop: '6px' }}>
-            <div
-              className="monospace"
-              style={{
-                fontSize: '1.15rem',
-                fontWeight: '900',
-                color: 'var(--text-primary)',
-                fontFamily: "'JetBrains Mono', monospace",
-              }}
-            >
-              Rs. {refundsTotal.toLocaleString()}
-            </div>
-            <div
-              style={{
-                fontSize: '0.7rem',
-                color: 'var(--text-secondary)',
-                marginTop: '2px',
-              }}
-            >
-              Customer returns
-            </div>
-          </div>
-        </div>
-        <div
-          style={{
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            padding: '14px 16px',
-            border: '1.5px solid #d97706',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span
-              style={{
-                fontSize: '0.7rem',
-                fontWeight: '700',
-                color: '#d97706',
-                textTransform: 'uppercase',
-              }}
-            >
-              Stock Valuation
-            </span>
-            <div style={{ color: '#d97706' }}>
-              <PackageIcon />
-            </div>
-          </div>
-          <div style={{ marginTop: '6px' }}>
-            <div
-              className="monospace"
-              style={{
-                fontSize: '1.15rem',
-                fontWeight: '900',
-                color: 'var(--text-primary)',
-                fontFamily: "'JetBrains Mono', monospace",
-              }}
-            >
-              Rs. {stockValuation.toLocaleString()}
-            </div>
-            <div
-              style={{
-                fontSize: '0.7rem',
-                color: 'var(--text-secondary)',
-                marginTop: '2px',
-              }}
-            >
-              WAC asset basis
-            </div>
-          </div>
-        </div>
-        <div
-          style={{
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            padding: '14px 16px',
-            border: '1.5px solid var(--info)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span
-              style={{
-                fontSize: '0.7rem',
-                fontWeight: '700',
-                color: 'var(--info)',
-                textTransform: 'uppercase',
-              }}
-            >
-              Device Repairs
-            </span>
-            <div style={{ color: 'var(--info)' }}>
-              <ToolIcon />
-            </div>
-          </div>
-          <div style={{ marginTop: '6px' }}>
-            <div
-              className="monospace"
-              style={{
-                fontSize: '1.15rem',
-                fontWeight: '900',
-                color: 'var(--text-primary)',
-                fontFamily: "'JetBrains Mono', monospace",
-              }}
-            >
-              {repairsCount} Jobs
-            </div>
-            <div
-              style={{
-                fontSize: '0.7rem',
-                color: 'var(--text-secondary)',
-                marginTop: '2px',
-              }}
-            >
-              Active tickets
-            </div>
-          </div>
-        </div>
-        <div
-          style={{
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            padding: '14px 16px',
-            border: '1.5px solid var(--danger)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span
-              style={{
-                fontSize: '0.7rem',
-                fontWeight: '700',
-                color: 'var(--danger)',
-                textTransform: 'uppercase',
-              }}
-            >
-              Customer Dues
-            </span>
-            <div style={{ color: 'var(--danger)' }}>
-              <UsersIcon />
-            </div>
-          </div>
-          <div style={{ marginTop: '6px' }}>
-            <div
-              className="monospace"
-              style={{
-                fontSize: '1.15rem',
-                fontWeight: '900',
-                color: 'var(--text-primary)',
-                fontFamily: "'JetBrains Mono', monospace",
-              }}
-            >
-              Rs. {customerDues.toLocaleString()}
-            </div>
-            <div
-              style={{
-                fontSize: '0.7rem',
-                color: 'var(--text-secondary)',
-                marginTop: '2px',
-              }}
-            >
-              Khata receivables
-            </div>
-          </div>
-        </div>
-        <div
-          style={{
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            padding: '14px 16px',
-            border: '1.5px solid #d97706',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span
-              style={{
-                fontSize: '0.7rem',
-                fontWeight: '700',
-                color: '#d97706',
-                textTransform: 'uppercase',
-              }}
-            >
-              Supplier Debt
-            </span>
-            <div style={{ color: '#d97706' }}>
-              <TruckIcon />
-            </div>
-          </div>
-          <div style={{ marginTop: '6px' }}>
-            <div
-              className="monospace"
-              style={{
-                fontSize: '1.15rem',
-                fontWeight: '900',
-                color: 'var(--text-primary)',
-                fontFamily: "'JetBrains Mono', monospace",
-              }}
-            >
-              Rs. {supplierPayables.toLocaleString()}
-            </div>
-            <div
-              style={{
-                fontSize: '0.7rem',
-                color: 'var(--text-secondary)',
-                marginTop: '2px',
-              }}
-            >
-              Vendor payables
-            </div>
-          </div>
-        </div>
-        <div
-          style={{
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            padding: '14px 16px',
-            border: '1.5px solid var(--brand-primary)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span
-              style={{
-                fontSize: '0.7rem',
-                fontWeight: '700',
-                color: 'var(--brand-primary)',
-                textTransform: 'uppercase',
-              }}
-            >
-              Credit Share
-            </span>
-            <div style={{ color: 'var(--brand-primary)' }}>
-              <UsersIcon />
-            </div>
-          </div>
-          <div style={{ marginTop: '6px' }}>
-            <div
-              className="monospace"
-              style={{
-                fontSize: '1.15rem',
-                fontWeight: '900',
-                color: 'var(--text-primary)',
-                fontFamily: "'JetBrains Mono', monospace",
-              }}
-            >
-              Rs. {customerDues.toLocaleString()}
-            </div>
-            <div
-              style={{
-                fontSize: '0.7rem',
-                color: 'var(--text-secondary)',
-                marginTop: '2px',
-              }}
-            >
-              Total credit owed
-            </div>
-          </div>
-        </div>
-        <div
-          style={{
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            padding: '14px 16px',
-            border: '1.5px solid var(--success)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span
-              style={{
-                fontSize: '0.7rem',
-                fontWeight: '700',
-                color: 'var(--success)',
-                textTransform: 'uppercase',
-              }}
-            >
-              Cash Counter
-            </span>
-            <div style={{ color: 'var(--success)' }}>
-              <WalletIcon />
-            </div>
-          </div>
-          <div style={{ marginTop: '6px' }}>
-            <div
-              className="monospace"
-              style={{
-                fontSize: '1.15rem',
-                fontWeight: '900',
-                color: 'var(--text-primary)',
-                fontFamily: "'JetBrains Mono', monospace",
-              }}
-            >
-              Rs. {cashCounter.toLocaleString()}
-            </div>
-            <div
-              style={{
-                fontSize: '0.7rem',
-                color: 'var(--text-secondary)',
-                marginTop: '2px',
-              }}
-            >
-              Estimated physical cash
-            </div>
-          </div>
-        </div>
-        <div
-          style={{
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            padding: '14px 16px',
-            border: '1.5px solid var(--brand-primary)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span
-              style={{
-                fontSize: '0.7rem',
-                fontWeight: '700',
-                color: 'var(--brand-primary)',
-                textTransform: 'uppercase',
-              }}
-            >
-              Monthly Sales
-            </span>
-            <div style={{ color: 'var(--brand-primary)' }}>
-              <TrendingUpIcon />
-            </div>
-          </div>
-          <div style={{ marginTop: '6px' }}>
-            <div
-              className="monospace"
-              style={{
-                fontSize: '1.15rem',
-                fontWeight: '900',
-                color: 'var(--text-primary)',
-                fontFamily: "'JetBrains Mono', monospace",
-              }}
-            >
-              Rs. {monthlyTotal.toLocaleString()}
-            </div>
-            <div
-              style={{
-                fontSize: '0.7rem',
-                color: 'var(--text-secondary)',
-                marginTop: '2px',
-              }}
-            >
-              {monthlyCount} transactions
-            </div>
-          </div>
-        </div>
+        </Card>
       </div>
 
-      {/* 3. TIER 2: CHARTS */}
+      {/* ─────────── QUIET STRIP (ledger signature) ─────────── */}
       <div
-        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '0',
+          background: 'var(--ink-0)',
+          border: '1px solid var(--ink-3)',
+          borderRadius: '12px',
+          overflow: 'hidden',
+        }}
       >
-        {/* Revenue Chart */}
-        <div
-          style={{
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            padding: '18px',
-            border: '1.5px solid var(--border-color)',
-          }}
-        >
+        {[
+          {
+            label: 'Total expenses',
+            value: expensesTotal,
+            color: 'var(--ink-danger)',
+          },
+          {
+            label: 'Total purchases',
+            value: purchasesTotal,
+            color: 'var(--ink-warning)',
+          },
+          {
+            label: 'Total refunds',
+            value: refundsTotal,
+            color: 'var(--ink-danger)',
+          },
+          {
+            label: 'Repairs logged',
+            value: repairsCount,
+            color: 'var(--ink-info)',
+            isCount: true,
+          },
+        ].map((item, i) => (
+          <div
+            key={item.label}
+            style={{
+              padding: '14px 18px',
+              borderLeft: i === 0 ? 'none' : '1px solid var(--ink-3)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '0.72rem',
+                color: 'var(--ink-fg-3)',
+                fontWeight: 500,
+              }}
+            >
+              {item.label}
+            </div>
+            <div
+              className="monospace tabular"
+              style={{
+                fontSize: '0.95rem',
+                fontWeight: 600,
+                color: item.color,
+                textAlign: 'left',
+              }}
+            >
+              {item.isCount ? item.value : `Rs. ${item.value.toLocaleString()}`}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ─────────── TIER 2: CHARTS ─────────── */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '2fr 1fr',
+          gap: '16px',
+        }}
+      >
+        {/* Revenue trajectory — the main moment */}
+        <Card>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              marginBottom: '12px',
+            }}
+          >
+            <div>
+              <CardTitle>Revenue</CardTitle>
+              <div
+                style={{
+                  fontSize: '0.72rem',
+                  color: 'var(--ink-fg-3)',
+                  marginTop: '-8px',
+                  marginBottom: '8px',
+                }}
+              >
+                Last {timeframe} days
+              </div>
+            </div>
+            {trendData.length > 0 && (
+              <div
+                className="monospace tabular"
+                style={{
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  color: 'var(--ink-fg)',
+                }}
+              >
+                Rs.{' '}
+                {trendData
+                  .reduce((s, d) => s + (d.total || 0), 0)
+                  .toLocaleString()}
+              </div>
+            )}
+          </div>
+
+          <div style={{ position: 'relative', width: '100%' }}>
+            {trendData.length === 0 ? (
+              <div
+                style={{
+                  height: '180px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--ink-fg-3)',
+                  fontSize: '0.8rem',
+                  gap: '6px',
+                }}
+              >
+                <svg
+                  width="28"
+                  height="28"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M3 3v18h18" />
+                  <path d="m7 12 4-4 4 4 4-4" />
+                </svg>
+                No sales in this window
+              </div>
+            ) : (
+              <svg
+                viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+                style={{ width: '100%', height: '190px', overflow: 'visible' }}
+              >
+                {/* grid */}
+                {[20, 60, 100, 140].map((y) => (
+                  <line
+                    key={y}
+                    x1="20"
+                    y1={y}
+                    x2={chartWidth - 20}
+                    y2={y}
+                    stroke="var(--chart-grid)"
+                    strokeDasharray="2 4"
+                  />
+                ))}
+
+                {hoveredPoint && (
+                  <line
+                    x1={hoveredPoint.x}
+                    y1="10"
+                    x2={hoveredPoint.x}
+                    y2={chartHeight - 20}
+                    stroke="var(--ink-4)"
+                    strokeDasharray="2 2"
+                  />
+                )}
+
+                {points.length > 1 && (
+                  <path
+                    d={smoothPath}
+                    fill="none"
+                    stroke="var(--brand-primary)"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                )}
+
+                {points.map((p, idx) => {
+                  const active = hoveredPoint === p;
+                  return (
+                    <g
+                      key={idx}
+                      style={{ cursor: 'pointer' }}
+                      onMouseEnter={() => setHoveredPoint(p)}
+                      onMouseLeave={() => setHoveredPoint(null)}
+                    >
+                      <circle
+                        cx={p.x}
+                        cy={p.y}
+                        r={active ? 4 : 2.5}
+                        fill="var(--brand-primary)"
+                        stroke="var(--ink-0)"
+                        strokeWidth="1.5"
+                      />
+                      <text
+                        x={p.x}
+                        y={chartHeight - 6}
+                        fontSize="9"
+                        fill="var(--ink-fg-3)"
+                        textAnchor="middle"
+                        fontFamily="'JetBrains Mono', monospace"
+                      >
+                        {p.sale_date ? p.sale_date.substring(5) : ''}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            )}
+
+            {hoveredPoint && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  right: 0,
+                  background: 'var(--ink-fg)',
+                  color: 'var(--ink-0)',
+                  padding: '6px 10px',
+                  borderRadius: '6px',
+                  fontSize: '0.72rem',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontWeight: 500,
+                }}
+              >
+                <div style={{ opacity: 0.7 }}>{hoveredPoint.sale_date}</div>
+                <div>Rs. {(hoveredPoint.total || 0).toLocaleString()}</div>
+              </div>
+            )}
+          </div>
+        </Card>
+
+        {/* Monthly — secondary, different in kind */}
+        <Card style={{ display: 'flex', flexDirection: 'column' }}>
           <div
             style={{
               display: 'flex',
@@ -1147,230 +741,17 @@ export default function Dashboard() {
               marginBottom: '12px',
             }}
           >
-            <div>
-              <h4
-                style={{
-                  margin: 0,
-                  fontSize: '0.92rem',
-                  fontWeight: '800',
-                  color: 'var(--text-primary)',
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                  textTransform: 'uppercase',
-                }}
-              >
-                Revenue Trajectory
-              </h4>
-              <span
-                style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}
-              >
-                Sales velocity over time
-              </span>
-            </div>
-            <span
-              style={{
-                fontSize: '0.7rem',
-                color: 'var(--brand-primary)',
-                background: '#f0fdf4',
-                padding: '4px 10px',
-                borderRadius: '6px',
-                fontWeight: 'bold',
-              }}
-            >
-              {timeframe} Days
-            </span>
-          </div>
-          <div style={{ position: 'relative', width: '100%' }}>
-            {trendData.length === 0 ? (
-              <div
-                style={{
-                  height: '160px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#94a3b8',
-                  fontSize: '0.85rem',
-                }}
-              >
-                No sales telemetry recorded.
-              </div>
-            ) : (
-              <svg
-                viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-                style={{ width: '100%', height: '170px', overflow: 'visible' }}
-              >
-                <defs>
-                  <linearGradient
-                    id="fluidGradient"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop
-                      offset="0%"
-                      stopColor="var(--brand-primary)"
-                      stopOpacity="0.25"
-                    />
-                    <stop
-                      offset="100%"
-                      stopColor="var(--brand-primary)"
-                      stopOpacity="0.0"
-                    />
-                  </linearGradient>
-                </defs>
-                <line
-                  x1="20"
-                  y1="20"
-                  x2={chartWidth - 20}
-                  y2="20"
-                  stroke="#f1f5f9"
-                  strokeDasharray="3 3"
-                />
-                <line
-                  x1="20"
-                  y1={chartHeight / 2}
-                  x2={chartWidth - 20}
-                  y2={chartHeight / 2}
-                  stroke="#f1f5f9"
-                  strokeDasharray="3 3"
-                />
-                <line
-                  x1="20"
-                  y1={chartHeight - 20}
-                  x2={chartWidth - 20}
-                  y2={chartHeight - 20}
-                  stroke="#cbd5e1"
-                />
-                {hoveredPoint && (
-                  <line
-                    x1={hoveredPoint.x}
-                    y1="10"
-                    x2={hoveredPoint.x}
-                    y2={chartHeight - 20}
-                    stroke="var(--brand-primary)"
-                    strokeDasharray="2 2"
-                    strokeWidth="1.5"
-                  />
-                )}
-                {points.length > 1 && (
-                  <path d={closedAreaPath} fill="url(#fluidGradient)" />
-                )}
-                {points.length > 1 && (
-                  <path
-                    d={smoothCurvePath}
-                    fill="none"
-                    stroke="var(--brand-primary)"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                  />
-                )}
-                {points.map((p, idx) => (
-                  <g
-                    key={idx}
-                    style={{ cursor: 'pointer' }}
-                    onMouseEnter={() => setHoveredPoint(p)}
-                    onMouseLeave={() => setHoveredPoint(null)}
-                  >
-                    <circle
-                      cx={p.x}
-                      cy={p.y}
-                      r={hoveredPoint === p ? '5' : '3.5'}
-                      fill="var(--brand-primary)"
-                      stroke="#ffffff"
-                      strokeWidth="1.5"
-                    />
-                    <text
-                      x={p.x}
-                      y={chartHeight - 6}
-                      fontSize="8"
-                      fill="#64748b"
-                      textAnchor="middle"
-                      fontWeight="600"
-                    >
-                      {p.sale_date ? p.sale_date.substring(5) : ''}
-                    </text>
-                  </g>
-                ))}
-              </svg>
-            )}
-            {hoveredPoint && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '5px',
-                  right: '10px',
-                  background: '#1e293b',
-                  color: '#ffffff',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  fontSize: '0.75rem',
-                  fontFamily: "'JetBrains Mono', monospace",
-                }}
-              >
-                <div style={{ fontWeight: '700', color: '#38bdf8' }}>
-                  {hoveredPoint.sale_date}
-                </div>
-                <div style={{ fontWeight: '800' }}>
-                  Rs. {(hoveredPoint.total || 0).toLocaleString()}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Yearly Performance Bar Chart */}
-        <div
-          style={{
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            padding: '18px',
-            border: '1.5px solid var(--border-color)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            // color: 'var(--text-primary)',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'flex-start',
-            }}
-          >
-            <div>
-              <h4
-                style={{
-                  margin: 0,
-                  fontSize: '0.92rem',
-                  fontWeight: '800',
-                  color: 'var(--text-primary)',
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                  textTransform: 'uppercase',
-                }}
-              >
-                Monthly Financial Overview
-              </h4>
-              <span
-                style={{
-                  fontSize: '0.75rem',
-                  color: 'var(--text-secondary)',
-                }}
-              >
-                Revenue vs operating costs vs net profit
-              </span>
-            </div>
+            <CardTitle>Monthly</CardTitle>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
               style={{
-                padding: '6px 10px',
-                fontSize: '0.75rem',
+                padding: '4px 8px',
+                fontSize: '0.72rem',
                 borderRadius: '6px',
-                border: '1px solid var(--border-strong)',
-                background: 'var(--bg-hover)',
-                fontWeight: 'bold',
-                color: '#334155',
+                border: '1px solid var(--ink-3)',
+                background: 'var(--ink-1)',
+                color: 'var(--ink-fg-2)',
                 cursor: 'pointer',
                 outline: 'none',
               }}
@@ -1386,178 +767,151 @@ export default function Dashboard() {
           <div
             style={{
               display: 'flex',
-              alignItems: 'flex-end',
-              justifyContent: 'space-around',
-              height: '160px',
-              paddingTop: '20px',
-              gap: '8px',
+              flexDirection: 'column',
+              gap: '6px',
+              flex: 1,
+              justifyContent: 'center',
             }}
           >
             {yearlyPerformance.map((m, idx) => {
-              const barHeightPct = Math.max((m.sales / maxBarVal) * 100, 2);
-              const isCurrentMonth =
+              const pct = maxBarVal > 0 ? (m.sales / maxBarVal) * 100 : 0;
+              const isCurrent =
                 new Date().getMonth() === idx &&
                 selectedYear === new Date().getFullYear().toString();
               return (
                 <div
                   key={idx}
                   style={{
-                    display: 'flex',
-                    flexDirection: 'column',
+                    display: 'grid',
+                    gridTemplateColumns: '28px 1fr auto',
                     alignItems: 'center',
-                    width: '100%',
-                    height: '100%',
-                    justifyContent: 'flex-end',
+                    gap: '8px',
                   }}
                 >
-                  <div
-                    className="monospace"
-                    style={{
-                      fontSize: '0.65rem',
-                      fontWeight: 'bold',
-                      color: isCurrentMonth
-                        ? 'var(--brand-primary)'
-                        : '#64748b',
-                      marginBottom: '4px',
-                    }}
-                  >
-                    {m.sales > 0 ? `Rs. ${(m.sales / 1000).toFixed(0)}k` : ''}
-                  </div>
-                  <div
-                    style={{
-                      width: '100%',
-                      maxWidth: '32px',
-                      height: `${barHeightPct}%`,
-                      background: isCurrentMonth
-                        ? 'var(--brand-primary)'
-                        : '#cbd5e1',
-                      borderRadius: '4px 4px 0 0',
-                      transition: 'height 0.3s ease',
-                    }}
-                    title={`Rs. ${m.sales.toLocaleString()}`}
-                  />
                   <span
                     style={{
-                      fontSize: '0.65rem',
-                      color: isCurrentMonth
-                        ? 'var(--brand-primary)'
-                        : '#64748b',
-                      marginTop: '6px',
-                      fontWeight: isCurrentMonth ? '800' : '600',
+                      fontSize: '0.7rem',
+                      color: isCurrent ? 'var(--ink-fg)' : 'var(--ink-fg-3)',
+                      fontWeight: isCurrent ? 600 : 500,
                     }}
                   >
                     {m.month}
+                  </span>
+                  <div
+                    style={{
+                      height: '6px',
+                      background: 'var(--ink-2)',
+                      borderRadius: '3px',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: '100%',
+                        width: `${Math.max(pct, m.sales > 0 ? 2 : 0)}%`,
+                        background: isCurrent
+                          ? 'var(--brand-primary)'
+                          : 'var(--ink-4)',
+                        borderRadius: '3px',
+                        transition: 'width 200ms ease',
+                      }}
+                    />
+                  </div>
+                  <span
+                    className="monospace tabular"
+                    style={{
+                      fontSize: '0.7rem',
+                      color: isCurrent ? 'var(--ink-fg)' : 'var(--ink-fg-2)',
+                      minWidth: '52px',
+                      textAlign: 'right',
+                    }}
+                  >
+                    {m.sales > 0 ? `Rs.${(m.sales / 1000).toFixed(0)}k` : '—'}
                   </span>
                 </div>
               );
             })}
           </div>
-        </div>
+        </Card>
       </div>
 
-      {/* 4. TIER 3: LISTS */}
+      {/* ─────────── TIER 3: LISTS ─────────── */}
       <div
-        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '16px',
+        }}
       >
-        {/* Hot Products */}
-        <div
-          style={{
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            padding: '18px',
-            border: '1.5px solid var(--border-color)',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '12px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ color: 'var(--brand-primary)' }}>
-                <FlameIcon />
-              </div>
-              <h4
-                style={{
-                  margin: 0,
-                  fontSize: '0.92rem',
-                  fontWeight: '800',
-                  color: 'var(--text-primary)',
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                  textTransform: 'uppercase',
-                }}
-              >
-                Top Hot Products
-              </h4>
-            </div>
-            <span
-              style={{
-                fontSize: '0.72rem',
-                color: 'var(--text-secondary)',
-                fontWeight: '600',
-              }}
-            >
-              By Revenue
-            </span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {/* Hot products */}
+        <Card>
+          <CardTitle>Top products · by revenue</CardTitle>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             {hotProducts.length === 0 ? (
               <div
                 style={{
-                  fontSize: '0.85rem',
-                  color: 'var(--text-secondary)',
+                  fontSize: '0.8rem',
+                  color: 'var(--ink-fg-3)',
                   padding: '20px 0',
                   textAlign: 'center',
                 }}
               >
-                No product sales logged.
+                No product sales yet
               </div>
             ) : (
               hotProducts.slice(0, 5).map((p, idx) => (
                 <div
                   key={idx}
                   style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
+                    display: 'grid',
+                    gridTemplateColumns: '20px 1fr auto',
                     alignItems: 'center',
-                    background: 'var(--bg-hover)',
-                    padding: '10px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid #f1f5f9',
+                    gap: '12px',
+                    padding: '10px 0',
+                    borderBottom:
+                      idx === Math.min(hotProducts.length, 5) - 1
+                        ? 'none'
+                        : '1px solid var(--ink-3)',
                   }}
                 >
-                  <div style={{ minWidth: 0, flex: 1, paddingRight: '8px' }}>
+                  <span
+                    className="monospace"
+                    style={{
+                      fontSize: '0.72rem',
+                      color: 'var(--ink-fg-3)',
+                    }}
+                  >
+                    {idx + 1}
+                  </span>
+                  <div style={{ minWidth: 0 }}>
                     <div
                       style={{
-                        fontWeight: '700',
-                        fontSize: '0.8rem',
-                        color: 'var(--text-primary)',
+                        fontSize: '0.82rem',
+                        fontWeight: 500,
+                        color: 'var(--ink-fg)',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                       }}
                     >
-                      {idx + 1}. {p.name}
+                      {p.name}
                     </div>
                     <div
                       style={{
                         fontSize: '0.7rem',
-                        color: 'var(--text-secondary)',
+                        color: 'var(--ink-fg-3)',
+                        marginTop: '2px',
                       }}
                     >
-                      Qty: {p.total_sold} units
+                      {p.total_sold} sold
                     </div>
                   </div>
                   <div
-                    className="monospace"
+                    className="monospace tabular"
                     style={{
-                      fontWeight: '800',
-                      color: 'var(--brand-primary)',
-                      fontSize: '0.85rem',
-                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      color: 'var(--ink-fg)',
                     }}
                   >
                     Rs. {(p.revenue || 0).toLocaleString()}
@@ -1566,17 +920,10 @@ export default function Dashboard() {
               ))
             )}
           </div>
-        </div>
+        </Card>
 
-        {/* Restock Alerts */}
-        <div
-          style={{
-            background: 'var(--bg-card)',
-            borderRadius: '10px',
-            padding: '18px',
-            border: '1.5px solid var(--border-color)',
-          }}
-        >
+        {/* Restock */}
+        <Card>
           <div
             style={{
               display: 'flex',
@@ -1585,55 +932,27 @@ export default function Dashboard() {
               marginBottom: '12px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ color: 'var(--danger)' }}>
-                <AlertIcon />
-              </div>
-              <h4
+            <CardTitle accent="var(--ink-danger)">Restock</CardTitle>
+            {restockItems.length > 0 && (
+              <span
+                className="monospace"
                 style={{
-                  margin: 0,
-                  fontSize: '0.92rem',
-                  fontWeight: '800',
-                  color: 'var(--danger)',
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                  textTransform: 'uppercase',
+                  fontSize: '0.7rem',
+                  color: 'var(--ink-danger)',
                 }}
               >
-                Urgent Restock
-              </h4>
-            </div>
-            <span
-              style={{
-                fontSize: '0.72rem',
-                color: 'var(--danger)',
-                fontWeight: 'bold',
-                background: '#fee2e2',
-                padding: '2px 8px',
-                borderRadius: '4px',
-              }}
-            >
-              {restockItems.length} Low
-            </span>
+                {restockItems.length} low
+              </span>
+            )}
           </div>
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-              maxHeight: '210px',
-              overflowY: 'auto',
-            }}
-          >
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             {restockItems.length === 0 ? (
               <div
                 style={{
-                  fontSize: '0.85rem',
-                  color: 'var(--success)',
+                  fontSize: '0.8rem',
+                  color: 'var(--ink-fg-3)',
                   padding: '20px 0',
                   textAlign: 'center',
-                  background: '#f0fdf4',
-                  borderRadius: '6px',
-                  fontWeight: '600',
                 }}
               >
                 Stock levels optimal
@@ -1646,19 +965,20 @@ export default function Dashboard() {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    background: '#fef2f2',
-                    padding: '10px 12px',
-                    borderRadius: '6px',
-                    borderLeft: '4px solid var(--danger)',
-                    border: '1px solid #fee2e2',
+                    gap: '12px',
+                    padding: '10px 0',
+                    borderBottom:
+                      idx === Math.min(restockItems.length, 5) - 1
+                        ? 'none'
+                        : '1px solid var(--ink-3)',
                   }}
                 >
-                  <div style={{ minWidth: 0, flex: 1, paddingRight: '8px' }}>
+                  <div style={{ minWidth: 0 }}>
                     <div
                       style={{
-                        fontWeight: '700',
-                        fontSize: '0.8rem',
-                        color: '#991b1b',
+                        fontSize: '0.82rem',
+                        fontWeight: 500,
+                        color: 'var(--ink-fg)',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -1666,27 +986,49 @@ export default function Dashboard() {
                     >
                       {item.name}
                     </div>
-                    <div style={{ fontSize: '0.7rem', color: '#b91c1c' }}>
-                      Remaining: {item.stock_qty} {item.unit || 'pcs'}
+                    <div
+                      style={{
+                        fontSize: '0.7rem',
+                        color: 'var(--ink-fg-3)',
+                        marginTop: '2px',
+                      }}
+                    >
+                      Remaining:{' '}
+                      <span className="monospace tabular">
+                        {item.stock_qty} {item.unit || 'pcs'}
+                      </span>
                     </div>
                   </div>
                   <span
+                    className="monospace tabular"
                     style={{
-                      background: 'var(--danger)',
-                      color: '#fff',
-                      fontSize: '0.68rem',
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      fontWeight: 'bold',
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                      color: 'var(--ink-danger)',
+                      padding: '2px 8px',
+                      border: '1px solid var(--ink-danger)',
+                      borderRadius: '6px',
+                      background: 'transparent',
                     }}
                   >
-                    Restock
+                    low
                   </span>
                 </div>
               ))
             )}
           </div>
-        </div>
+        </Card>
+      </div>
+
+      <Hairline />
+      <div
+        style={{
+          fontSize: '0.7rem',
+          color: 'var(--ink-fg-3)',
+          textAlign: 'center',
+        }}
+      >
+        Repairs card reflects the last 20 records returned by the backend.
       </div>
     </div>
   );

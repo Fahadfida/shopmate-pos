@@ -194,22 +194,27 @@ ipcMain.handle('get-users', async () => {
 });
 
 // 1. DASHBOARD STATS HANDLER
+// 1. DASHBOARD STATS HANDLER
 ipcMain.handle('get-dashboard-stats', () => {
   try {
-    // 🛡️ Get local YYYY-MM-DD and YYYY-MM using local time instead of UTC to fix timezone drift
     const now = new Date();
-    const localDate = now.toLocaleDateString('en-CA'); // Always yields local YYYY-MM-DD
+    const localDate = now.toLocaleDateString('en-CA'); // Local YYYY-MM-DD
     const currentMonth = localDate.substring(0, 7);
 
+    // 🛡️ Fix: Use date(date, 'localtime') to match local calendar dates accurately
     const dailySales = db
       .prepare(
-        `SELECT COALESCE(SUM(total_amount), 0) as total, COUNT(*) as count FROM sales WHERE date LIKE ?`,
+        `SELECT COALESCE(SUM(total_amount), 0) as total, COUNT(*) as count 
+         FROM sales 
+         WHERE date(date, 'localtime') = ?`,
       )
-      .get(`${localDate}%`);
+      .get(localDate);
 
     const monthlySales = db
       .prepare(
-        `SELECT COALESCE(SUM(total_amount), 0) as total, COUNT(*) as count FROM sales WHERE strftime('%Y-%m', date) = ?`,
+        `SELECT COALESCE(SUM(total_amount), 0) as total, COUNT(*) as count 
+         FROM sales 
+         WHERE strftime('%Y-%m', date, 'localtime') = ?`,
       )
       .get(currentMonth);
 
@@ -266,12 +271,12 @@ ipcMain.handle(
         .prepare(
           `
       SELECT 
-        date(date) as sale_date, 
+        date(date, 'localtime') as sale_date, 
         SUM(total_amount) as total, 
         COUNT(*) as count
       FROM sales
-      WHERE date >= date('now', '-' || ? || ' days', 'localtime')
-      GROUP BY date(date)
+      WHERE date(date, 'localtime') >= date('now', 'localtime', '-' || ? || ' days')
+      GROUP BY date(date, 'localtime')
       ORDER BY sale_date ASC
     `,
         )
@@ -448,7 +453,7 @@ ipcMain.handle('add-item', (event, { item, currentUser }) => {
       `Added item ${item.name} (${autoCode})`,
     );
 
-    return { success: true };
+    return { success: true, id: info.lastInsertRowid };
   } catch (err) {
     return { success: false, error: err.message };
   }
