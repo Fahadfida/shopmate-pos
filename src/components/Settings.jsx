@@ -1,9 +1,190 @@
 import React, { useState, useEffect } from 'react';
 import logoImage from '../assets/logo.png';
-
 import { getIpc } from '../utils/ipc';
+
+// --- SVG ICONS ---
+const StoreIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+  </svg>
+);
+const ShieldIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+  </svg>
+);
+const DatabaseIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+  </svg>
+);
+const InfoIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="10"></circle>
+    <line x1="12" y1="16" x2="12" y2="12"></line>
+    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+  </svg>
+);
+const PaletteIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="13.5" cy="6.5" r=".5"></circle>
+    <circle cx="17.5" cy="10.5" r=".5"></circle>
+    <circle cx="8.5" cy="7.5" r=".5"></circle>
+    <circle cx="6.5" cy="12.5" r=".5"></circle>
+    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path>
+  </svg>
+);
+const SunIcon = () => (
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="5"></circle>
+    <line x1="12" y1="1" x2="12" y2="3"></line>
+    <line x1="12" y1="21" x2="12" y2="23"></line>
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+    <line x1="1" y1="12" x2="3" y2="12"></line>
+    <line x1="21" y1="12" x2="23" y2="12"></line>
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+  </svg>
+);
+const MoonIcon = () => (
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+  </svg>
+);
+const UploadIcon = () => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+    <polyline points="17 8 12 3 7 8"></polyline>
+    <line x1="12" y1="3" x2="12" y2="15"></line>
+  </svg>
+);
+const DownloadIcon = () => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+    <polyline points="7 10 12 15 17 10"></polyline>
+    <line x1="12" y1="15" x2="12" y2="3"></line>
+  </svg>
+);
+const SaveIcon = () => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+    <polyline points="7 3 7 8 15 8"></polyline>
+  </svg>
+);
+const LockIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+  </svg>
+);
+
 export default function Settings({ currentUser }) {
-  const [activeSubTab, setActiveSubTab] = useState('shop');
+  const [activeTab, setActiveTab] = useState('shop');
+
   const [settings, setSettings] = useState({
     shop_name: '',
     shop_address: '',
@@ -15,10 +196,9 @@ export default function Settings({ currentUser }) {
     last_sync_time: 'Never',
   });
 
+  const [currentTheme, setCurrentTheme] = useState('light');
   const [saveStatus, setSaveStatus] = useState('');
   const [backupStatus, setBackupStatus] = useState('');
-
-  // --- ADMIN USER & PASSWORD MANAGEMENT STATES ---
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -28,10 +208,7 @@ export default function Settings({ currentUser }) {
     const ipc = getIpc();
     if (ipc) {
       const data = await ipc.invoke('get-settings');
-      if (data) {
-        setSettings((prev) => ({ ...prev, ...data }));
-      }
-
+      if (data) setSettings((prev) => ({ ...prev, ...data }));
       if (currentUser?.role?.toUpperCase() === 'ADMIN') {
         const fetchedUsers = await ipc.invoke('get-users');
         setUsers(fetchedUsers || []);
@@ -40,8 +217,19 @@ export default function Settings({ currentUser }) {
   };
 
   useEffect(() => {
+    // Load theme preference
+    const savedTheme = localStorage.getItem('shopmate_theme') || 'light';
+    setCurrentTheme(savedTheme);
+    document.documentElement.setAttribute('data-theme', savedTheme);
+
     loadSettingsAndUsers();
   }, [currentUser]);
+
+  const handleThemeChange = (theme) => {
+    setCurrentTheme(theme);
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('shopmate_theme', theme);
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -49,7 +237,7 @@ export default function Settings({ currentUser }) {
     if (ipc) {
       const res = await ipc.invoke('save-settings', settings);
       if (res && res.success) {
-        setSaveStatus('✅ Settings saved successfully!');
+        setSaveStatus('Settings saved successfully!');
         setTimeout(() => setSaveStatus(''), 3000);
       } else {
         alert('Error: ' + (res?.error || 'Unknown error'));
@@ -61,25 +249,19 @@ export default function Settings({ currentUser }) {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = () =>
         setSettings((prev) => ({ ...prev, shop_logo: reader.result }));
-      };
       reader.readAsDataURL(file);
     }
   };
 
-  // --- PASSWORD UPDATE HANDLER (ADMIN ONLY) ---
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
-    if (currentUser?.role?.toUpperCase() !== 'ADMIN') {
-      return alert(
-        'Unauthorized: Only Admin accounts can change user passwords.',
-      );
-    }
-    if (!selectedUserId) return alert('Please select a user operator.');
-    if (!newPassword || newPassword.length < 4) {
-      return alert('Password must be at least 4 characters long.');
-    }
+    if (currentUser?.role?.toUpperCase() !== 'ADMIN')
+      return alert('Unauthorized.');
+    if (!selectedUserId) return alert('Select a user.');
+    if (!newPassword || newPassword.length < 4)
+      return alert('Password must be at least 4 characters.');
 
     const ipc = getIpc();
     if (ipc) {
@@ -88,565 +270,839 @@ export default function Settings({ currentUser }) {
         newPassword,
         currentUser,
       });
-
       if (res && res.success) {
-        setPasswordStatus('✅ Operator password updated successfully!');
+        setPasswordStatus('Operator password updated successfully!');
         setNewPassword('');
         setSelectedUserId('');
         setTimeout(() => setPasswordStatus(''), 4000);
       } else {
-        alert('Failed to update password: ' + (res?.error || 'Unknown error'));
+        alert('Failed: ' + (res?.error || 'Unknown error'));
       }
     }
   };
 
-  // --- DATABASE BACKUP & RESTORE HANDLERS ---
   const handleExportBackup = async () => {
     const ipc = getIpc();
     if (ipc) {
-      setBackupStatus('⏳ Generating backup file...');
+      setBackupStatus('Generating backup file...');
       const res = await ipc.invoke('export-database-backup');
-      if (res && res.success) {
-        setBackupStatus('✅ Backup saved successfully to: ' + res.filePath);
-      } else if (res && res.canceled) {
-        setBackupStatus('');
-      } else {
-        setBackupStatus('❌ Backup failed: ' + (res?.error || 'Unknown error'));
-      }
-    } else {
-      alert('Backup feature requires Electron desktop environment.');
+      if (res && res.success)
+        setBackupStatus('Backup saved to: ' + res.filePath);
+      else if (res && res.canceled) setBackupStatus('');
+      else setBackupStatus('Backup failed: ' + (res?.error || 'Unknown error'));
     }
   };
 
   const handleRestoreBackup = async () => {
-    const confirmed = window.confirm(
-      '⚠️ WARNING: Restoring a database backup will overwrite all current sales, inventory, and khata records with the backup file data. Are you sure you want to proceed?',
-    );
-    if (!confirmed) return;
-
+    if (
+      !window.confirm(
+        'WARNING: This will overwrite all current sales, inventory, and khata records with the backup file data. Are you sure?',
+      )
+    )
+      return;
     const ipc = getIpc();
     if (ipc) {
-      setBackupStatus('⏳ Restoring database...');
+      setBackupStatus('Restoring database...');
       const res = await ipc.invoke('restore-database-backup');
       if (res && res.success) {
         alert(
-          '✅ Database restored successfully! The application will now reload.',
+          'Database restored successfully! The application will now reload.',
         );
         window.location.reload();
-      } else if (res && res.canceled) {
-        setBackupStatus('');
-      } else {
-        setBackupStatus(
-          '❌ Restore failed: ' + (res?.error || 'Unknown error'),
-        );
-      }
+      } else if (res && res.canceled) setBackupStatus('');
+      else
+        setBackupStatus('Restore failed: ' + (res?.error || 'Unknown error'));
     }
-  };
-
-  const handleCloudConnect = async (provider) => {
-    const ipc = getIpc();
-    if (ipc) {
-      const res = await ipc.invoke('link-cloud-account', provider);
-      if (res && res.success) {
-        setSettings((prev) => ({
-          ...prev,
-          cloud_provider: provider,
-          cloud_sync_enabled: true,
-        }));
-      } else {
-        alert('Failed to open browser: ' + (res?.error || 'Unknown error'));
-      }
-    }
-  };
-
-  const handleCloudDisconnect = () => {
-    setSettings((prev) => ({
-      ...prev,
-      cloud_provider: 'NONE',
-      cloud_sync_enabled: false,
-    }));
-    alert('🔌 Cloud sync disconnected.');
   };
 
   return (
     <div
       style={{
         display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
-        height: 'calc(100vh - 100px)',
-        overflow: 'hidden',
+        gap: '24px',
+        flex: 1, // 👈 ADD THIS
+        height: '100%',
+        fontFamily: "'Inter', sans-serif",
       }}
     >
-      <div className="page-title">⚙️ Settings & System Administration</div>
-
-      {/* Modern Pill Sub-Tab Navigation */}
+      {/* LEFT SIDEBAR NAVIGATION */}
       <div
         style={{
-          display: 'flex',
-          gap: '8px',
-          flexWrap: 'wrap',
-          background: '#ffffff',
-          padding: '8px',
+          width: '260px',
+          flexShrink: 0,
+          background: 'var(--bg-card)',
           borderRadius: '10px',
-          border: '1px solid #e2e8f0',
+          border: '1.5px solid var(--border-color)',
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px',
+          // height: 'fit-content',
         }}
       >
-        <button
-          type="button"
-          className={'btn ' + (activeSubTab === 'shop' ? 'btn-primary' : '')}
+        <h3
           style={{
-            background: activeSubTab === 'shop' ? '#1b75bc' : 'transparent',
-            color: activeSubTab === 'shop' ? '#fff' : '#475569',
-            fontSize: '0.78rem',
-            border: 'none',
-            borderRadius: '6px',
-            fontWeight: '700',
-            padding: '8px 14px',
-            cursor: 'pointer',
+            margin: '0 0 16px 8px',
+            color: 'var(--text-primary)',
+            fontSize: '1.05rem',
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontWeight: '800',
+            textTransform: 'uppercase',
           }}
-          onClick={() => setActiveSubTab('shop')}
         >
-          🏬 Shop Info & SKU
-        </button>
+          Settings
+        </h3>
 
-        <button
-          type="button"
-          className={
-            'btn ' + (activeSubTab === 'security' ? 'btn-primary' : '')
-          }
-          style={{
-            background: activeSubTab === 'security' ? '#1b75bc' : 'transparent',
-            color: activeSubTab === 'security' ? '#fff' : '#475569',
-            fontSize: '0.78rem',
-            border: 'none',
-            borderRadius: '6px',
-            fontWeight: '700',
-            padding: '8px 14px',
-            cursor: 'pointer',
-          }}
-          onClick={() => setActiveSubTab('security')}
-        >
-          🔒 Security & Passwords{' '}
-          {currentUser?.role?.toUpperCase() !== 'ADMIN' && '(Admin Only)'}
-        </button>
-
-        <button
-          type="button"
-          className={'btn ' + (activeSubTab === 'backup' ? 'btn-primary' : '')}
-          style={{
-            background: activeSubTab === 'backup' ? '#1b75bc' : 'transparent',
-            color: activeSubTab === 'backup' ? '#fff' : '#475569',
-            fontSize: '0.78rem',
-            border: 'none',
-            borderRadius: '6px',
-            fontWeight: '700',
-            padding: '8px 14px',
-            cursor: 'pointer',
-          }}
-          onClick={() => setActiveSubTab('backup')}
-        >
-          💾 Backup
-        </button>
-
-        <button
-          type="button"
-          className={'btn ' + (activeSubTab === 'about' ? 'btn-primary' : '')}
-          style={{
-            background: activeSubTab === 'about' ? '#1b75bc' : 'transparent',
-            color: activeSubTab === 'about' ? '#fff' : '#475569',
-            fontSize: '0.78rem',
-            border: 'none',
-            borderRadius: '6px',
-            fontWeight: '700',
-            padding: '8px 14px',
-            cursor: 'pointer',
-          }}
-          onClick={() => setActiveSubTab('about')}
-        >
-          ℹ️ About & Support
-        </button>
-      </div>
-
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '20px' }}>
-        {/* SHOP INFO SUB-TAB */}
-        {activeSubTab === 'shop' && (
-          <div
-            className="card"
-            style={{
-              maxWidth: '680px',
-              background: '#fff',
-              padding: '24px',
-              borderRadius: '12px',
-              border: '1px solid #e2e8f0',
-            }}
-          >
-            <h4
+        {[
+          { id: 'shop', label: 'Shop Info & SKU', icon: StoreIcon },
+          { id: 'theme', label: 'Appearance', icon: PaletteIcon },
+          { id: 'security', label: 'Security & Passwords', icon: ShieldIcon },
+          { id: 'backup', label: 'Backup & Recovery', icon: DatabaseIcon },
+          { id: 'about', label: 'About & Support', icon: InfoIcon },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
               style={{
-                margin: '0 0 4px 0',
-                color: '#1e293b',
-                fontWeight: '800',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                background: isActive ? 'var(--info-bg)' : 'transparent',
+                color: isActive ? 'var(--info)' : 'var(--text-secondary)',
+                fontWeight: isActive ? '700' : '600',
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
               }}
             >
-              Custom Receipt Headers & SKU Configuration
-            </h4>
-            <p
-              style={{
-                fontSize: '0.78rem',
-                color: '#64748b',
-                marginBottom: '16px',
-              }}
-            >
-              These details will automatically display on all 80mm thermal
-              receipt prints and inventory auto-sku generators.
-            </p>
-
-            {saveStatus && (
               <div
                 style={{
-                  background: '#f0fdf4',
-                  color: '#15803d',
-                  padding: '10px 14px',
-                  borderRadius: '8px',
-                  fontSize: '0.8rem',
-                  marginBottom: '14px',
-                  border: '1px solid #bbf7d0',
-                  fontWeight: '600',
+                  color: isActive ? 'var(--info)' : 'var(--text-secondary)',
                 }}
               >
-                {saveStatus}
+                <Icon />
               </div>
-            )}
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
 
-            <form
-              onSubmit={handleSave}
-              style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
-            >
-              <div>
-                <label
+      {/* RIGHT CONTENT AREA */}
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          background: 'var(--bg-card)',
+          borderRadius: '10px',
+          border: '1.5px solid var(--border-color)',
+        }}
+      >
+        {/* SHOP INFO TAB */}
+        {activeTab === 'shop' && (
+          <form
+            onSubmit={handleSave}
+            style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+          >
+            <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+              <div
+                style={{
+                  marginBottom: '24px',
+                  borderBottom: '1px solid var(--border-color)',
+                  paddingBottom: '16px',
+                }}
+              >
+                <h4
                   style={{
-                    fontSize: '0.78rem',
-                    fontWeight: '700',
-                    color: '#334155',
+                    margin: 0,
+                    color: 'var(--text-primary)',
+                    fontSize: '1.1rem',
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
                   }}
                 >
-                  Shop / Business Name
-                </label>
-                <input
-                  type="text"
-                  className="input-field"
-                  value={settings.shop_name || ''}
-                  onChange={(e) =>
-                    setSettings({ ...settings, shop_name: e.target.value })
-                  }
-                  placeholder="e.g. ShopMate Gaming & Tech"
-                  required
-                />
-              </div>
-
-              <div>
-                <label
+                  Shop Identity & Branding
+                </h4>
+                <p
                   style={{
-                    fontSize: '0.78rem',
-                    fontWeight: '700',
-                    color: '#334155',
+                    margin: '4px 0 0 0',
+                    fontSize: '0.8rem',
+                    color: 'var(--text-secondary)',
                   }}
                 >
-                  Shop Physical Address
-                </label>
-                <textarea
-                  className="input-field"
-                  rows="2"
-                  value={settings.shop_address || ''}
-                  onChange={(e) =>
-                    setSettings({ ...settings, shop_address: e.target.value })
-                  }
-                  placeholder="e.g. Shop #42, Main Plaza, Saddar Market"
-                />
+                  These details will automatically display on all 80mm thermal
+                  receipt prints.
+                </p>
               </div>
 
-              <div>
-                <label
+              {saveStatus && (
+                <div
                   style={{
-                    fontSize: '0.78rem',
-                    fontWeight: '700',
-                    color: '#334155',
+                    background: 'var(--success-bg)',
+                    color: 'var(--success)',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    fontSize: '0.85rem',
+                    marginBottom: '20px',
+                    border: '1px solid var(--success)',
+                    fontWeight: '600',
                   }}
                 >
-                  Contact Phone / Helpline
-                </label>
-                <input
-                  type="text"
-                  className="input-field"
-                  value={settings.shop_phone || ''}
-                  onChange={(e) =>
-                    setSettings({ ...settings, shop_phone: e.target.value })
-                  }
-                  placeholder="e.g. +92 300 1234567"
-                />
-              </div>
+                  {saveStatus}
+                </div>
+              )}
 
-              <div>
-                <label
-                  style={{
-                    fontSize: '0.78rem',
-                    fontWeight: '700',
-                    color: '#334155',
-                  }}
-                >
-                  Automated SKU Generation Format
-                </label>
-                <select
-                  className="input-field"
-                  value={settings.sku_format || 'CAT_SEQ'}
-                  onChange={(e) =>
-                    setSettings({ ...settings, sku_format: e.target.value })
-                  }
-                >
-                  <option value="CAT_SEQ">
-                    Category Prefix + Sequential (e.g. ELE-0001)
-                  </option>
-                  <option value="NAME_SEQ">
-                    Name Abbreviation + Sequential (e.g. WHP-0001)
-                  </option>
-                  <option value="TIMESTAMP">
-                    Epoch Timestamp Hex (e.g. TS-19FA8C)
-                  </option>
-                  <option value="NUMERIC">
-                    Pure Numeric (e.g. 1001, 1002)
-                  </option>
-                </select>
-              </div>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '20px',
+                }}
+              >
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label
+                    style={{
+                      fontSize: '0.8rem',
+                      fontWeight: '700',
+                      color: 'var(--text-primary)',
+                      marginBottom: '6px',
+                      display: 'block',
+                    }}
+                  >
+                    Business Name
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={settings.shop_name || ''}
+                    onChange={(e) =>
+                      setSettings({ ...settings, shop_name: e.target.value })
+                    }
+                    placeholder="e.g. ShopMate Gaming & Tech"
+                    required
+                    style={{
+                      padding: '12px',
+                      borderRadius: '6px',
+                      width: '100%',
+                      fontSize: '0.9rem',
+                    }}
+                  />
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label
+                    style={{
+                      fontSize: '0.8rem',
+                      fontWeight: '700',
+                      color: 'var(--text-primary)',
+                      marginBottom: '6px',
+                      display: 'block',
+                    }}
+                  >
+                    Physical Address
+                  </label>
+                  <textarea
+                    className="input-field"
+                    rows="2"
+                    value={settings.shop_address || ''}
+                    onChange={(e) =>
+                      setSettings({ ...settings, shop_address: e.target.value })
+                    }
+                    placeholder="e.g. Shop #42, Main Plaza, Saddar Market"
+                    style={{
+                      padding: '12px',
+                      borderRadius: '6px',
+                      width: '100%',
+                      fontSize: '0.9rem',
+                      resize: 'vertical',
+                    }}
+                  />
+                </div>
+                <div>
+                  <label
+                    style={{
+                      fontSize: '0.8rem',
+                      fontWeight: '700',
+                      color: 'var(--text-primary)',
+                      marginBottom: '6px',
+                      display: 'block',
+                    }}
+                  >
+                    Contact Phone / Helpline
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={settings.shop_phone || ''}
+                    onChange={(e) =>
+                      setSettings({ ...settings, shop_phone: e.target.value })
+                    }
+                    placeholder="e.g. +92 300 1234567"
+                    style={{
+                      padding: '12px',
+                      borderRadius: '6px',
+                      width: '100%',
+                      fontSize: '0.9rem',
+                    }}
+                  />
+                </div>
+                <div>
+                  <label
+                    style={{
+                      fontSize: '0.8rem',
+                      fontWeight: '700',
+                      color: 'var(--text-primary)',
+                      marginBottom: '6px',
+                      display: 'block',
+                    }}
+                  >
+                    Automated SKU Format
+                  </label>
+                  <select
+                    className="input-field"
+                    value={settings.sku_format || 'CAT_SEQ'}
+                    onChange={(e) =>
+                      setSettings({ ...settings, sku_format: e.target.value })
+                    }
+                    style={{
+                      padding: '12px',
+                      borderRadius: '6px',
+                      width: '100%',
+                      fontSize: '0.9rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <option value="CAT_SEQ">
+                      Category Prefix + Sequential (e.g. ELE-0001)
+                    </option>
+                    <option value="NAME_SEQ">
+                      Name Abbreviation + Sequential (e.g. WHP-0001)
+                    </option>
+                    <option value="TIMESTAMP">
+                      Epoch Timestamp Hex (e.g. TS-19FA8C)
+                    </option>
+                    <option value="NUMERIC">
+                      Pure Numeric (e.g. 1001, 1002)
+                    </option>
+                  </select>
+                </div>
 
-              <div>
-                <label
-                  style={{
-                    fontSize: '0.78rem',
-                    fontWeight: '700',
-                    color: '#334155',
-                  }}
-                >
-                  Shop Logo (Displays on Receipt)
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoUpload}
-                  style={{ marginTop: '6px', fontSize: '0.8rem' }}
-                />
-                {settings.shop_logo && (
-                  <div style={{ marginTop: '10px' }}>
-                    <img
-                      src={settings.shop_logo}
-                      alt="Shop Logo"
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label
+                    style={{
+                      fontSize: '0.8rem',
+                      fontWeight: '700',
+                      color: 'var(--text-primary)',
+                      marginBottom: '6px',
+                      display: 'block',
+                    }}
+                  >
+                    Shop Logo
+                  </label>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '16px',
+                      background: 'var(--bg-hover)',
+                      padding: '16px',
+                      borderRadius: '8px',
+                      border: '1px dashed var(--border-strong)',
+                    }}
+                  >
+                    {settings.shop_logo ? (
+                      <img
+                        src={settings.shop_logo}
+                        alt="Logo"
+                        style={{
+                          height: '48px',
+                          borderRadius: '6px',
+                          border: '1px solid var(--border-color)',
+                          background: 'var(--bg-card)',
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: '48px',
+                          height: '48px',
+                          background: 'var(--border-color)',
+                          borderRadius: '6px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'var(--text-secondary)',
+                        }}
+                      >
+                        <StoreIcon />
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
                       style={{
-                        maxHeight: '55px',
-                        borderRadius: '6px',
-                        border: '1px solid #cbd5e0',
+                        fontSize: '0.85rem',
+                        color: 'var(--text-secondary)',
                       }}
                     />
                   </div>
-                )}
+                </div>
               </div>
+            </div>
 
+            <div
+              style={{
+                padding: '20px 32px',
+                borderTop: '1px solid var(--border-color)',
+                background: 'var(--bg-hover)',
+                borderRadius: '0 0 10px 10px',
+                display: 'flex',
+                justifyContent: 'flex-end',
+              }}
+            >
               <button
                 type="submit"
                 className="btn btn-primary"
-                style={{ padding: '11px', marginTop: '8px', fontWeight: '700' }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '12px 24px',
+                  background: 'var(--brand-primary)',
+                  color: '#fff',
+                  borderRadius: '6px',
+                  fontWeight: '700',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                }}
               >
-                💾 Save Shop Branding Settings
+                <SaveIcon /> Save Shop Branding
               </button>
-            </form>
-          </div>
+            </div>
+          </form>
         )}
 
-        {/* ADMIN SECURITY & PASSWORD MANAGEMENT SUB-TAB */}
-        {activeSubTab === 'security' && (
+        {/* APPEARANCE THEME TAB */}
+        {activeTab === 'theme' && (
           <div
-            className="card"
-            style={{
-              maxWidth: '680px',
-              background: '#fff',
-              padding: '24px',
-              borderRadius: '12px',
-              border: '1px solid #e2e8f0',
-            }}
+            style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
           >
-            <h4
-              style={{
-                margin: '0 0 4px 0',
-                color: '#1e293b',
-                fontWeight: '800',
-              }}
-            >
-              🔒 Admin Password & Operator Security
-            </h4>
-            <p
-              style={{
-                fontSize: '0.78rem',
-                color: '#64748b',
-                marginBottom: '16px',
-              }}
-            >
-              Securely update operator credentials and manager passwords. Strict
-              RBAC enforcement is active.
-            </p>
-
-            {currentUser?.role?.toUpperCase() !== 'ADMIN' ? (
+            <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
               <div
                 style={{
-                  background: '#fef2f2',
-                  color: '#991b1b',
-                  padding: '14px',
-                  borderRadius: '8px',
-                  fontSize: '0.85rem',
-                  border: '1px solid #fecaca',
-                  fontWeight: 'bold',
+                  marginBottom: '24px',
+                  borderBottom: '1px solid var(--border-color)',
+                  paddingBottom: '16px',
                 }}
               >
-                ⛔ Access Denied: Only Manager (ADMIN) accounts can access
-                password management and security controls.
-              </div>
-            ) : (
-              <>
-                {passwordStatus && (
-                  <div
-                    style={{
-                      background: '#f0fdf4',
-                      color: '#15803d',
-                      padding: '10px 14px',
-                      borderRadius: '8px',
-                      fontSize: '0.8rem',
-                      marginBottom: '14px',
-                      border: '1px solid #bbf7d0',
-                      fontWeight: '600',
-                    }}
-                  >
-                    {passwordStatus}
-                  </div>
-                )}
-
-                <form
-                  onSubmit={handleUpdatePassword}
+                <h4
                   style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '14px',
+                    margin: 0,
+                    color: 'var(--text-primary)',
+                    fontSize: '1.1rem',
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
                   }}
                 >
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.78rem',
-                        fontWeight: '700',
-                        color: '#334155',
-                      }}
-                    >
-                      Select Operator Account
-                    </label>
-                    <select
-                      className="input-field"
-                      value={selectedUserId}
-                      onChange={(e) => setSelectedUserId(e.target.value)}
-                      required
-                    >
-                      <option value="">-- Choose Staff Operator --</option>
-                      {users.map((u) => (
-                        <option key={u.id} value={u.id}>
-                          {u.username} ({u.role})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  App Appearance
+                </h4>
+                <p
+                  style={{
+                    margin: '4px 0 0 0',
+                    fontSize: '0.8rem',
+                    color: 'var(--text-secondary)',
+                  }}
+                >
+                  Customize how ShopMate looks on your screen. Your preference
+                  is saved automatically.
+                </p>
+              </div>
 
-                  <div>
-                    <label
-                      style={{
-                        fontSize: '0.78rem',
-                        fontWeight: '700',
-                        color: '#334155',
-                      }}
-                    >
-                      New Secure Password
-                    </label>
-                    <input
-                      type="password"
-                      className="input-field"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Enter new password (min 4 chars)"
-                      required
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '24px',
+                }}
+              >
+                {/* Light Mode Card */}
+                <div
+                  onClick={() => handleThemeChange('light')}
+                  style={{
+                    cursor: 'pointer',
+                    background:
+                      currentTheme === 'light'
+                        ? 'var(--info-bg)'
+                        : 'var(--bg-hover)',
+                    border:
+                      currentTheme === 'light'
+                        ? '2px solid var(--info)'
+                        : '2px solid var(--border-color)',
+                    borderRadius: '12px',
+                    padding: '24px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '16px',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <div
                     style={{
-                      padding: '11px',
-                      marginTop: '8px',
-                      background: '#0d5c75',
-                      fontWeight: '700',
+                      background:
+                        currentTheme === 'light'
+                          ? 'var(--info)'
+                          : 'var(--text-secondary)',
+                      color: '#fff',
+                      padding: '16px',
+                      borderRadius: '50%',
                     }}
                   >
-                    🔐 Update Operator Password
-                  </button>
-                </form>
-              </>
-            )}
+                    <SunIcon />
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <h5
+                      style={{
+                        margin: 0,
+                        fontSize: '1rem',
+                        color: 'var(--text-primary)',
+                        fontWeight: '800',
+                      }}
+                    >
+                      Light Mode
+                    </h5>
+                    <p
+                      style={{
+                        margin: '4px 0 0 0',
+                        fontSize: '0.75rem',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      Clean, bright, and professional. Best for daytime use.
+                    </p>
+                  </div>
+                  {currentTheme === 'light' && (
+                    <span
+                      style={{
+                        background: 'var(--info)',
+                        color: '#fff',
+                        fontSize: '0.7rem',
+                        fontWeight: 'bold',
+                        padding: '4px 10px',
+                        borderRadius: '20px',
+                      }}
+                    >
+                      Active
+                    </span>
+                  )}
+                </div>
+
+                {/* Dark Mode Card */}
+                <div
+                  onClick={() => handleThemeChange('dark')}
+                  style={{
+                    cursor: 'pointer',
+                    background:
+                      currentTheme === 'dark'
+                        ? 'var(--info-bg)'
+                        : 'var(--bg-hover)',
+                    border:
+                      currentTheme === 'dark'
+                        ? '2px solid var(--info)'
+                        : '2px solid var(--border-color)',
+                    borderRadius: '12px',
+                    padding: '24px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '16px',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <div
+                    style={{
+                      background:
+                        currentTheme === 'dark'
+                          ? 'var(--info)'
+                          : 'var(--text-secondary)',
+                      color: '#fff',
+                      padding: '16px',
+                      borderRadius: '50%',
+                    }}
+                  >
+                    <MoonIcon />
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <h5
+                      style={{
+                        margin: 0,
+                        fontSize: '1rem',
+                        color: 'var(--text-primary)',
+                        fontWeight: '800',
+                      }}
+                    >
+                      Dark Mode
+                    </h5>
+                    <p
+                      style={{
+                        margin: '4px 0 0 0',
+                        fontSize: '0.75rem',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      Sleek and easy on the eyes. Best for late-night shifts.
+                    </p>
+                  </div>
+                  {currentTheme === 'dark' && (
+                    <span
+                      style={{
+                        background: 'var(--info)',
+                        color: '#fff',
+                        fontSize: '0.7rem',
+                        fontWeight: 'bold',
+                        padding: '4px 10px',
+                        borderRadius: '20px',
+                      }}
+                    >
+                      Active
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* DATABASE BACKUP & CLOUD SYNC SUB-TAB */}
-        {activeSubTab === 'backup' && (
-          <div
-            style={{
-              maxWidth: '680px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px',
-            }}
+        {/* SECURITY TAB */}
+        {activeTab === 'security' && (
+          <form
+            onSubmit={handleUpdatePassword}
+            style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
           >
-            <div
-              className="card"
-              style={{
-                background: '#fff',
-                padding: '24px',
-                borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-              }}
-            >
-              <h4
+            <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+              <div
                 style={{
-                  margin: '0 0 6px 0',
-                  color: '#1e293b',
-                  fontWeight: '800',
+                  marginBottom: '24px',
+                  borderBottom: '1px solid var(--border-color)',
+                  paddingBottom: '16px',
                 }}
               >
-                💾 Local Database Backup & Recovery
-              </h4>
-              <p
+                <h4
+                  style={{
+                    margin: 0,
+                    color: 'var(--text-primary)',
+                    fontSize: '1.1rem',
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  }}
+                >
+                  Operator Security
+                </h4>
+                <p
+                  style={{
+                    margin: '4px 0 0 0',
+                    fontSize: '0.8rem',
+                    color: 'var(--text-secondary)',
+                  }}
+                >
+                  Securely update operator credentials and manager passwords.
+                </p>
+              </div>
+
+              {currentUser?.role?.toUpperCase() !== 'ADMIN' ? (
+                <div
+                  style={{
+                    background: 'var(--danger-bg)',
+                    color: 'var(--danger)',
+                    padding: '20px',
+                    borderRadius: '8px',
+                    fontSize: '0.9rem',
+                    border: '1px solid var(--danger)',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                  }}
+                >
+                  <LockIcon /> Access Denied: Only Manager (ADMIN) accounts can
+                  access password management.
+                </div>
+              ) : (
+                <>
+                  {passwordStatus && (
+                    <div
+                      style={{
+                        background: 'var(--success-bg)',
+                        color: 'var(--success)',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        marginBottom: '20px',
+                        border: '1px solid var(--success)',
+                        fontWeight: '600',
+                      }}
+                    >
+                      {passwordStatus}
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '20px',
+                    }}
+                  >
+                    <div>
+                      <label
+                        style={{
+                          fontSize: '0.8rem',
+                          fontWeight: '700',
+                          color: 'var(--text-primary)',
+                          marginBottom: '6px',
+                          display: 'block',
+                        }}
+                      >
+                        Select Operator Account
+                      </label>
+                      <select
+                        className="input-field"
+                        value={selectedUserId}
+                        onChange={(e) => setSelectedUserId(e.target.value)}
+                        required
+                        style={{
+                          padding: '12px',
+                          borderRadius: '6px',
+                          width: '100%',
+                          fontSize: '0.9rem',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <option value="">-- Choose Staff Operator --</option>
+                        {users.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.username} ({u.role})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label
+                        style={{
+                          fontSize: '0.8rem',
+                          fontWeight: '700',
+                          color: 'var(--text-primary)',
+                          marginBottom: '6px',
+                          display: 'block',
+                        }}
+                      >
+                        New Secure Password
+                      </label>
+                      <input
+                        type="password"
+                        className="input-field"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter new password (min 4 chars)"
+                        required
+                        style={{
+                          padding: '12px',
+                          borderRadius: '6px',
+                          width: '100%',
+                          fontSize: '0.9rem',
+                        }}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {currentUser?.role?.toUpperCase() === 'ADMIN' && (
+              <div
                 style={{
-                  fontSize: '0.78rem',
-                  color: '#64748b',
-                  marginBottom: '16px',
+                  padding: '20px 32px',
+                  borderTop: '1px solid var(--border-color)',
+                  background: 'var(--bg-hover)',
+                  borderRadius: '0 0 10px 10px',
+                  display: 'flex',
+                  justifyContent: 'flex-end',
                 }}
               >
-                Safeguard your business records. Export a complete copy of your
-                SQLite database file (`.sqlite`) or restore from a previous
-                archive.
-              </p>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px 24px',
+                    background: 'var(--brand-primary)',
+                    color: '#fff',
+                    borderRadius: '6px',
+                    fontWeight: '700',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                  }}
+                >
+                  <ShieldIcon /> Update Operator Password
+                </button>
+              </div>
+            )}
+          </form>
+        )}
+
+        {/* BACKUP TAB */}
+        {activeTab === 'backup' && (
+          <div
+            style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+          >
+            <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+              <div
+                style={{
+                  marginBottom: '24px',
+                  borderBottom: '1px solid var(--border-color)',
+                  paddingBottom: '16px',
+                }}
+              >
+                <h4
+                  style={{
+                    margin: 0,
+                    color: 'var(--text-primary)',
+                    fontSize: '1.1rem',
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  }}
+                >
+                  Database Backup & Recovery
+                </h4>
+                <p
+                  style={{
+                    margin: '4px 0 0 0',
+                    fontSize: '0.8rem',
+                    color: 'var(--text-secondary)',
+                  }}
+                >
+                  Safeguard your business records. Export a complete copy of
+                  your database or restore from a previous archive.
+                </p>
+              </div>
 
               {backupStatus && (
                 <div
                   style={{
-                    background: '#f8fafc',
-                    color: '#0f172a',
-                    padding: '10px 14px',
+                    background: 'var(--bg-hover)',
+                    color: 'var(--text-primary)',
+                    padding: '12px 16px',
                     borderRadius: '8px',
-                    fontSize: '0.8rem',
-                    marginBottom: '14px',
-                    border: '1px solid #cbd5e0',
+                    fontSize: '0.85rem',
+                    marginBottom: '20px',
+                    border: '1px solid var(--border-strong)',
                     fontWeight: '600',
                   }}
                 >
@@ -658,297 +1114,260 @@ export default function Settings({ currentUser }) {
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr',
-                  gap: '12px',
+                  gap: '20px',
                 }}
               >
-                <button
-                  type="button"
-                  className="btn btn-primary"
+                {/* Export Card */}
+                <div
                   style={{
-                    padding: '12px',
-                    fontWeight: '700',
-                    fontSize: '0.8rem',
-                    cursor: 'pointer',
+                    background: 'var(--info-bg)',
+                    padding: '24px',
+                    borderRadius: '10px',
+                    border: '1px solid var(--info)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px',
                   }}
-                  onClick={handleExportBackup}
                 >
-                  📥 Download Backup (.sqlite)
-                </button>
-                <button
-                  type="button"
-                  className="btn"
+                  <div
+                    style={{
+                      color: 'var(--info)',
+                      background: 'var(--bg-card)',
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    }}
+                  >
+                    <DownloadIcon />
+                  </div>
+                  <div>
+                    <h5
+                      style={{
+                        margin: 0,
+                        color: 'var(--text-primary)',
+                        fontSize: '0.95rem',
+                        fontWeight: '800',
+                      }}
+                    >
+                      Export Backup
+                    </h5>
+                    <p
+                      style={{
+                        margin: '4px 0 0 0',
+                        fontSize: '0.75rem',
+                        color: 'var(--text-secondary)',
+                        lineHeight: '1.4',
+                      }}
+                    >
+                      Download a complete copy of your SQLite database file.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleExportBackup}
+                    style={{
+                      marginTop: 'auto',
+                      padding: '10px',
+                      background: 'var(--info)',
+                      color: '#fff',
+                      fontWeight: '700',
+                      fontSize: '0.85rem',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Download .sqlite File
+                  </button>
+                </div>
+
+                {/* Restore Card */}
+                <div
                   style={{
-                    padding: '12px',
-                    background: '#fee2e2',
-                    color: '#dc2626',
-                    fontWeight: '700',
-                    fontSize: '0.8rem',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
+                    background: 'var(--danger-bg)',
+                    padding: '24px',
+                    borderRadius: '10px',
+                    border: '1px solid var(--danger)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px',
                   }}
-                  onClick={handleRestoreBackup}
                 >
-                  🔄 Restore from Backup File
-                </button>
+                  <div
+                    style={{
+                      color: 'var(--danger)',
+                      background: 'var(--bg-card)',
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    }}
+                  >
+                    <UploadIcon />
+                  </div>
+                  <div>
+                    <h5
+                      style={{
+                        margin: 0,
+                        color: 'var(--text-primary)',
+                        fontSize: '0.95rem',
+                        fontWeight: '800',
+                      }}
+                    >
+                      Restore Data
+                    </h5>
+                    <p
+                      style={{
+                        margin: '4px 0 0 0',
+                        fontSize: '0.75rem',
+                        color: 'var(--text-secondary)',
+                        lineHeight: '1.4',
+                      }}
+                    >
+                      Overwrite current data with a backup file. Use with
+                      caution.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRestoreBackup}
+                    style={{
+                      marginTop: 'auto',
+                      padding: '10px',
+                      background: 'var(--danger)',
+                      color: '#fff',
+                      fontWeight: '700',
+                      fontSize: '0.85rem',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Restore from Backup
+                  </button>
+                </div>
               </div>
             </div>
+          </div>
+        )}
 
-            {/* Cloud Sync Integration */}
-            {/* <div
-              className="card"
-              style={{
-                background: "#fff",
-                padding: "24px",
-                borderRadius: "12px",
-                border: "1px solid #e2e8f0",
-              }}
-            >
-              <h4
+        {/* ABOUT TAB */}
+        {activeTab === 'about' && (
+          <div
+            style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+          >
+            <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+              <div
                 style={{
-                  margin: "0 0 6px 0",
-                  color: "#1e293b",
-                  fontWeight: "800",
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                  marginBottom: '24px',
+                  borderBottom: '1px solid var(--border-color)',
+                  paddingBottom: '16px',
                 }}
               >
-                ☁️ Cloud Database Sync (Online Backup)
-              </h4>
+                <img
+                  src={logoImage}
+                  alt="ShopMate Logo"
+                  style={{
+                    width: '48px',
+                    height: '48px',
+                    objectFit: 'contain',
+                    borderRadius: '10px',
+                    background: 'var(--bg-hover)',
+                    padding: '6px',
+                    border: '1px solid var(--border-color)',
+                  }}
+                />
+                <div>
+                  <h4
+                    style={{
+                      margin: 0,
+                      color: 'var(--text-primary)',
+                      fontSize: '1.1rem',
+                      fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    }}
+                  >
+                    ShopMate Desktop POS
+                  </h4>
+                  <p
+                    style={{
+                      margin: '2px 0 0 0',
+                      fontSize: '0.75rem',
+                      color: 'var(--text-secondary)',
+                      fontWeight: '600',
+                    }}
+                  >
+                    Version 1.0.0 (Offline Desktop WAL Edition)
+                  </p>
+                </div>
+              </div>
+
               <p
                 style={{
-                  fontSize: "0.78rem",
-                  color: "#64748b",
-                  marginBottom: "16px",
+                  fontSize: '0.85rem',
+                  color: 'var(--text-secondary)',
+                  lineHeight: '1.6',
+                  marginBottom: '24px',
                 }}
               >
-                Connect your preferred cloud storage provider to automatically
-                sync your SQLite WAL database file securely online.
+                ShopMate is an enterprise-grade, offline-first Windows POS &
+                Khata management system built for high performance, accuracy,
+                and reliability.
               </p>
 
               <div
                 style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "12px",
+                  background: 'var(--bg-hover)',
+                  padding: '24px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--border-color)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px',
                 }}
               >
-                <div
+                <h5
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "12px 14px",
-                    background: "#f8fafc",
-                    borderRadius: "10px",
-                    border: "1px solid #e2e8f0",
+                    margin: 0,
+                    color: 'var(--brand-primary)',
+                    fontSize: '0.95rem',
+                    fontWeight: '800',
+                    textTransform: 'uppercase',
                   }}
                 >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                    }}
-                  >
-                    <span style={{ fontSize: "1.3rem" }}>📁</span>
-                    <div>
-                      <div
-                        style={{
-                          fontWeight: "700",
-                          fontSize: "0.82rem",
-                          color: "#1e293b",
-                        }}
-                      >
-                        Google Drive Sync
-                      </div>
-                      <div style={{ fontSize: "0.7rem", color: "#64748b" }}>
-                        {settings.cloud_provider === "GOOGLE"
-                          ? "🟢 Connected & Auto-syncing"
-                          : "🔴 Not Connected"}
-                      </div>
-                    </div>
-                  </div>
-
-                  {settings.cloud_provider === "GOOGLE" ? (
-                    <button
-                      type="button"
-                      className="btn"
-                      style={{
-                        background: "#fee2e2",
-                        color: "#dc2626",
-                        padding: "6px 12px",
-                        fontSize: "0.75rem",
-                        fontWeight: "700",
-                        border: "none",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                      }}
-                      onClick={handleCloudDisconnect}
-                    >
-                      Disconnect
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      style={{
-                        padding: "6px 12px",
-                        fontSize: "0.75rem",
-                        fontWeight: "700",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => handleCloudConnect("GOOGLE")}
-                    >
-                      Connect Google Drive
-                    </button>
-                  )}
-                </div>
-
+                  Support & Developer Contact
+                </h5>
                 <div
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "12px 14px",
-                    background: "#f8fafc",
-                    borderRadius: "10px",
-                    border: "1px solid #e2e8f0",
+                    fontSize: '0.85rem',
+                    color: 'var(--text-primary)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
                   }}
                 >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                    }}
-                  >
-                    <span style={{ fontSize: "1.3rem" }}>☁️</span>
-                    <div>
-                      <div
-                        style={{
-                          fontWeight: "700",
-                          fontSize: "0.82rem",
-                          color: "#1e293b",
-                        }}
-                      >
-                        Microsoft OneDrive Sync
-                      </div>
-                      <div style={{ fontSize: "0.7rem", color: "#64748b" }}>
-                        {settings.cloud_provider === "ONEDRIVE"
-                          ? "🟢 Connected & Auto-syncing"
-                          : "🔴 Not Connected"}
-                      </div>
-                    </div>
+                  <div>
+                    <strong style={{ color: 'var(--text-secondary)' }}>
+                      Email:
+                    </strong>{' '}
+                    fahadfida400@gmail.com
                   </div>
-
-                  {settings.cloud_provider === "ONEDRIVE" ? (
-                    <button
-                      type="button"
-                      className="btn"
-                      style={{
-                        background: "#fee2e2",
-                        color: "#dc2626",
-                        padding: "6px 12px",
-                        fontSize: "0.75rem",
-                        fontWeight: "700",
-                        border: "none",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                      }}
-                      onClick={handleCloudDisconnect}
-                    >
-                      Disconnect
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      style={{
-                        padding: "6px 12px",
-                        fontSize: "0.75rem",
-                        fontWeight: "700",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => handleCloudConnect("ONEDRIVE")}
-                    >
-                      Connect OneDrive
-                    </button>
-                  )}
+                  <div>
+                    <strong style={{ color: 'var(--text-secondary)' }}>
+                      WhatsApp:
+                    </strong>{' '}
+                    +92 331 546 9223
+                  </div>
                 </div>
-            </div>
-                    </div> */}
-          </div>
-        )}
-
-        {/* ABOUT SUB-TAB */}
-        {activeSubTab === 'about' && (
-          <div
-            className="card"
-            style={{
-              maxWidth: '680px',
-              background: '#fff',
-              padding: '24px',
-              borderRadius: '12px',
-              border: '1px solid #e2e8f0',
-            }}
-          >
-            <h4
-              style={{
-                margin: '0 0 6px 0',
-                color: '#1b75bc',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontWeight: '800',
-              }}
-            >
-              <img
-                src={logoImage}
-                alt="ShopMate Logo"
-                style={{
-                  width: '22px',
-                  height: '22px',
-                  objectFit: 'contain',
-                  borderRadius: '4px',
-                }}
-              />
-              About ShopMate Desktop POS
-            </h4>
-            <p
-              style={{
-                fontSize: '0.8rem',
-                color: '#555',
-                marginBottom: '16px',
-              }}
-            >
-              ShopMate is an enterprise-grade, offline-first Windows POS & Khata
-              management system built for high performance, accuracy, and
-              reliability.
-            </p>
-
-            <div
-              style={{
-                background: '#f8fafc',
-                padding: '16px',
-                borderRadius: '8px',
-                border: '1px solid #e2e8f0',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px',
-                color: '#000',
-              }}
-            >
-              <h5 style={{ margin: 0, color: '#1b75bc', fontWeight: '700' }}>
-                Support & Developer Contact
-              </h5>
-              <div style={{ fontSize: '0.8rem' }}>
-                <strong>Email:</strong> fahadfida400@gmail.com
-              </div>
-              <div style={{ fontSize: '0.8rem' }}>
-                <strong>💬 WhatsApp:</strong> +92 331 546 9223
-              </div>
-              <div style={{ fontSize: '0.8rem' }}>
-                <strong>💻 System Version:</strong> v1.0.0 (Offline Desktop WAL
-                Edition)
               </div>
             </div>
           </div>

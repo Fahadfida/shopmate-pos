@@ -256,55 +256,69 @@ ipcMain.handle('get-dashboard-stats', () => {
 });
 
 // 2. DASHBOARD ANALYTICS HANDLER
-ipcMain.handle('get-dashboard-analytics', (event, timeframe = 7) => {
-  try {
-    const salesTrend = db
-      .prepare(
-        `
-      SELECT date(date) as sale_date, SUM(total_amount) as total, COUNT(*) as count
+ipcMain.handle(
+  'get-dashboard-analytics',
+  (event, timeframe = 7, selectedYear = new Date().getFullYear()) => {
+    try {
+      // 1. Sales Trend (for Revenue Trajectory Chart)
+      const salesTrend = db
+        .prepare(
+          `
+      SELECT 
+        date(date) as sale_date, 
+        SUM(total_amount) as total, 
+        COUNT(*) as count
       FROM sales
       WHERE date >= date('now', '-' || ? || ' days', 'localtime')
       GROUP BY date(date)
       ORDER BY sale_date ASC
     `,
-      )
-      .all(timeframe);
+        )
+        .all(timeframe);
 
-    const paymentFlow = db
-      .prepare(
-        `
+      // 2. Payment Flow (Pie/Donut Chart data)
+      const paymentFlow = db
+        .prepare(
+          `
       SELECT payment_type, SUM(total_amount) as total 
       FROM sales 
       WHERE date >= date('now', '-30 days', 'localtime')
       GROUP BY payment_type
     `,
-      )
-      .all();
+        )
+        .all();
 
-    const hotProducts = db
-      .prepare(
-        `
+      // 3. Hot Products (Top 5 by Revenue)
+      const hotProducts = db
+        .prepare(
+          `
       SELECT i.name, SUM(l.qty) as total_sold, SUM(l.qty * l.price) as revenue
       FROM sale_lines l
       JOIN items i ON l.item_id = i.id
       GROUP BY l.item_id
-      ORDER BY total_sold DESC
+      ORDER BY revenue DESC
       LIMIT 5
     `,
-      )
-      .all();
+        )
+        .all();
 
-    const restockItems = db
-      .prepare(
-        `
-      SELECT name, stock_qty, unit, min_price FROM items WHERE stock_qty <= 5 ORDER BY stock_qty ASC LIMIT 5
+      // 4. Restock Items (Top 5 Low Stock)
+      const restockItems = db
+        .prepare(
+          `
+      SELECT name, stock_qty, unit, min_price 
+      FROM items 
+      WHERE stock_qty <= 5 AND (is_active = 1 OR is_active IS NULL)
+      ORDER BY stock_qty ASC 
+      LIMIT 5
     `,
-      )
-      .all();
+        )
+        .all();
 
-    const topCustomers = db
-      .prepare(
-        `
+      // 5. Top Customers (Top 5 by Spend)
+      const topCustomers = db
+        .prepare(
+          `
       SELECT c.name, c.phone, SUM(s.total_amount) as total_spent
       FROM sales s
       JOIN customers c ON s.customer_id = c.id
@@ -312,37 +326,80 @@ ipcMain.handle('get-dashboard-analytics', (event, timeframe = 7) => {
       ORDER BY total_spent DESC
       LIMIT 5
     `,
-      )
-      .all();
+        )
+        .all();
 
-    const topCreditHolders = db
-      .prepare(
-        `
+      // 6. Top Credit Holders (Top 5 Customers with Highest Debt)
+      const topCreditHolders = db
+        .prepare(
+          `
       SELECT name, phone, balance FROM customers WHERE balance > 0 ORDER BY balance DESC LIMIT 5
     `,
-      )
-      .all();
+        )
+        .all();
 
-    return {
-      salesTrend,
-      paymentFlow,
-      hotProducts,
-      restockItems,
-      topCustomers,
-      topCreditHolders,
-    };
-  } catch (err) {
-    console.error('Dashboard Analytics Error:', err);
-    return {
-      salesTrend: [],
-      paymentFlow: [],
-      hotProducts: [],
-      restockItems: [],
-      topCustomers: [],
-      topCreditHolders: [],
-    };
-  }
-});
+      // 7. Yearly Performance (Monthly Breakdown for the selected Year)
+      // We use strftime to extract the month and sum the total sales for that year.
+      const monthlyData = db
+        .prepare(
+          `
+      SELECT 
+        strftime('%m', date) as month_num,
+        SUM(total_amount) as sales
+      FROM sales 
+      WHERE strftime('%Y', date) = ?
+      GROUP BY strftime('%m', date)
+    `,
+        )
+        .all(selectedYear.toString());
+
+      // Format the data into a standard Jan-Dec array so the frontend chart doesn't break on empty months
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      const yearlyPerformance = months.map((monthName, index) => {
+        const monthStr = (index + 1).toString().padStart(2, '0');
+        const foundMonth = monthlyData.find((d) => d.month_num === monthStr);
+        return {
+          month: monthName,
+          sales: foundMonth ? foundMonth.sales : 0,
+        };
+      });
+
+      return {
+        salesTrend,
+        paymentFlow,
+        hotProducts,
+        restockItems,
+        topCustomers,
+        topCreditHolders,
+        yearlyPerformance, // 👈 New data injected for the Bar Chart
+      };
+    } catch (err) {
+      console.error('Dashboard Analytics Error:', err);
+      return {
+        salesTrend: [],
+        paymentFlow: [],
+        hotProducts: [],
+        restockItems: [],
+        topCustomers: [],
+        topCreditHolders: [],
+        yearlyPerformance: [],
+      };
+    }
+  },
+);
 // 3. INVENTORY & ITEMS MASTER
 ipcMain.handle('get-items', (event, showAll = true) => {
   if (showAll) {
@@ -817,16 +874,31 @@ ipcMain.handle(
 
 // 6. BUSINESS & TRIP EXPENSES (Manager-Only Delete Guard)
 ipcMain.handle('get-expenses', () => {
-  return db
-    .prepare(
-      `
-    SELECT e.*, u.username 
-    FROM business_expenses e 
-    LEFT JOIN users u ON e.user_id = u.id 
-    ORDER BY e.id DESC
-  `,
-    )
-    .all();
+  try {
+    // We join with the users table to get the operator's name, and order by newest first
+    const expenses = db
+      .prepare(
+        `
+      SELECT 
+        e.id, 
+        e.category, 
+        e.amount, 
+        e.description, 
+        e.date, 
+        COALESCE(u.username, 'Manager') as username
+      FROM business_expenses e 
+      LEFT JOIN users u ON e.user_id = u.id 
+      ORDER BY e.date DESC, e.id DESC 
+      LIMIT 50
+    `,
+      )
+      .all();
+
+    return expenses;
+  } catch (err) {
+    console.error('Error fetching expenses:', err);
+    return [];
+  }
 });
 
 ipcMain.handle('add-expense', (event, { expense, currentUser }) => {
@@ -1101,262 +1173,92 @@ ipcMain.handle(
     }
   },
 );
-// 8. P&L FINANCIAL LEDGER WITH SMART FILTERS & SORTING
-// ipcMain.handle("get-financial-ledger", (event, filters = {}) => {
-//   try {
-//     const {
-//       startDate,
-//       endDate,
-//       user_id,
-//       payment_type,
-//       sortBy = "date_desc",
-//     } = filters;
-
-//     let expenseQuery = `SELECT e.*, u.username FROM business_expenses e LEFT JOIN users u ON e.user_id = u.id WHERE 1=1`;
-//     let purchaseQuery = `
-//   SELECT pl.*, pl.qty_received, pl.unit_cost, pl.payment_type,
-//          s.name as supplier_name, i.name as item_name
-//   FROM purchase_lines pl
-//   LEFT JOIN suppliers s ON pl.supplier_id = s.id
-//   LEFT JOIN items i ON pl.item_id = i.id
-//   WHERE 1=1
-// `;
-//     let salesQuery = `
-//       SELECT s.id as sale_id, s.date, s.payment_type, s.total_amount as invoice_total,
-//              c.name as customer_name, u.username,
-//              i.name as item_name, sl.qty as qty_sold, sl.price as unit_price, (sl.qty * sl.price) as total_line
-//       FROM sales s
-//       LEFT JOIN sale_lines sl ON s.id = sl.sale_id
-//       LEFT JOIN items i ON sl.item_id = i.id
-//       LEFT JOIN customers c ON s.customer_id = c.id
-//       LEFT JOIN users u ON s.user_id = u.id
-//       WHERE 1=1
-//     `;
-
-//     let expParams = [],
-//       purParams = [],
-//       salParams = [];
-
-//     if (startDate && endDate) {
-//       expenseQuery += ` AND date(e.date) >= date(?) AND date(e.date) <= date(?)`;
-//       purchaseQuery += ` AND date(pl.date) >= date(?) AND date(pl.date) <= date(?)`;
-//       salesQuery += ` AND date(s.date) >= date(?) AND date(s.date) <= date(?)`;
-//       expParams.push(startDate, endDate);
-//       purParams.push(startDate, endDate);
-//       salParams.push(startDate, endDate);
-//     }
-
-//     if (user_id) {
-//       expenseQuery += ` AND e.user_id = ?`;
-//       expParams.push(user_id);
-//       salesQuery += ` AND s.user_id = ?`;
-//       salParams.push(user_id);
-//     }
-
-//     if (payment_type) {
-//       salesQuery += ` AND s.payment_type = ?`;
-//       salParams.push(payment_type);
-//     }
-
-//     let expenses = db.prepare(expenseQuery).all(...expParams);
-//     let purchases = db.prepare(purchaseQuery).all(...purParams);
-//     let sales = db.prepare(salesQuery).all(...salParams);
-
-//     const sortFn = (a, b) => {
-//       const dateA = new Date(a.date || 0);
-//       const dateB = new Date(b.date || 0);
-//       if (sortBy === "date_asc") {
-//         return dateA - dateB;
-//       } else if (sortBy === "amount_desc") {
-//         return (
-//           (b.amount || b.total_amount || b.qty_received * b.unit_cost || 0) -
-//           (a.amount || a.total_amount || a.qty_received * a.unit_cost || 0)
-//         );
-//       } else if (sortBy === "amount_asc") {
-//         return (
-//           (a.amount || a.total_amount || a.qty_received * a.unit_cost || 0) -
-//           (b.amount || b.total_amount || b.qty_received * b.unit_cost || 0)
-//         );
-//       } else {
-//         return dateB - dateA;
-//       }
-//     };
-
-//     expenses.sort(sortFn);
-//     purchases.sort(sortFn);
-//     sales.sort(sortFn);
-
-//     const totalSales = db
-//       .prepare("SELECT COALESCE(SUM(total_amount), 0) as total FROM sales")
-//       .get().total;
-//     const totalExpenses = db
-//       .prepare(
-//         "SELECT COALESCE(SUM(amount), 0) as total FROM business_expenses",
-//       )
-//       .get().total;
-//     const totalPurchases = db
-//       .prepare(
-//         "SELECT COALESCE(SUM(qty_received * unit_cost), 0) as total FROM purchase_lines",
-//       )
-//       .get().total;
-
-//     return {
-//       expenses,
-//       purchases,
-//       sales,
-//       summary: {
-//         totalSales,
-//         totalExpenses,
-//         totalPurchases,
-//         netProfit: totalSales - (totalExpenses + totalPurchases),
-//       },
-//     };
-//   } catch (err) {
-//     console.error("Financial Ledger Error:", err);
-//     return {
-//       expenses: [],
-//       purchases: [],
-//       sales: [],
-//       summary: {
-//         totalSales: 0,
-//         totalExpenses: 0,
-//         totalPurchases: 0,
-//         netProfit: 0,
-//       },
-//     };
-//   }
-// });
-// Upgraded get-master-general-ledger handler in main.js
 ipcMain.handle('get-master-general-ledger', () => {
   try {
-    const customerEntries = db
-      .prepare(
-        `
-      SELECT cl.id, COALESCE(c.name, 'Customer') as entity_name, COALESCE(cl.description, 'Khata') as description, COALESCE(cl.debit, 0) as debit, COALESCE(cl.credit, 0) as credit, COALESCE(cl.balance_after, 0) as balance_after, COALESCE(cl.created_at, datetime('now')) as date, 'CUSTOMER_KHATA' as stream, COALESCE(u.username, 'Manager') as user_name
-      FROM customer_ledger cl LEFT JOIN customers c ON cl.customer_id = c.id LEFT JOIN users u ON cl.user_id = u.id
-    `,
-      )
-      .all();
+    const query = `
+      -- 1. SALES REVENUE
+      SELECT 
+        'SALE' as stream,
+        s.id as ref_id,
+        COALESCE(s.date, datetime('now')) as transaction_date,
+        COALESCE(c.name, 'Walk-in Customer') as entity_name,
+        ('Invoice #' || s.id || ' (' || s.payment_type || ')') as description,
+        0.0 as debit,
+        s.total_amount as credit,
+        COALESCE(u.username, 'Manager') as user_name
+      FROM sales s 
+      LEFT JOIN customers c ON s.customer_id = c.id 
+      LEFT JOIN users u ON s.user_id = u.id
 
-    const expenseEntries = db
-      .prepare(
-        `
-      SELECT e.id, COALESCE(e.category, 'Expense') as entity_name, COALESCE(e.description, 'Cost') as description, COALESCE(e.amount, 0) as debit, 0.0 as credit, 0.0 as balance_after, COALESCE(e.date, datetime('now')) as date, 'EXPENSE' as stream, COALESCE(u.username, 'Manager') as user_name
-      FROM business_expenses e LEFT JOIN users u ON e.user_id = u.id
-    `,
-      )
-      .all();
+      UNION ALL
 
-    const salesEntries = db
-      .prepare(
-        `
-      SELECT s.id, COALESCE(c.name, 'Walk-in') as entity_name, ('Invoice #' || s.id || ' (' || s.payment_type || ')') as description, 0.0 as debit, COALESCE(s.total_amount, 0) as credit, 0.0 as balance_after, COALESCE(s.date, datetime('now')) as date, 'SALE' as stream, COALESCE(u.username, 'Manager') as user_name
-      FROM sales s LEFT JOIN customers c ON s.customer_id = c.id LEFT JOIN users u ON s.user_id = u.id
-    `,
-      )
-      .all();
+      -- 2. OPERATING EXPENSES
+      SELECT 
+        'EXPENSE' as stream,
+        e.id as ref_id,
+        COALESCE(e.date, datetime('now')) as transaction_date,
+        COALESCE(e.category, 'Expense') as entity_name,
+        COALESCE(e.description, 'Store Overhead') as description,
+        e.amount as debit,
+        0.0 as credit,
+        COALESCE(u.username, 'Manager') as user_name
+      FROM business_expenses e 
+      LEFT JOIN users u ON e.user_id = u.id
 
-    // 🛡️ Safe wrapper for optional inventory shrinkage table
-    let shrinkageEntries = [];
-    try {
-      shrinkageEntries = db
-        .prepare(
-          `
-        SELECT id, 'Inventory Write-Off' as entity_name, COALESCE(reason, 'Damaged / Expired Stock') as description, COALESCE(total_loss, 0) as debit, 0.0 as credit, 0.0 as balance_after, COALESCE(date, datetime('now')) as date, 'SHRINKAGE' as stream, COALESCE(username, 'Manager') as user_name
-        FROM inventory_shrinkage
-      `,
-        )
-        .all();
-    } catch (e) {
-      shrinkageEntries = [];
-    }
+      UNION ALL
 
-    const auditEntries = db
-      .prepare(
-        `
-      SELECT id, 'Security Event' as entity_name, COALESCE(details, action) as description, 0.0 as debit, 0.0 as credit, 0.0 as balance_after, COALESCE(timestamp, datetime('now')) as date, 'AUDIT_LOG' as stream, COALESCE(username, 'System') as user_name
-      FROM audit_logs
-    `,
-      )
-      .all();
+      -- 3. CUSTOMER KHATA (Receivables)
+      SELECT 
+        'RECEIVABLE' as stream,
+        cl.id as ref_id,
+        COALESCE(cl.created_at, datetime('now')) as transaction_date,
+        COALESCE(c.name, 'Customer') as entity_name,
+        COALESCE(cl.description, 'Khata Entry') as description,
+        COALESCE(cl.debit, 0) as debit,
+        COALESCE(cl.credit, 0) as credit,
+        COALESCE(u.username, 'Manager') as user_name
+      FROM customer_ledger cl 
+      LEFT JOIN customers c ON cl.customer_id = c.id 
+      LEFT JOIN users u ON cl.user_id = u.id
 
-    return [
-      ...customerEntries,
-      ...expenseEntries,
-      ...salesEntries,
-      ...shrinkageEntries,
-      ...auditEntries,
-    ].sort((a, b) => new Date(b.date) - new Date(a.date));
+      UNION ALL
+
+      -- 4. SUPPLIER KHATA (Payables)
+      SELECT 
+        'PAYABLE' as stream,
+        sl.id as ref_id,
+        COALESCE(sl.date, datetime('now')) as transaction_date,
+        COALESCE(s.name, 'Supplier') as entity_name,
+        COALESCE(sl.description, 'Supplier Entry') as description,
+        COALESCE(sl.debit, 0) as debit,
+        COALESCE(sl.credit, 0) as credit,
+        COALESCE(u.username, 'Manager') as user_name
+      FROM supplier_ledger sl 
+      LEFT JOIN suppliers s ON sl.supplier_id = s.id 
+      LEFT JOIN users u ON sl.user_id = u.id
+
+      UNION ALL
+
+      -- 5. SECURITY AUDIT LOGS
+      SELECT 
+        'AUDIT' as stream,
+        al.id as ref_id,
+        COALESCE(al.timestamp, datetime('now')) as transaction_date,
+        COALESCE(al.action, 'Security Event') as entity_name,
+        COALESCE(al.details, al.action) as description,
+        0.0 as debit,
+        0.0 as credit,
+        COALESCE(al.username, 'System') as user_name
+      FROM audit_logs al
+    `;
+
+    const finalQuery = `SELECT * FROM (${query}) ORDER BY transaction_date DESC`;
+    return db.prepare(finalQuery).all();
   } catch (err) {
     console.error('Master Ledger Error:', err);
     return [];
   }
 });
-// ipcMain.handle("get-master-general-ledger", () => {
-//   try {
-//     const customerEntries = db
-//       .prepare(
-//         `
-//       SELECT cl.id, COALESCE(c.name, 'Customer') as entity_name, COALESCE(cl.description, 'Khata') as description, COALESCE(cl.debit, 0) as debit, COALESCE(cl.credit, 0) as credit, COALESCE(cl.balance_after, 0) as balance_after, COALESCE(cl.date, datetime('now')) as date, 'CUSTOMER_KHATA' as stream, COALESCE(u.username, 'Manager') as user_name
-//       FROM customer_ledger cl LEFT JOIN customers c ON cl.customer_id = c.id LEFT JOIN users u ON cl.user_id = u.id
-//     `,
-//       )
-//       .all();
-
-//     const expenseEntries = db
-//       .prepare(
-//         `
-//       SELECT e.id, COALESCE(e.category, 'Expense') as entity_name, COALESCE(e.description, 'Cost') as description, COALESCE(e.amount, 0) as debit, 0.0 as credit, 0.0 as balance_after, COALESCE(e.date, datetime('now')) as date, 'EXPENSE' as stream, COALESCE(u.username, 'Manager') as user_name
-//       FROM business_expenses e LEFT JOIN users u ON e.user_id = u.id
-//     `,
-//       )
-//       .all();
-
-//     const salesEntries = db
-//       .prepare(
-//         `
-//       SELECT s.id, COALESCE(c.name, 'Walk-in') as entity_name, ('Invoice #' || s.id || ' (' || s.payment_type || ')') as description, 0.0 as debit, COALESCE(s.total_amount, 0) as credit, 0.0 as balance_after, COALESCE(s.date, datetime('now')) as date, 'SALE' as stream, COALESCE(u.username, 'Manager') as user_name
-//       FROM sales s LEFT JOIN customers c ON s.customer_id = c.id LEFT JOIN users u ON s.user_id = u.id
-//     `,
-//       )
-//       .all();
-
-//     let shrinkageEntries = [];
-//     try {
-//       shrinkageEntries = db
-//         .prepare(
-//           `
-//         SELECT id, 'Inventory Write-Off' as entity_name, COALESCE(reason, 'Damaged / Expired Stock') as description, COALESCE(total_loss, 0) as debit, 0.0 as credit, 0.0 as balance_after, COALESCE(date, datetime('now')) as date, 'SHRINKAGE' as stream, COALESCE(username, 'Manager') as user_name
-//         FROM inventory_shrinkage
-//       `,
-//         )
-//         .all();
-//     } catch (e) {
-//       shrinkageEntries = [];
-//     }
-
-//     const auditEntries = db
-//       .prepare(
-//         `
-//       SELECT id, 'Security Event' as entity_name, COALESCE(details, action) as description, 0.0 as debit, 0.0 as credit, 0.0 as balance_after, COALESCE(timestamp, datetime('now')) as date, 'AUDIT_LOG' as stream, COALESCE(username, 'System') as user_name
-//       FROM audit_logs
-//     `,
-//       )
-//       .all();
-
-//     return [
-//       ...customerEntries,
-//       ...expenseEntries,
-//       ...salesEntries,
-//       ...shrinkageEntries,
-//       ...auditEntries,
-//     ].sort((a, b) => new Date(b.date) - new Date(a.date));
-//   } catch (err) {
-//     console.error("Master Ledger Error:", err);
-//     return [];
-//   }
-// });
-
 // 10. SETTINGS & CASH REGISTER RECONCILIATION
 ipcMain.handle('get-settings', () => {
   const rows = db.prepare('SELECT key, value FROM settings').all();
@@ -1547,8 +1449,8 @@ const handleExportA4PDF = async () => {
         <tr>
           <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #334155;">${e.date}</td>
           <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #334155;">${e.description}</td>
-          <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: #dc2626; text-align: right;">${e.debit > 0 ? `Rs. ${e.debit.toLocaleString()}` : '-'}</td>
-          <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: #059669; text-align: right;">${e.credit > 0 ? `Rs. ${e.credit.toLocaleString()}` : '-'}</td>
+          <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: var(--danger); text-align: right;">${e.debit > 0 ? `Rs. ${e.debit.toLocaleString()}` : '-'}</td>
+          <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: var(--success); text-align: right;">${e.credit > 0 ? `Rs. ${e.credit.toLocaleString()}` : '-'}</td>
           <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: #0f172a; text-align: right;">Rs. ${e.balance_after?.toLocaleString()}</td>
         </tr>
       `,
@@ -1564,8 +1466,8 @@ const handleExportA4PDF = async () => {
             <style>
               @page { size: A4 portrait; margin: 15mm; }
               body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 20px; color: #0f172a; background: #fff; margin: 0; }
-              .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #0d5c75; padding-bottom: 16px; margin-bottom: 24px; }
-              .title-area h1 { margin: 0; color: #0d5c75; font-size: 22px; text-transform: uppercase; letter-spacing: 0.5px; }
+              .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--brand-primary); padding-bottom: 16px; margin-bottom: 24px; }
+              .title-area h1 { margin: 0; color: var(--brand-primary); font-size: 22px; text-transform: uppercase; letter-spacing: 0.5px; }
               .title-area p { margin: 4px 0 0 0; font-size: 12px; color: #64748b; }
               .meta-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px 18px; margin-bottom: 24px; font-size: 13px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
               table { width: 100%; border-collapse: collapse; margin-top: 8px; }
@@ -1573,7 +1475,7 @@ const handleExportA4PDF = async () => {
               .right { text-align: right; }
               .total-card { margin-top: 24px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 16px; text-align: right; float: right; width: 280px; }
               .total-card .label { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; }
-              .total-card .amount { font-size: 20px; font-weight: 900; color: #dc2626; margin-top: 4px; }
+              .total-card .amount { font-size: 20px; font-weight: 900; color: var(--danger); margin-top: 4px; }
             </style>
           </head>
           <body>
@@ -1677,47 +1579,71 @@ ipcMain.handle(
 // });
 
 // ✏️ Universal Ledger Entry Update Handler
+// ipcMain.handle(
+//   'update-ledger-entry',
+//   (event, { type, id, data, currentUser }) => {
+//     try {
+//       if (!currentUser || currentUser.role !== 'ADMIN') {
+//         throw new Error(
+//           'Unauthorized: Only Managers/Admins can edit financial records.',
+//         );
+//       }
+
+//       const transaction = db.transaction(() => {
+//         if (type === 'SALES') {
+//           db.prepare(
+//             `UPDATE sales SET total_amount = ?, payment_type = ? WHERE id = ?`,
+//           ).run(data.total_amount, data.payment_type, id);
+//         } else if (type === 'EXPENSES') {
+//           db.prepare(
+//             `UPDATE business_expenses SET category = ?, amount = ?, description = ? WHERE id = ?`,
+//           ).run(data.category, data.amount, data.description, id);
+//         } else if (type === 'PURCHASES') {
+//           db.prepare(
+//             `UPDATE purchase_lines SET qty_received = ?, unit_cost = ?, payment_type = ? WHERE id = ?`,
+//           ).run(
+//             parseFloat(data.qty_received) || 0,
+//             parseFloat(data.unit_cost) || 0,
+//             data.payment_type || 'CREDIT',
+//             id,
+//           );
+//         }
+//       });
+
+//       transaction();
+
+//       db.prepare(
+//         'INSERT INTO audit_logs (user_id, username, action, details) VALUES (?, ?, ?, ?)',
+//       ).run(
+//         currentUser.id,
+//         currentUser.username,
+//         'EDIT_LEDGER',
+//         `Updated ${type} record ID #${id}`,
+//       );
+
+//       return { success: true };
+//     } catch (err) {
+//       return { success: false, error: err.message };
+//     }
+//   },
+// );
+// 🛡️ Update Ledger Entry (Safely updates date and notes, protects the amount)
+// 🛡️ Update Ledger Entry (Safely updates date and notes, protects the amount)
 ipcMain.handle(
   'update-ledger-entry',
-  (event, { type, id, data, currentUser }) => {
+  (event, { ledgerId, newDate, newNotes, currentUser }) => {
     try {
-      if (!currentUser || currentUser.role !== 'ADMIN') {
-        throw new Error(
-          'Unauthorized: Only Managers/Admins can edit financial records.',
-        );
-      }
+      if (currentUser?.role !== 'ADMIN')
+        throw new Error('Only Admins can edit ledger records.');
 
-      const transaction = db.transaction(() => {
-        if (type === 'SALES') {
-          db.prepare(
-            `UPDATE sales SET total_amount = ?, payment_type = ? WHERE id = ?`,
-          ).run(data.total_amount, data.payment_type, id);
-        } else if (type === 'EXPENSES') {
-          db.prepare(
-            `UPDATE business_expenses SET category = ?, amount = ?, description = ? WHERE id = ?`,
-          ).run(data.category, data.amount, data.description, id);
-        } else if (type === 'PURCHASES') {
-          db.prepare(
-            `UPDATE purchase_lines SET qty_received = ?, unit_cost = ?, payment_type = ? WHERE id = ?`,
-          ).run(
-            parseFloat(data.qty_received) || 0,
-            parseFloat(data.unit_cost) || 0,
-            data.payment_type || 'CREDIT',
-            id,
-          );
-        }
-      });
-
-      transaction();
-
+      // 👈 Changed 'date' to 'created_at'
       db.prepare(
-        'INSERT INTO audit_logs (user_id, username, action, details) VALUES (?, ?, ?, ?)',
-      ).run(
-        currentUser.id,
-        currentUser.username,
-        'EDIT_LEDGER',
-        `Updated ${type} record ID #${id}`,
-      );
+        `
+      UPDATE customer_ledger 
+      SET created_at = ?, description = ? 
+      WHERE id = ?
+    `,
+      ).run(newDate, newNotes, ledgerId);
 
       return { success: true };
     } catch (err) {
@@ -1725,23 +1651,86 @@ ipcMain.handle(
     }
   },
 );
+
+// 🛡️ Delete Ledger Entry (Recalculates balance if deleted)
+// ipcMain.handle(
+//   'delete-ledger-entry',
+//   (event, { ledgerId, customerId, currentUser }) => {
+//     try {
+//       if (currentUser?.role !== 'ADMIN')
+//         throw new Error('Only Admins can delete ledger records.');
+
+//       const record = db
+//         .prepare('SELECT debit, credit FROM customer_ledger WHERE id = ?')
+//         .get(ledgerId);
+//       if (!record) throw new Error('Record not found.');
+
+//       const transaction = db.transaction(() => {
+//         db.prepare('DELETE FROM customer_ledger WHERE id = ?').run(ledgerId);
+
+//         const balanceAdjustment = (record.debit || 0) - (record.credit || 0);
+//         db.prepare(
+//           'UPDATE customers SET balance = balance - ? WHERE id = ?',
+//         ).run(balanceAdjustment, customerId);
+
+//         // 👈 Changed 'date' to 'created_at' in the ORDER BY
+//         const remainingEntries = db
+//           .prepare(
+//             'SELECT id, debit, credit FROM customer_ledger WHERE customer_id = ? ORDER BY created_at ASC, id ASC',
+//           )
+//           .all(customerId);
+//         let runningBalance = 0;
+//         const updateStmt = db.prepare(
+//           'UPDATE customer_ledger SET balance_after = ? WHERE id = ?',
+//         );
+
+//         for (const entry of remainingEntries) {
+//           runningBalance += (entry.debit || 0) - (entry.credit || 0);
+//           updateStmt.run(runningBalance, entry.id);
+//         }
+//       });
+
+//       transaction();
+//       return { success: true };
+//     } catch (err) {
+//       return { success: false, error: err.message };
+//     }
+//   },
+// );
 // ==========================================
 // REFUNDS & REPAIRS IPC HANDLERS
 // ==========================================
 
 ipcMain.handle('get-refunds-repairs', () => {
   try {
-    return db
-      .prepare(
-        `
-      SELECT r.*, i.name as item_name, u.username as operator_name
+    // 1. Check if 'manual_item_name' column exists in the table
+    const tableInfo = db.prepare('PRAGMA table_info(refunds_repairs)').all();
+    const hasManualItem = tableInfo.some(
+      (col) => col.name === 'manual_item_name',
+    );
+    const hasStatus = tableInfo.some((col) => col.name === 'status');
+
+    // 2. Build the select query dynamically based on what columns exist
+    const manualItemSelect = hasManualItem
+      ? 'r.manual_item_name'
+      : 'NULL as manual_item_name';
+    const statusSelect = hasStatus ? 'r.status' : "'COMPLETED' as status";
+
+    // 3. Run the query safely
+    const query = `
+      SELECT r.*, 
+             ${manualItemSelect},
+             ${statusSelect},
+             COALESCE(i.name, ${hasManualItem ? 'r.manual_item_name' : "'Custom Item'"}) as item_name, 
+             u.username as operator_name
       FROM refunds_repairs r
       LEFT JOIN items i ON r.item_id = i.id
       LEFT JOIN users u ON r.user_id = u.id
       ORDER BY r.id DESC
-    `,
-      )
-      .all();
+      LIMIT 20
+    `;
+
+    return db.prepare(query).all();
   } catch (err) {
     console.error('Error fetching refunds/repairs:', err);
     return [];
@@ -1749,60 +1738,60 @@ ipcMain.handle('get-refunds-repairs', () => {
 });
 
 // 1. Remove expense logging from record-refund-repair
-ipcMain.handle(
-  'record-refund-repair',
-  (
-    event,
-    {
-      type,
-      sale_id,
-      item_id,
-      qty,
-      amount_refunded,
-      customer_name,
-      phone,
-      description,
-      currentUser,
-    },
-  ) => {
-    try {
-      const processTransaction = db.transaction(() => {
-        const parsedQty = parseFloat(qty) || 1;
-        const parsedRefund = parseFloat(amount_refunded) || 0;
+ipcMain.handle('record-refund-repair', (event, payload) => {
+  const {
+    type,
+    sale_id,
+    item_id,
+    manual_item_name,
+    qty,
+    amount_refunded,
+    customer_name,
+    phone,
+    status,
+    description,
+    currentUser,
+  } = payload;
 
-        // Insert into refunds_repairs
-        db.prepare(
-          `
-        INSERT INTO refunds_repairs (type, sale_id, item_id, qty, amount_refunded, customer_name, phone, status, description, user_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'COMPLETED', ?, ?)
+  try {
+    const processTransaction = db.transaction(() => {
+      const parsedQty = parseFloat(qty) || 1;
+      const parsedAmount = parseFloat(amount_refunded) || 0;
+
+      // 1. Insert into refunds_repairs
+      db.prepare(
+        `
+        INSERT INTO refunds_repairs (type, sale_id, item_id, manual_item_name, qty, amount_refunded, customer_name, phone, status, description, user_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
-        ).run(
-          type,
-          sale_id ? parseInt(sale_id) : null,
-          item_id ? parseInt(item_id) : null,
-          parsedQty,
-          parsedRefund,
-          customer_name || 'Walk-in Customer',
-          phone || '',
-          description || '',
-          currentUser.id,
-        );
+      ).run(
+        type,
+        sale_id ? parseInt(sale_id) : null,
+        item_id ? parseInt(item_id) : null,
+        manual_item_name || null,
+        parsedQty,
+        parsedAmount,
+        customer_name || 'Walk-in Customer',
+        phone || '',
+        status || 'COMPLETED',
+        description || '',
+        currentUser.id,
+      );
 
-        // If REFUND, restore stock (Do NOT add to business_expenses)
-        if (type === 'REFUND' && item_id) {
-          db.prepare(
-            `UPDATE items SET stock_qty = stock_qty + ? WHERE id = ?`,
-          ).run(parsedQty, item_id);
-        }
-      });
+      // 2. If REFUND, restore stock to inventory
+      if (type === 'REFUND' && item_id) {
+        db.prepare(
+          `UPDATE items SET stock_qty = stock_qty + ? WHERE id = ?`,
+        ).run(parsedQty, item_id);
+      }
+    });
 
-      processTransaction();
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  },
-);
+    processTransaction();
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
 
 // 2. Update get-financial-ledger to subtract refunds and include them in sales tab
 ipcMain.handle('get-financial-ledger', (event, filters = {}) => {
@@ -1918,7 +1907,7 @@ ipcMain.handle('get-financial-ledger', (event, filters = {}) => {
         totalExpenses,
         totalPurchases,
         totalRefunds,
-        netProfit: totalSales - (totalExpenses + totalPurchases),
+        netCashFlow: totalSales - totalExpenses,
       },
     };
   } catch (err) {
@@ -1933,36 +1922,98 @@ ipcMain.handle('get-financial-ledger', (event, filters = {}) => {
         totalExpenses: 0,
         totalPurchases: 0,
         totalRefunds: 0,
-        netProfit: 0,
+        netCashFlow: 0,
       },
     };
   }
 });
 
-ipcMain.handle('delete-ledger-entry', (event, { type, id, currentUser }) => {
-  try {
-    if (!currentUser || currentUser.role?.toUpperCase() !== 'ADMIN') {
-      throw new Error(
-        'Unauthorized: Only Manager/Admin accounts can delete ledger entries.',
-      );
+ipcMain.handle(
+  'delete-ledger-entry',
+  (event, { ledgerId, customerId, isSupplier, currentUser }) => {
+    try {
+      if (currentUser?.role !== 'ADMIN')
+        throw new Error('Only Admins can delete ledger records.');
+
+      const transaction = db.transaction(() => {
+        if (isSupplier) {
+          // 🚚 SUPPLIER LOGIC (Uses 'date')
+
+          // 1. Check if it's a GRN purchase
+          const purchaseEntry = db
+            .prepare(
+              'SELECT id FROM purchase_lines WHERE id = ? AND supplier_id = ?',
+            )
+            .get(ledgerId, customerId);
+
+          if (purchaseEntry) {
+            db.prepare('DELETE FROM purchase_lines WHERE id = ?').run(ledgerId);
+            db.prepare('DELETE FROM supplier_ledger WHERE id = ?').run(
+              ledgerId,
+            );
+          } else {
+            db.prepare('DELETE FROM supplier_ledger WHERE id = ?').run(
+              ledgerId,
+            );
+          }
+
+          // 2. Recalculate balances
+          const remaining = db
+            .prepare(
+              'SELECT id, credit, debit FROM supplier_ledger WHERE supplier_id = ? ORDER BY date ASC, id ASC',
+            )
+            .all(customerId);
+          let running = 0;
+          const updateStmt = db.prepare(
+            'UPDATE supplier_ledger SET balance_after = ? WHERE id = ?',
+          );
+
+          for (const e of remaining) {
+            running += (e.credit || 0) - (e.debit || 0);
+            updateStmt.run(running, e.id);
+          }
+
+          // 3. Update the master supplier balance
+          db.prepare('UPDATE suppliers SET balance = ? WHERE id = ?').run(
+            running,
+            customerId,
+          );
+        } else {
+          // 👥 CUSTOMER LOGIC (Uses 'created_at')
+
+          const record = db
+            .prepare('SELECT debit, credit FROM customer_ledger WHERE id = ?')
+            .get(ledgerId);
+          if (!record) throw new Error('Record not found.');
+
+          db.prepare('DELETE FROM customer_ledger WHERE id = ?').run(ledgerId);
+
+          const remaining = db
+            .prepare(
+              'SELECT id, debit, credit FROM customer_ledger WHERE customer_id = ? ORDER BY created_at ASC, id ASC',
+            )
+            .all(customerId);
+          let running = 0;
+          const updateStmt = db.prepare(
+            'UPDATE customer_ledger SET balance_after = ? WHERE id = ?',
+          );
+
+          for (const e of remaining) {
+            running += (e.debit || 0) - (e.credit || 0);
+            updateStmt.run(running, e.id);
+          }
+
+          db.prepare('UPDATE customers SET balance = ? WHERE id = ?').run(
+            running,
+            customerId,
+          );
+        }
+      });
+
+      transaction();
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
     }
-
-    const transaction = db.transaction(() => {
-      if (type === 'SALES') {
-        db.prepare(`DELETE FROM sale_lines WHERE sale_id = ?`).run(id);
-        db.prepare(`DELETE FROM sales WHERE id = ?`).run(id);
-      } else if (type === 'REFUNDS') {
-        db.prepare(`DELETE FROM refunds_repairs WHERE id = ?`).run(id);
-      } else if (type === 'EXPENSES') {
-        db.prepare(`DELETE FROM business_expenses WHERE id = ?`).run(id);
-      } else if (type === 'PURCHASES') {
-        db.prepare(`DELETE FROM purchase_lines WHERE id = ?`).run(id);
-      }
-    });
-
-    transaction();
-    return { success: true };
-  } catch (err) {
-    return { success: false, error: err.message };
-  }
-});
+  },
+);

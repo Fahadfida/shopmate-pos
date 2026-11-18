@@ -1,13 +1,13 @@
-import Database from "better-sqlite3";
-import path from "path";
-import { app } from "electron";
+import Database from 'better-sqlite3';
+import path from 'path';
+import { app } from 'electron';
 
 // Secure %APPDATA% path resolution for production .exe persistence
-const dataPath = app ? app.getPath("userData") : ".";
-const dbPath = path.join(dataPath, "shopmate_data.sqlite");
+const dataPath = app ? app.getPath('userData') : '.';
+const dbPath = path.join(dataPath, 'shopmate_data.sqlite');
 
 const db = new Database(dbPath);
-db.pragma("journal_mode = WAL");
+db.pragma('journal_mode = WAL');
 
 export function initDB() {
   db.exec(`
@@ -208,73 +208,70 @@ export function initDB() {
       closed_at TEXT,
       FOREIGN KEY(user_id) REFERENCES users(id)
     );
-    -- 14. REFUNDS & REPAIRS
     CREATE TABLE IF NOT EXISTS refunds_repairs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      type TEXT NOT NULL CHECK (type IN ('REFUND', 'REPAIR')),
-      sale_id INTEGER,
-      item_id INTEGER,
-      qty REAL DEFAULT 1,
-      amount_refunded REAL DEFAULT 0,
-      customer_name TEXT,
-      phone TEXT,
-      status TEXT DEFAULT 'PENDING', -- 'PENDING', 'COMPLETED', 'CANCELLED'
-      description TEXT,
-      user_id INTEGER,
-      date TEXT DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY(sale_id) REFERENCES sales(id),
-      FOREIGN KEY(item_id) REFERENCES items(id),
-      FOREIGN KEY(user_id) REFERENCES users(id)
-    );
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  type TEXT NOT NULL, -- 'REFUND' or 'REPAIR'
+  sale_id INTEGER,
+  item_id INTEGER,
+  manual_item_name TEXT,
+  qty INTEGER,
+  amount_refunded REAL,
+  customer_name TEXT,
+  phone TEXT,
+  status TEXT DEFAULT 'COMPLETED',
+  description TEXT,
+  user_id INTEGER,
+  date TEXT DEFAULT CURRENT_TIMESTAMP
+);
   `);
 
   // Seed Default Users if empty
   const userCount = db
-    .prepare("SELECT COUNT(*) as count FROM users")
+    .prepare('SELECT COUNT(*) as count FROM users')
     .get().count;
   if (userCount === 0) {
-    db.prepare("INSERT INTO users (username, pin, role) VALUES (?, ?, ?)").run(
-      "Manager",
-      "1234",
-      "ADMIN",
+    db.prepare('INSERT INTO users (username, pin, role) VALUES (?, ?, ?)').run(
+      'Manager',
+      '1234',
+      'ADMIN',
     );
-    db.prepare("INSERT INTO users (username, pin, role) VALUES (?, ?, ?)").run(
-      "Cashier",
-      "0000",
-      "CASHIER",
+    db.prepare('INSERT INTO users (username, pin, role) VALUES (?, ?, ?)').run(
+      'Cashier',
+      '0000',
+      'CASHIER',
     );
   }
 
   // Seed default shop info if not set
   const hasShopName = db
-    .prepare("SELECT COUNT(*) as count FROM settings WHERE key = ?")
-    .get("shop_name").count;
+    .prepare('SELECT COUNT(*) as count FROM settings WHERE key = ?')
+    .get('shop_name').count;
   if (hasShopName === 0) {
     const insert = db.prepare(
-      "INSERT INTO settings (key, value) VALUES (?, ?)",
+      'INSERT INTO settings (key, value) VALUES (?, ?)',
     );
-    insert.run("shop_name", "ShopMate POS");
-    insert.run("shop_address", "Main Retail Market, Store #12");
-    insert.run("shop_phone", "+92 300 0000000");
-    insert.run("shop_logo", "");
-    insert.run("sku_format", "CAT_SEQ");
+    insert.run('shop_name', 'ShopMate POS');
+    insert.run('shop_address', 'Main Retail Market, Store #12');
+    insert.run('shop_phone', '+92 300 0000000');
+    insert.run('shop_logo', '');
+    insert.run('sku_format', 'CAT_SEQ');
   }
 
   // 🛡️ COMPREHENSIVE AUTO-MIGRATION BLOCK
   try {
     // 1. Check and patch 'items' table
-    const itemTableInfo = db.prepare("PRAGMA table_info(items)").all();
-    if (!itemTableInfo.some((col) => col.name === "is_active")) {
-      db.exec("ALTER TABLE items ADD COLUMN is_active INTEGER DEFAULT 1");
+    const itemTableInfo = db.prepare('PRAGMA table_info(items)').all();
+    if (!itemTableInfo.some((col) => col.name === 'is_active')) {
+      db.exec('ALTER TABLE items ADD COLUMN is_active INTEGER DEFAULT 1');
     }
 
     // 2. Check and patch 'suppliers' table
-    const supplierTableInfo = db.prepare("PRAGMA table_info(suppliers)").all();
+    const supplierTableInfo = db.prepare('PRAGMA table_info(suppliers)').all();
     const supplierColumnsToAdd = [
-      { name: "is_active", type: "INTEGER DEFAULT 1" },
-      { name: "address", type: "TEXT DEFAULT ''" },
-      { name: "avatar", type: "TEXT DEFAULT ''" },
-      { name: "credit_limit", type: "REAL DEFAULT 0" },
+      { name: 'is_active', type: 'INTEGER DEFAULT 1' },
+      { name: 'address', type: "TEXT DEFAULT ''" },
+      { name: 'avatar', type: "TEXT DEFAULT ''" },
+      { name: 'credit_limit', type: 'REAL DEFAULT 0' },
     ];
     for (const col of supplierColumnsToAdd) {
       if (!supplierTableInfo.some((c) => c.name === col.name)) {
@@ -283,42 +280,42 @@ export function initDB() {
     }
 
     // 3. Check and patch 'customers' table
-    const customerTableInfo = db.prepare("PRAGMA table_info(customers)").all();
-    if (!customerTableInfo.some((col) => col.name === "is_active")) {
-      db.exec("ALTER TABLE customers ADD COLUMN is_active INTEGER DEFAULT 1");
+    const customerTableInfo = db.prepare('PRAGMA table_info(customers)').all();
+    if (!customerTableInfo.some((col) => col.name === 'is_active')) {
+      db.exec('ALTER TABLE customers ADD COLUMN is_active INTEGER DEFAULT 1');
     }
-    if (!customerTableInfo.some((col) => col.name === "address")) {
+    if (!customerTableInfo.some((col) => col.name === 'address')) {
       db.exec("ALTER TABLE customers ADD COLUMN address TEXT DEFAULT ''");
     }
-    if (!customerTableInfo.some((col) => col.name === "avatar")) {
+    if (!customerTableInfo.some((col) => col.name === 'avatar')) {
       db.exec("ALTER TABLE customers ADD COLUMN avatar TEXT DEFAULT ''");
     }
 
     // 4. 📅 Check and patch 'purchase_lines' and 'supplier_ledger' for custom dates & payment types
     const purchaseTableInfo = db
-      .prepare("PRAGMA table_info(purchase_lines)")
+      .prepare('PRAGMA table_info(purchase_lines)')
       .all();
-    if (!purchaseTableInfo.some((col) => col.name === "date")) {
+    if (!purchaseTableInfo.some((col) => col.name === 'date')) {
       db.exec(
-        "ALTER TABLE purchase_lines ADD COLUMN date TEXT DEFAULT CURRENT_TIMESTAMP",
+        'ALTER TABLE purchase_lines ADD COLUMN date TEXT DEFAULT CURRENT_TIMESTAMP',
       );
     }
-    if (!purchaseTableInfo.some((col) => col.name === "payment_type")) {
+    if (!purchaseTableInfo.some((col) => col.name === 'payment_type')) {
       db.exec(
         "ALTER TABLE purchase_lines ADD COLUMN payment_type TEXT DEFAULT 'CREDIT'",
       );
     }
 
     const supplierLedgerInfo = db
-      .prepare("PRAGMA table_info(supplier_ledger)")
+      .prepare('PRAGMA table_info(supplier_ledger)')
       .all();
-    if (!supplierLedgerInfo.some((col) => col.name === "date")) {
+    if (!supplierLedgerInfo.some((col) => col.name === 'date')) {
       db.exec(
-        "ALTER TABLE supplier_ledger ADD COLUMN date TEXT DEFAULT CURRENT_TIMESTAMP",
+        'ALTER TABLE supplier_ledger ADD COLUMN date TEXT DEFAULT CURRENT_TIMESTAMP',
       );
     }
   } catch (err) {
-    console.error("Database auto-migration patch error:", err);
+    console.error('Database auto-migration patch error:', err);
   }
 
   // // 3. Check and patch 'customers' table

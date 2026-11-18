@@ -1,33 +1,94 @@
 import React, { useState, useEffect } from 'react';
 import { getIpc } from '../utils/ipc';
 
+// --- CUSTOM TOAST COMPONENT ---
+const Toast = ({ message, type, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 4000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const colors = {
+    success: {
+      bg: '#f0fdf4',
+      border: 'var(--success)',
+      text: '#065f46',
+      icon: '✅',
+    },
+    error: {
+      bg: '#fef2f2',
+      border: 'var(--danger)',
+      text: '#991b1b',
+      icon: '🚨',
+    },
+    info: { bg: '#eff6ff', border: 'var(--info)', text: '#1e40af', icon: 'ℹ️' },
+  };
+  const c = colors[type] || colors.info;
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        background: c.bg,
+        borderLeft: `4px solid ${c.border}`,
+        color: c.text,
+        padding: '12px 16px',
+        borderRadius: '6px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        minWidth: '280px',
+        fontWeight: '600',
+        fontSize: '0.85rem',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      <span>{c.icon}</span>
+      <span style={{ flex: 1 }}>{message}</span>
+      <button
+        onClick={onClose}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          color: c.text,
+          fontWeight: 'bold',
+        }}
+      >
+        ✕
+      </button>
+    </div>
+  );
+};
+
 export default function KhataLedger({ currentUser }) {
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [ledgerEntries, setLedgerEntries] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [customerFilter, setCustomerFilter] = useState('active'); // 'active' | 'archived' | 'all'
+  const [toasts, setToasts] = useState([]);
 
-  // Advanced Ledger Filters
+  // Filters
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
   const [ledgerSearch, setLedgerSearch] = useState('');
 
   // Modals State
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('CASH');
-  const [paymentNotes, setPaymentNotes] = useState('');
-
-  const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
-  const [debtAmount, setDebtAmount] = useState('');
-  const [debtNotes, setDebtNotes] = useState('');
-
-  const [isCreditModalOpen, setIsCreditModalOpen] = useState(false);
-  const [creditAmount, setCreditAmount] = useState('');
-  const [creditNotes, setCreditNotes] = useState('');
-
+  const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false);
+  const [isEditRecordModalOpen, setIsEditRecordModalOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+
+  // Form States
+  const [entryType, setEntryType] = useState('DEBIT'); // 'DEBIT' | 'CREDIT'
+  const [entryData, setEntryData] = useState({
+    amount: '',
+    date: new Date().toISOString().split('T')[0],
+    notes: '',
+    method: 'CASH',
+    ref: '',
+  });
+  const [editingRecord, setEditingRecord] = useState(null);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [customerForm, setCustomerForm] = useState({
     name: '',
@@ -35,20 +96,29 @@ export default function KhataLedger({ currentUser }) {
     credit_limit: 0,
     avatar: '',
   });
+  const [isSaving, setIsSaving] = useState(false);
+
+  const addToast = (message, type = 'info') => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
+  };
+  const removeToast = (id) =>
+    setToasts((prev) => prev.filter((t) => t.id !== id));
 
   const loadCustomers = async () => {
     const ipc = getIpc();
     if (ipc) {
       const data = await ipc.invoke('get-customers');
-      setCustomers(data || []);
+      const activeCustomers = (data || []).filter(
+        (c) => c.is_active === 1 || c.is_active === undefined,
+      );
+      setCustomers(activeCustomers);
       if (selectedCustomer) {
-        const refreshed = (data || []).find(
+        const refreshed = activeCustomers.find(
           (c) => c.id === selectedCustomer.id,
         );
-        if (refreshed) {
-          setSelectedCustomer(refreshed);
-          loadLedger(refreshed.id);
-        }
+        if (refreshed) setSelectedCustomer(refreshed);
+        else setSelectedCustomer(null);
       }
     }
   };
@@ -64,25 +134,13 @@ export default function KhataLedger({ currentUser }) {
   useEffect(() => {
     loadCustomers();
   }, []);
+  useEffect(() => {
+    if (selectedCustomer) loadLedger(selectedCustomer.id);
+  }, [selectedCustomer]);
 
-  const selectCustomer = (cust) => {
-    setSelectedCustomer(cust);
-    loadLedger(cust.id);
-    setFilterStartDate('');
-    setFilterEndDate('');
-    setLedgerSearch('');
-  };
+  const sanitizePhone = (val) => val.replace(/[^0-9+]/g, '');
 
-  const handleAvatarUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setCustomerForm((prev) => ({ ...prev, avatar: reader.result }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  // --- HANDLERS ---
 
   const handleSaveCustomer = async (e) => {
     e.preventDefault();
@@ -100,987 +158,1400 @@ export default function KhataLedger({ currentUser }) {
       } else {
         res = await ipc.invoke('add-customer', customerForm);
       }
-
       if (res.success) {
         setIsCustomerModalOpen(false);
         setEditingCustomer(null);
         setCustomerForm({ name: '', phone: '', credit_limit: 0, avatar: '' });
         loadCustomers();
+        addToast(
+          editingCustomer
+            ? 'Party updated successfully'
+            : 'Party registered successfully',
+          'success',
+        );
       } else {
-        alert('Error saving customer profile: ' + res.error);
+        addToast('Error saving customer: ' + res.error, 'error');
       }
     }
   };
 
-  // Archive / Reactivate Customer Workflow
-  const handleToggleArchiveCustomer = async (cust) => {
-    const target = cust || selectedCustomer;
-    if (!target) return;
+  const handleAddEntry = async (e) => {
+    e.preventDefault();
+    if (isSaving) return;
+    const ipc = getIpc();
+    const amt = parseFloat(entryData.amount);
+    if (!amt || amt <= 0) return addToast('Enter a valid amount.', 'error');
 
-    if (currentUser?.role !== 'ADMIN') {
-      return alert('Access Denied: Manager (ADMIN) permissions required.');
+    setIsSaving(true);
+    const fullNotes = entryData.ref
+      ? `${entryData.notes} (Ref: ${entryData.ref})`
+      : entryData.notes;
+
+    if (ipc) {
+      let res;
+      if (entryType === 'DEBIT') {
+        res = await ipc.invoke('record-customer-debt', {
+          customer_id: selectedCustomer.id,
+          amount: amt,
+          notes: fullNotes,
+          currentUser,
+        });
+      } else {
+        res = await ipc.invoke('record-customer-payment', {
+          customer_id: selectedCustomer.id,
+          amount: amt,
+          payment_method: entryData.method,
+          notes: fullNotes,
+          currentUser,
+          date: entryData.date, // If you update backend to accept date
+        });
+      }
+
+      if (res.success) {
+        setIsAddEntryModalOpen(false);
+        setEntryData({
+          amount: '',
+          date: new Date().toISOString().split('T')[0],
+          notes: '',
+          method: 'CASH',
+          ref: '',
+        });
+        loadCustomers();
+        loadLedger(selectedCustomer.id);
+        addToast('Entry recorded successfully', 'success');
+      } else {
+        addToast('Error recording entry: ' + res.error, 'error');
+      }
     }
+    setIsSaving(false);
+  };
 
-    if (target.balance > 0 && target.is_active === 1) {
-      return alert(
-        'Cannot archive party while outstanding debt balance is due.',
-      );
+  const handleEditRecord = async (e) => {
+    e.preventDefault();
+    const ipc = getIpc();
+    if (ipc && editingRecord) {
+      const res = await ipc.invoke('update-ledger-entry', {
+        ledgerId: editingRecord.id,
+        newDate: entryData.date,
+        newNotes: entryData.notes,
+        currentUser,
+      });
+      if (res.success) {
+        setIsEditRecordModalOpen(false);
+        setEditingRecord(null);
+        loadLedger(selectedCustomer.id);
+        addToast('Record updated successfully', 'success');
+      } else {
+        addToast('Error updating record: ' + res.error, 'error');
+      }
     }
+  };
 
-    const nextActiveState = target.is_active === 0 ? 1 : 0;
-    const actionText = nextActiveState === 0 ? 'archive' : 'reactivate';
+  const handleDeleteRecord = async (recordId) => {
     if (
       !window.confirm(
-        `Are you sure you want to ${actionText} customer "${target.name}"?`,
+        'Are you sure you want to delete this ledger entry? This will recalculate the customer balance.',
       )
     )
       return;
+    const ipc = getIpc();
+    if (ipc) {
+      const res = await ipc.invoke('delete-ledger-entry', {
+        ledgerId: recordId,
+        customerId: selectedCustomer.id,
+        currentUser,
+      });
+      if (res.success) {
+        setIsEditRecordModalOpen(false);
+        setEditingRecord(null);
+        loadCustomers();
+        loadLedger(selectedCustomer.id);
+        addToast('Record deleted successfully', 'success');
+      } else {
+        addToast('Error deleting record: ' + res.error, 'error');
+      }
+    }
+  };
 
+  const handleDeleteCustomer = async () => {
+    if (ledgerEntries.length > 0)
+      return addToast(
+        'Cannot delete customer with existing records. Please Archive them instead.',
+        'error',
+      );
+    if (
+      !window.confirm(
+        `Are you sure you want to permanently DELETE "${selectedCustomer.name}"?`,
+      )
+    )
+      return;
+    const ipc = getIpc();
+    if (ipc) {
+      const res = await ipc.invoke('delete-customer', {
+        customerId: selectedCustomer.id,
+        currentUser,
+      });
+      if (res.success) {
+        addToast('Customer deleted successfully', 'success');
+        setSelectedCustomer(null);
+        loadCustomers();
+      } else {
+        addToast('Delete Error: ' + res.error, 'error');
+      }
+    }
+  };
+
+  const handleToggleArchive = async () => {
+    if (selectedCustomer.balance > 0)
+      return addToast('Cannot archive party with outstanding debt.', 'error');
+    if (!window.confirm(`Archive "${selectedCustomer.name}"?`)) return;
     const ipc = getIpc();
     if (ipc) {
       const res = await ipc.invoke('toggle-archive-customer', {
-        customerId: target.id,
-        is_active: nextActiveState,
+        customerId: selectedCustomer.id,
+        is_active: 0,
         currentUser,
       });
-
       if (res.success) {
-        if (selectedCustomer?.id === target.id) {
-          setSelectedCustomer(null);
-          setLedgerEntries([]);
-        }
+        addToast('Customer archived successfully', 'success');
+        setSelectedCustomer(null);
         loadCustomers();
       } else {
-        alert('Action Error: ' + res.error);
+        addToast('Archive Error: ' + res.error, 'error');
       }
     }
   };
 
-  const handleRecordPayment = async (e) => {
-    e.preventDefault();
-    const ipc = getIpc();
-    const amt = parseFloat(paymentAmount);
-    if (!amt || amt <= 0) return alert('Enter a valid settlement amount.');
-
-    if (ipc) {
-      const res = await ipc.invoke('record-customer-payment', {
-        customer_id: selectedCustomer.id,
-        amount: amt,
-        payment_method: paymentMethod,
-        notes: paymentNotes,
-        currentUser,
-      });
-
-      if (res.success) {
-        setIsPaymentModalOpen(false);
-        setPaymentAmount('');
-        setPaymentNotes('');
-        loadCustomers();
-      } else {
-        alert('Payment Error: ' + res.error);
-      }
-    }
-  };
-
-  // CREDIT LIMIT GUARDRAIL CHECK DURING DEBT ADDITION
-  const handleAddDebt = async (e) => {
-    e.preventDefault();
-    const ipc = getIpc();
-    const amt = parseFloat(debtAmount);
-    if (!amt || amt <= 0) return alert('Enter a valid debt amount.');
-
-    const currentBalance = selectedCustomer.balance || 0;
-    const creditLimit = selectedCustomer.credit_limit || 0;
-
-    if (creditLimit > 0 && currentBalance + amt > creditLimit) {
-      const override = window.confirm(
-        `⚠️ CREDIT LIMIT BREACH WARNING:\n\nThis debit of Rs. ${amt.toLocaleString()} will push the total balance (Rs. ${(currentBalance + amt).toLocaleString()}) past the credit limit of Rs. ${creditLimit.toLocaleString()}.\n\nDo you want to proceed anyway?`,
-      );
-      if (!override) return;
-    }
-
-    if (ipc) {
-      const res = await ipc.invoke('record-customer-debt', {
-        customer_id: selectedCustomer.id,
-        amount: amt,
-        notes: debtNotes,
-        currentUser,
-      });
-
-      if (res.success) {
-        setIsDebtModalOpen(false);
-        setDebtAmount('');
-        setDebtNotes('');
-        loadCustomers();
-      } else {
-        alert('Debt Adjustment Error: ' + res.error);
-      }
-    }
-  };
-
-  const handleAddCreditAdjustment = async (e) => {
-    e.preventDefault();
-    const ipc = getIpc();
-    const amt = parseFloat(creditAmount);
-    if (!amt || amt <= 0) return alert('Enter a valid credit amount.');
-
-    if (ipc) {
-      const res = await ipc.invoke('record-customer-payment', {
-        customer_id: selectedCustomer.id,
-        amount: amt,
-        payment_method: 'DISCOUNT/RETURN',
-        notes: creditNotes || 'Manual Credit / Discount Adjustment',
-        currentUser,
-      });
-
-      if (res.success) {
-        setIsCreditModalOpen(false);
-        setCreditAmount('');
-        setCreditNotes('');
-        loadCustomers();
-      } else {
-        alert('Credit Adjustment Error: ' + res.error);
-      }
-    }
-  };
-
-  // 📄 PROFESSIONAL CORPORATE A4 PDF STATEMENT EXPORT
+  // 📄 EXPORT LEDGER TO PROFESSIONAL A4 PDF
   const handleExportA4PDF = async () => {
     const ipc = getIpc();
-    if (ipc && selectedCustomer) {
-      const rowsHtml = filteredLedger
-        .map(
-          (e) => `
+    if (!ipc || !selectedCustomer) return;
+
+    // Build the table rows
+    const rowsHtml = filteredLedger
+      .map((e) => {
+        const dateStr = e.created_at ? e.created_at.substring(0, 10) : '';
+        const debitStr = e.debit > 0 ? `Rs. ${e.debit.toLocaleString()}` : '-';
+        const creditStr =
+          e.credit > 0 ? `Rs. ${e.credit.toLocaleString()}` : '-';
+        const balStr = `Rs. ${e.balance_after?.toLocaleString()}`;
+
+        return `
         <tr>
-          <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #334155;">${e.date}</td>
-          <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #334155;">${e.description}</td>
-          <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: #dc2626; text-align: right;">${e.debit > 0 ? `Rs. ${e.debit.toLocaleString()}` : '-'}</td>
-          <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: #059669; text-align: right;">${e.credit > 0 ? `Rs. ${e.credit.toLocaleString()}` : '-'}</td>
-          <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: #0f172a; text-align: right;">Rs. ${e.balance_after?.toLocaleString()}</td>
+          <td>${dateStr}</td>
+          <td>${e.description || ''}</td>
+          <td class="right color-red">${debitStr}</td>
+          <td class="right color-green">${creditStr}</td>
+          <td class="right bold color-navy">${balStr}</td>
         </tr>
-      `,
-        )
-        .join('');
+      `;
+      })
+      .join('');
 
-      const html = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="utf-8" />
-            <title>Customer Statement - ${selectedCustomer.name}</title>
-            <style>
-              @page { size: A4 portrait; margin: 15mm; }
-              body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 20px; color: #0f172a; background: #fff; margin: 0; }
-              .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #0d5c75; padding-bottom: 16px; margin-bottom: 24px; }
-              .title-area h1 { margin: 0; color: #0d5c75; font-size: 22px; text-transform: uppercase; letter-spacing: 0.5px; }
-              .title-area p { margin: 4px 0 0 0; font-size: 12px; color: #64748b; }
-              .meta-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px 18px; margin-bottom: 24px; font-size: 13px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-              table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-              th { background: #f1f5f9; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #475569; padding: 10px; text-align: left; border-bottom: 2px solid #cbd5e1; }
-              .right { text-align: right; }
-              .total-card { margin-top: 24px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 16px; text-align: right; float: right; width: 280px; }
-              .total-card .label { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; }
-              .total-card .amount { font-size: 20px; font-weight: 900; color: #dc2626; margin-top: 4px; }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <div class="title-area">
-                <h1>Customer Khata Statement</h1>
-                <p>ShopMate Enterprise Business Intelligence & Accounting</p>
-              </div>
-              <div style="text-align: right;">
-                <p style="margin: 0; font-weight: bold; font-size: 13px;">Issued Date: ${new Date().toLocaleDateString()}</p>
-                <p style="margin: 2px 0 0 0; font-size: 11px; color: #64748b;">Status: ${selectedCustomer.is_active === 0 ? 'Archived Party' : 'Active Account'}</p>
-              </div>
+    // Build the HTML document
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Khata Statement - ${selectedCustomer.name}</title>
+          <style>
+            @page { size: A4 portrait; margin: 15mm; }
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 20px; color: #0f172a; background: #fff; margin: 0; }
+            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--brand-primary); padding-bottom: 16px; margin-bottom: 24px; }
+            .title-area h1 { margin: 0; color: var(--brand-primary); font-size: 22px; text-transform: uppercase; letter-spacing: 0.5px; }
+            .title-area p { margin: 4px 0 0 0; font-size: 12px; color: #64748b; }
+            .meta-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px 18px; margin-bottom: 24px; font-size: 13px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+            th { background: var(--brand-primary); color: white; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 10px; text-align: left; }
+            td { padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px; }
+            .right { text-align: right; }
+            .bold { font-weight: bold; }
+            .color-red { color: var(--danger); }
+            .color-green { color: var(--success); }
+            .color-navy { color: #1e293b; }
+            .total-card { margin-top: 24px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 16px; text-align: right; float: right; width: 280px; }
+            .total-card .label { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; }
+            .total-card .amount { font-size: 20px; font-weight: 900; color: ${selectedCustomer.balance > 0 ? 'var(--danger)' : 'var(--success)'}; margin-top: 4px; }
+            .clearfix::after { content: ""; clear: both; display: table; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="title-area">
+              <h1>Khata Statement</h1>
+              <p>ShopMate Enterprise Business Intelligence</p>
             </div>
-
-            <div class="meta-box">
-              <div>
-                <strong>Party Name:</strong> ${selectedCustomer.name}<br/>
-                <strong>Phone Number:</strong> ${selectedCustomer.phone || 'N/A'}<br/>
-                <strong>Credit Limit:</strong> Rs. ${selectedCustomer.credit_limit?.toLocaleString()}
-              </div>
-              <div>
-                <strong>Account ID:</strong> #${selectedCustomer.id}<br/>
-                <strong>Operator:</strong> ${currentUser?.username || 'Manager'}
-              </div>
+            <div style="text-align: right;">
+              <p style="margin: 0; font-weight: bold; font-size: 13px;">Issued Date: ${new Date().toLocaleDateString()}</p>
+              <p style="margin: 2px 0 0 0; font-size: 11px; color: #64748b;">Operator: ${currentUser?.username || 'Manager'}</p>
             </div>
+          </div>
 
-            <table>
-              <thead>
-                <tr>
-                  <th>Timestamp</th>
-                  <th>Description / Reference</th>
-                  <th class="right">Debit (+)</th>
-                  <th class="right">Credit (-)</th>
-                  <th class="right">Balance Due</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rowsHtml}
-              </tbody>
-            </table>
+          <div class="meta-box">
+            <div>
+              <strong>Party Name:</strong> ${selectedCustomer.name}<br/>
+              <strong>Phone Number:</strong> ${selectedCustomer.phone || 'N/A'}<br/>
+              <strong>Credit Limit:</strong> Rs. ${selectedCustomer.credit_limit?.toLocaleString() || 0}
+            </div>
+            <div>
+              <strong>Account ID:</strong> #${selectedCustomer.id}<br/>
+              <strong>Report Range:</strong> ${filterStartDate || 'Start'} to ${filterEndDate || 'Present'}
+            </div>
+          </div>
 
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Particulars / Notes</th>
+                <th class="right">Udhaar (Debit +)</th>
+                <th class="right">Jama (Credit -)</th>
+                <th class="right">Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+
+          <div class="clearfix">
             <div class="total-card">
-              <div class="label">Net Outstanding Balance Due</div>
+              <div class="label">Net Outstanding Balance</div>
               <div class="amount">Rs. ${selectedCustomer.balance?.toLocaleString()}</div>
             </div>
-          </body>
-        </html>
-      `;
+          </div>
+        </body>
+      </html>
+    `;
 
-      const res = await ipc.invoke('export-ledger-pdf', html);
-      if (res.success && !res.canceled) {
-        alert(
-          `✅ Corporate A4 Customer statement exported successfully:\n${res.filePath}`,
-        );
-      } else if (!res.canceled) {
-        alert(`PDF Export failed: ${res.error}`);
-      }
+    // Send to Electron to save as PDF
+    const res = await ipc.invoke('export-ledger-pdf', html);
+    if (res.success && !res.canceled) {
+      addToast('Khata statement exported to PDF successfully', 'success');
+    } else if (!res.canceled) {
+      addToast('PDF Export failed: ' + res.error, 'error');
     }
   };
 
-  // Directory filter logic
-  const filteredCustomers = customers.filter((c) => {
-    const matchesSearch =
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (c.phone && c.phone.includes(searchQuery));
-
-    if (!matchesSearch) return false;
-
-    if (customerFilter === 'active')
-      return c.is_active === 1 || c.is_active === undefined;
-    if (customerFilter === 'archived') return c.is_active === 0;
-    return true; // 'all'
-  });
-
+  // Filtering Ledger
   const filteredLedger = ledgerEntries.filter((entry) => {
     const matchesSearch = (entry.description || '')
       .toLowerCase()
       .includes(ledgerSearch.toLowerCase());
-
     let matchesDate = true;
-    const entryDate = entry.date ? entry.date.substring(0, 10) : '';
-
+    const entryDate = entry.created_at ? entry.created_at.substring(0, 10) : '';
     if (filterStartDate && entryDate < filterStartDate) matchesDate = false;
     if (filterEndDate && entryDate > filterEndDate) matchesDate = false;
-
     return matchesSearch && matchesDate;
   });
+
+  // KPI Calculations
+  const totalSales = ledgerEntries.reduce((sum, e) => sum + (e.debit || 0), 0);
+  const totalReceived = ledgerEntries.reduce(
+    (sum, e) => sum + (e.credit || 0),
+    0,
+  );
+  const currentBalance = selectedCustomer?.balance || 0;
 
   return (
     <div
       style={{
         display: 'flex',
+        flexDirection: 'column',
         gap: '16px',
-        height: 'calc(100vh - 90px)',
+        flex: 1, // 👈 ADD THIS
+        height: '100%',
         overflow: 'hidden',
+        position: 'relative',
       }}
     >
-      {/* 👥 LEFT COLUMN: PARTY DIRECTORY */}
+      {/* TOASTS */}
       <div
-        className="card"
         style={{
-          flex: '1.1',
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          zIndex: 9999,
           display: 'flex',
           flexDirection: 'column',
-          gap: '10px',
-          padding: '14px',
-          background: '#fff',
-          borderRadius: '8px',
-          border: '1px solid #e2e8f0',
-          overflow: 'hidden',
+          gap: '8px',
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <div>
-            <h4
-              style={{
-                margin: 0,
-                color: '#0f172a',
-                fontSize: '0.95rem',
-                fontWeight: 'bold',
-              }}
-            >
-              Whole Sale Buyers
-            </h4>
-            <span style={{ fontSize: '0.68rem', color: '#64748b' }}>
-              Showing {filteredCustomers.length} records
-            </span>
-          </div>
-          <button
-            className="btn btn-primary"
-            style={{
-              fontSize: '0.72rem',
-              padding: '6px 12px',
-              background: '#0d5c75',
-              color: '#fff',
-              fontWeight: 'bold',
-            }}
-            onClick={() => {
-              setEditingCustomer(null);
-              setCustomerForm({
-                name: '',
-                phone: '',
-                credit_limit: 0,
-                avatar: '',
-              });
-              setIsCustomerModalOpen(true);
-            }}
-          >
-            + Add Party
-          </button>
-        </div>
-
-        {/* ACTIVE / ARCHIVED FILTER PILLS */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '4px',
-            background: '#f1f5f9',
-            padding: '4px',
-            borderRadius: '6px',
-          }}
-        >
-          {[
-            { id: 'active', label: 'Active' },
-            { id: 'archived', label: 'Archived' },
-            { id: 'all', label: 'All Parties' },
-          ].map((pill) => (
-            <button
-              key={pill.id}
-              className="btn"
-              style={{
-                flex: 1,
-                fontSize: '0.68rem',
-                padding: '4px',
-                border: 'none',
-                borderRadius: '4px',
-                fontWeight: customerFilter === pill.id ? 'bold' : 'normal',
-                background: customerFilter === pill.id ? '#fff' : 'transparent',
-                color: customerFilter === pill.id ? '#0d5c75' : '#64748b',
-                boxShadow:
-                  customerFilter === pill.id
-                    ? '0 1px 2px rgba(0,0,0,0.05)'
-                    : 'none',
-              }}
-              onClick={() => setCustomerFilter(pill.id)}
-            >
-              {pill.label}
-            </button>
-          ))}
-        </div>
-
-        <input
-          type="text"
-          className="input-field"
-          placeholder="🔍 Search party name or phone..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ margin: 0, padding: '7px 10px', fontSize: '0.75rem' }}
-        />
-
-        <div
-          style={{
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '6px',
-            flex: 1,
-          }}
-        >
-          {filteredCustomers.length === 0 ? (
-            <div
-              style={{
-                textAlign: 'center',
-                color: '#94a3b8',
-                padding: '30px 0',
-                fontSize: '0.75rem',
-              }}
-            >
-              No party records found.
-            </div>
-          ) : (
-            filteredCustomers.map((cust) => {
-              const isSelected = selectedCustomer?.id === cust.id;
-              const hasDebt = cust.balance > 0;
-              const isArchived = cust.is_active === 0;
-
-              return (
-                <div
-                  key={cust.id}
-                  onClick={() => selectCustomer(cust)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '10px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    background: isSelected
-                      ? '#e0f2fe'
-                      : isArchived
-                        ? '#f8fafc'
-                        : '#fff',
-                    border: isSelected
-                      ? '1px solid #0284c7'
-                      : '1px solid #f1f5f9',
-                    opacity: isArchived ? 0.7 : 1,
-                  }}
-                >
-                  {cust.avatar ? (
-                    <img
-                      src={cust.avatar}
-                      alt={cust.name}
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '50%',
-                        background: isArchived ? '#94a3b8' : '#0d5c75',
-                        color: '#fff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 'bold',
-                        fontSize: '0.8rem',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {cust.name.substring(0, 2).toUpperCase()}
-                    </div>
-                  )}
-
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontWeight: 'bold',
-                        fontSize: '0.8rem',
-                        color: '#1e293b',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {cust.name}{' '}
-                      {isArchived && (
-                        <span style={{ fontSize: '0.65rem', color: '#d97706' }}>
-                          (Archived)
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ fontSize: '0.68rem', color: '#64748b' }}>
-                      {cust.phone || 'No phone'}
-                    </div>
-                  </div>
-
-                  <div style={{ textAlign: 'right' }}>
-                    <div
-                      className="monospace"
-                      style={{
-                        fontSize: '0.82rem',
-                        fontWeight: 'bold',
-                        color: hasDebt ? '#dc2626' : '#059669',
-                      }}
-                    >
-                      Rs. {cust.balance?.toLocaleString()}
-                    </div>
-                    <div style={{ fontSize: '0.6rem', color: '#64748b' }}>
-                      {hasDebt ? 'Debt Due' : 'Clear'}
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
+        {toasts.map((t) => (
+          <Toast
+            key={t.id}
+            message={t.message}
+            type={t.type}
+            onClose={() => removeToast(t.id)}
+          />
+        ))}
       </div>
 
-      {/* 📊 RIGHT COLUMN: PARTY LEDGER STATEMENT & ADVANCED FILTERS */}
+      {/* TOP BAR */}
       <div
-        className="card"
         style={{
-          flex: '2.3',
           display: 'flex',
-          flexDirection: 'column',
           justifyContent: 'space-between',
-          padding: '16px',
-          background: '#fff',
-          borderRadius: '8px',
-          border: '1px solid #e2e8f0',
-          overflow: 'hidden',
+          alignItems: 'center',
         }}
       >
-        {selectedCustomer ? (
-          <>
-            {/* PARTY HEADER & ACTION TOOLBAR */}
+        <h3
+          style={{
+            margin: 0,
+            color: 'var(--text-primary)',
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontWeight: '800',
+            textTransform: 'uppercase',
+          }}
+        >
+          Wholesale Buyers Khata
+        </h3>
+        <button
+          className="btn btn-primary"
+          style={{
+            padding: '8px 16px',
+            background: 'var(--brand-primary)',
+            color: '#fff',
+            fontWeight: 'bold',
+            borderRadius: '6px',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+          onClick={() => {
+            setEditingCustomer(null);
+            setCustomerForm({
+              name: '',
+              phone: '',
+              credit_limit: 0,
+              avatar: '',
+            });
+            setIsCustomerModalOpen(true);
+          }}
+        >
+          + Add New Party
+        </button>
+      </div>
+
+      {/* PROFILE CARDS GRID */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+          gap: '12px',
+          maxHeight: '200px',
+          overflowY: 'auto',
+          paddingBottom: '4px',
+        }}
+      >
+        {customers.map((cust) => {
+          const isSelected = selectedCustomer?.id === cust.id;
+          const hasDebt = cust.balance > 0;
+          return (
             <div
+              key={cust.id}
+              onClick={() => setSelectedCustomer(cust)}
               style={{
+                background: isSelected ? '#f0f9ff' : '#ffffff',
+                border: isSelected
+                  ? '2px solid var(--brand-primary)'
+                  : '1px solid #e2e8f0',
+                borderRadius: '8px',
+                padding: '12px',
+                cursor: 'pointer',
                 display: 'flex',
-                justifyContent: 'space-between',
                 alignItems: 'center',
-                borderBottom: '1px solid #e2e8f0',
-                paddingBottom: '10px',
-                marginBottom: '10px',
+                gap: '12px',
+                boxShadow: isSelected
+                  ? '0 4px 6px -1px rgba(13, 92, 117, 0.1)'
+                  : '0 1px 2px rgba(0,0,0,0.05)',
               }}
             >
-              <div
-                style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
-              >
-                {selectedCustomer.avatar ? (
-                  <img
-                    src={selectedCustomer.avatar}
-                    alt={selectedCustomer.name}
-                    style={{
-                      width: '44px',
-                      height: '44px',
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                      border: '2px solid #0d5c75',
-                    }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: '44px',
-                      height: '44px',
-                      borderRadius: '50%',
-                      background:
-                        selectedCustomer.is_active === 0
-                          ? '#94a3b8'
-                          : '#0d5c75',
-                      color: '#fff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 'bold',
-                      fontSize: '1rem',
-                    }}
-                  >
-                    {selectedCustomer.name.substring(0, 2).toUpperCase()}
-                  </div>
-                )}
-                <div>
-                  <h3
-                    style={{ margin: 0, color: '#1e293b', fontSize: '1.05rem' }}
-                  >
-                    {selectedCustomer.name}
-                  </h3>
-                  <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                    Phone: <strong>{selectedCustomer.phone || 'N/A'}</strong> |
-                    Credit Limit:{' '}
-                    <span className="monospace">
-                      Rs. {selectedCustomer.credit_limit?.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: 'flex',
-                  gap: '6px',
-                  flexWrap: 'wrap',
-                  justifyContent: 'flex-end',
-                }}
-              >
-                <button
-                  className="btn btn-success"
+              {cust.avatar ? (
+                <img
+                  src={cust.avatar}
+                  alt={cust.name}
                   style={{
-                    fontSize: '0.72rem',
-                    padding: '6px 10px',
-                    background: '#10b981',
-                    color: '#fff',
-                    fontWeight: 'bold',
-                  }}
-                  onClick={() => setIsPaymentModalOpen(true)}
-                >
-                  💵 Receive Cash
-                </button>
-                <button
-                  className="btn"
-                  style={{
-                    background: '#fee2e2',
-                    color: '#dc2626',
-                    fontSize: '0.72rem',
-                    padding: '6px 10px',
-                    fontWeight: 'bold',
-                  }}
-                  onClick={() => setIsDebtModalOpen(true)}
-                >
-                  + Debt
-                </button>
-                <button
-                  className="btn"
-                  style={{
-                    background: '#e0f2fe',
-                    color: '#0369a1',
-                    fontSize: '0.72rem',
-                    padding: '6px 10px',
-                    fontWeight: 'bold',
-                  }}
-                  onClick={() => setIsCreditModalOpen(true)}
-                >
-                  + Credit
-                </button>
-                <button
-                  className="btn"
-                  style={{
-                    fontSize: '0.72rem',
-                    padding: '6px 10px',
-                    background: '#f1f5f9',
-                    color: '#334155',
-                    fontWeight: 'bold',
-                  }}
-                  onClick={() => {
-                    setEditingCustomer(selectedCustomer);
-                    setCustomerForm({
-                      name: selectedCustomer.name || '',
-                      phone: selectedCustomer.phone || '',
-                      credit_limit: selectedCustomer.credit_limit || 0,
-                      avatar: selectedCustomer.avatar || '',
-                    });
-                    setIsCustomerModalOpen(true);
-                  }}
-                >
-                  ✏️ Edit
-                </button>
-                <button
-                  className="btn btn-primary"
-                  style={{
-                    fontSize: '0.72rem',
-                    padding: '6px 12px',
-                    background: '#0d5c75',
-                    color: '#fff',
-                    fontWeight: 'bold',
-                  }}
-                  onClick={handleExportA4PDF}
-                >
-                  📥 Export A4 PDF
-                </button>
-
-                {/* ARCHIVE / REACTIVATE TOGGLE WITH BALANCE GUARD */}
-                {currentUser?.role === 'ADMIN' && (
-                  <button
-                    className="btn"
-                    disabled={
-                      selectedCustomer.balance > 0 &&
-                      selectedCustomer.is_active === 1
-                    }
-                    title={
-                      selectedCustomer.balance > 0 &&
-                      selectedCustomer.is_active === 1
-                        ? 'Cannot archive party while debt balance is due.'
-                        : 'Archive / Reactivate Party'
-                    }
-                    style={{
-                      fontSize: '0.72rem',
-                      padding: '6px 10px',
-                      background:
-                        selectedCustomer.balance > 0 &&
-                        selectedCustomer.is_active === 1
-                          ? '#f1f5f9'
-                          : selectedCustomer.is_active === 1
-                            ? '#fef3c7'
-                            : '#dcfce7',
-                      color:
-                        selectedCustomer.balance > 0 &&
-                        selectedCustomer.is_active === 1
-                          ? '#94a3b8'
-                          : selectedCustomer.is_active === 1
-                            ? '#d97706'
-                            : '#15803d',
-                      fontWeight: 'bold',
-                      border: 'none',
-                      cursor:
-                        selectedCustomer.balance > 0 &&
-                        selectedCustomer.is_active === 1
-                          ? 'not-allowed'
-                          : 'pointer',
-                    }}
-                    onClick={() =>
-                      handleToggleArchiveCustomer(selectedCustomer)
-                    }
-                  >
-                    {selectedCustomer.is_active === 1
-                      ? '📦 Archive'
-                      : '🔄 Reactivate'}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* ADVANCED FILTER TOOLBAR (Date range + description search) */}
-            <div
-              style={{
-                display: 'flex',
-                gap: '8px',
-                background: '#f8fafc',
-                padding: '8px 10px',
-                borderRadius: '6px',
-                border: '1px solid #e2e8f0',
-                marginBottom: '8px',
-                alignItems: 'center',
-              }}
-            >
-              <input
-                type="text"
-                placeholder="🔍 Filter notes / description..."
-                value={ledgerSearch}
-                onChange={(e) => setLedgerSearch(e.target.value)}
-                className="input-field"
-                style={{
-                  flex: 1,
-                  margin: 0,
-                  padding: '4px 8px',
-                  fontSize: '0.72rem',
-                }}
-              />
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  fontSize: '0.7rem',
-                  color: '#64748b',
-                }}
-              >
-                <span>From:</span>
-                <input
-                  type="date"
-                  value={filterStartDate}
-                  onChange={(e) => setFilterStartDate(e.target.value)}
-                  style={{
-                    fontSize: '0.7rem',
-                    padding: '3px',
-                    borderRadius: '4px',
-                    border: '1px solid #cbd5e1',
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
                   }}
                 />
-                <span>To:</span>
-                <input
-                  type="date"
-                  value={filterEndDate}
-                  onChange={(e) => setFilterEndDate(e.target.value)}
-                  style={{
-                    fontSize: '0.7rem',
-                    padding: '3px',
-                    borderRadius: '4px',
-                    border: '1px solid #cbd5e1',
-                  }}
-                />
-              </div>
-              {(filterStartDate || filterEndDate || ledgerSearch) && (
-                <button
-                  className="btn"
-                  style={{
-                    fontSize: '0.68rem',
-                    padding: '4px 6px',
-                    background: '#fee2e2',
-                    color: '#dc2626',
-                    border: 'none',
-                    fontWeight: 'bold',
-                  }}
-                  onClick={() => {
-                    setFilterStartDate('');
-                    setFilterEndDate('');
-                    setLedgerSearch('');
-                  }}
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-
-            {/* TRANSACTIONS TABLE */}
-            <div
-              style={{
-                flex: 1,
-                overflowY: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '4px',
-              }}
-            >
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1.3fr 2fr 1fr 1fr 1fr',
-                  fontSize: '0.7rem',
-                  fontWeight: 'bold',
-                  background: '#f3efef',
-                  padding: '8px',
-                  borderRadius: '4px',
-                  borderBottom: '1px solid #cbd5e0',
-                  background: 'navy',
-                }}
-              >
-                <span>TIMESTAMP</span>
-                <span>DESCRIPTION / NOTES</span>
-                <span style={{ textAlign: 'right' }}>DEBIT (+)</span>
-                <span style={{ textAlign: 'right' }}>CREDIT (-)</span>
-                <span style={{ textAlign: 'right' }}>BALANCE</span>
-              </div>
-
-              {filteredLedger.length === 0 ? (
+              ) : (
                 <div
                   style={{
-                    textAlign: 'center',
-                    color: '#94a3b8',
-                    padding: '40px 0',
-                    fontSize: '0.75rem',
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    background: 'var(--brand-primary)',
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    fontSize: '0.9rem',
                   }}
                 >
-                  No ledger entries matching your filters.
+                  {cust.name.substring(0, 2).toUpperCase()}
                 </div>
-              ) : (
-                filteredLedger.map((entry) => (
-                  <div
-                    key={entry.id}
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontWeight: 'bold',
+                    fontSize: '0.85rem',
+                    color: 'var(--text-primary)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {cust.name}
+                </div>
+                <div
+                  style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}
+                >
+                  {cust.phone || 'No phone'}
+                </div>
+                <div style={{ marginTop: '4px' }}>
+                  <span
                     style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1.3fr 2fr 1fr 1fr 1fr',
-                      fontSize: '0.74rem',
-                      alignItems: 'center',
-                      background: '#fff',
-                      padding: '7px 8px',
-                      borderBottom: '1px solid #f1f5f9',
+                      fontSize: '0.65rem',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontWeight: 'bold',
+                      background: hasDebt ? '#fee2e2' : '#d1fae5',
+                      color: hasDebt ? 'var(--danger)' : 'var(--success)',
                     }}
                   >
-                    <span style={{ fontSize: '0.68rem', color: '#64748b' }}>
-                      {entry.date}
-                    </span>
-                    <span style={{ color: '#334155' }}>
-                      {entry.description}
-                    </span>
-                    <span
-                      className="monospace"
-                      style={{
-                        textAlign: 'right',
-                        color: entry.debit > 0 ? '#dc2626' : '#94a3b8',
-                        fontWeight: entry.debit > 0 ? 'bold' : 'normal',
-                      }}
-                    >
-                      {entry.debit > 0
-                        ? `Rs. ${entry.debit.toLocaleString()}`
-                        : '—'}
-                    </span>
-                    <span
-                      className="monospace"
-                      style={{
-                        textAlign: 'right',
-                        color: entry.credit > 0 ? '#059669' : '#94a3b8',
-                        fontWeight: entry.credit > 0 ? 'bold' : 'normal',
-                      }}
-                    >
-                      {entry.credit > 0
-                        ? `Rs. ${entry.credit.toLocaleString()}`
-                        : '—'}
-                    </span>
-                    <span
-                      className="monospace"
-                      style={{
-                        textAlign: 'right',
-                        fontWeight: 'bold',
-                        color: '#0d5c75',
-                      }}
-                    >
-                      Rs. {entry.balance_after?.toLocaleString()}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderTop: '2px solid #e2e8f0',
-                paddingTop: '10px',
-                marginTop: '8px',
-              }}
-            >
-              <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                Account ID: #{selectedCustomer.id}
-              </span>
-              <div
-                style={{
-                  fontSize: '0.95rem',
-                  fontWeight: 'bold',
-                  color: '#1e293b',
-                }}
-              >
-                Net Balance Due:{' '}
-                <span
-                  className="monospace"
-                  style={{
-                    color: selectedCustomer.balance > 0 ? '#dc2626' : '#059669',
-                  }}
-                >
-                  Rs. {selectedCustomer.balance?.toLocaleString()}
-                </span>
+                    {hasDebt
+                      ? `Owes Rs. ${cust.balance.toLocaleString()}`
+                      : 'Clear'}
+                  </span>
+                </div>
               </div>
             </div>
-          </>
-        ) : (
-          <div
-            style={{ textAlign: 'center', color: '#a0aec0', margin: 'auto' }}
-          >
-            <h4>
-              👈 Select a party profile from the directory to view statement.
-            </h4>
+          );
+        })}
+        {customers.length === 0 && (
+          <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
+            No active parties found. Add one to get started.
           </div>
         )}
       </div>
 
-      {/* ========================================== */}
-      {/* 🛠️ MODALS                                   */}
-      {/* ========================================== */}
+      {/* MAIN LEDGER AREA */}
+      {selectedCustomer ? (
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            background: 'var(--bg-card)',
+            borderRadius: '10px',
+            border: '1.5px solid var(--border-color)',
+            overflow: 'hidden',
+          }}
+        >
+          {/* KPI ROW & ACTIONS */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '16px',
+              borderBottom: '1px solid #e2e8f0',
+            }}
+          >
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <div
+                style={{
+                  background: 'var(--bg-hover)',
+                  padding: '10px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
+                  minWidth: '150px',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '0.65rem',
+                    color: 'var(--text-secondary)',
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Total Udhaar (Debit)
+                </div>
+                <div
+                  className="monospace"
+                  style={{
+                    fontSize: '1.1rem',
+                    fontWeight: '900',
+                    color: 'var(--danger)',
+                    marginTop: '2px',
+                  }}
+                >
+                  Rs. {totalSales.toLocaleString()}
+                </div>
+              </div>
+              <div
+                style={{
+                  background: 'var(--bg-hover)',
+                  padding: '10px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
+                  minWidth: '150px',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '0.65rem',
+                    color: 'var(--text-secondary)',
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Cash Received (Credit)
+                </div>
+                <div
+                  className="monospace"
+                  style={{
+                    fontSize: '1.1rem',
+                    fontWeight: '900',
+                    color: 'var(--success)',
+                    marginTop: '2px',
+                  }}
+                >
+                  Rs. {totalReceived.toLocaleString()}
+                </div>
+              </div>
+              <div
+                style={{
+                  background: 'var(--bg-hover)',
+                  padding: '10px 16px',
+                  borderRadius: '8px',
+                  border: `1px solid ${currentBalance > 0 ? 'var(--danger)' : 'var(--success)'}`,
+                  minWidth: '150px',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '0.65rem',
+                    color: 'var(--text-secondary)',
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  A/C Receivable (Balance)
+                </div>
+                <div
+                  className="monospace"
+                  style={{
+                    fontSize: '1.1rem',
+                    fontWeight: '900',
+                    color:
+                      currentBalance > 0 ? 'var(--danger)' : 'var(--success)',
+                    marginTop: '2px',
+                  }}
+                >
+                  Rs. {currentBalance.toLocaleString()}
+                </div>
+              </div>
+            </div>
 
-      {/* REGISTER / EDIT PARTY MODAL WITH AVATAR */}
-      {isCustomerModalOpen && (
-        <div className="receipt-modal-backdrop">
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                className="btn"
+                style={{
+                  padding: '8px 12px',
+                  background: '#e0f2fe',
+                  color: 'var(--info)',
+                  fontWeight: 'bold',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                }}
+                onClick={() => {
+                  setEntryType('CREDIT');
+                  setEntryData({
+                    ...entryData,
+                    amount: '',
+                    notes: '',
+                    ref: '',
+                  });
+                  setIsAddEntryModalOpen(true);
+                }}
+              >
+                Receive Payment
+              </button>
+              <button
+                className="btn"
+                style={{
+                  padding: '8px 12px',
+                  background: 'var(--bg-hover)',
+                  color: 'var(--text-primary)',
+                  fontWeight: 'bold',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                }}
+                onClick={handleExportA4PDF}
+              >
+                PDF
+              </button>
+              <button
+                className="btn"
+                style={{
+                  padding: '8px 12px',
+                  background: '#fee2e2',
+                  color: 'var(--danger)',
+                  fontWeight: 'bold',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                }}
+                onClick={() => {
+                  setEntryType('DEBIT');
+                  setEntryData({
+                    ...entryData,
+                    amount: '',
+                    notes: '',
+                    ref: '',
+                  });
+                  setIsAddEntryModalOpen(true);
+                }}
+              >
+                + Add Udhaar
+              </button>
+              <button
+                className="btn"
+                style={{
+                  padding: '8px 12px',
+                  background: 'var(--bg-hover)',
+                  color: 'var(--text-primary)',
+                  fontWeight: 'bold',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                }}
+                onClick={() => {
+                  setEditingCustomer(selectedCustomer);
+                  setCustomerForm({ ...selectedCustomer });
+                  setIsCustomerModalOpen(true);
+                }}
+              >
+                ✏️ Edit
+              </button>
+
+              {currentUser?.role === 'ADMIN' && (
+                <>
+                  {ledgerEntries.length === 0 ? (
+                    <button
+                      className="btn"
+                      style={{
+                        padding: '8px 12px',
+                        background: '#fef2f2',
+                        color: 'var(--danger)',
+                        fontWeight: 'bold',
+                        border: '1px solid #fca5a5',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                      }}
+                      onClick={handleDeleteCustomer}
+                    >
+                      🗑️ Delete
+                    </button>
+                  ) : (
+                    <button
+                      className="btn"
+                      style={{
+                        padding: '8px 12px',
+                        background: '#fef3c7',
+                        color: '#d97706',
+                        fontWeight: 'bold',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                      }}
+                      onClick={handleToggleArchive}
+                    >
+                      📦 Archive
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* FILTERS */}
+          <div
+            style={{
+              display: 'flex',
+              gap: '12px',
+              padding: '12px 16px',
+              background: 'var(--bg-hover)',
+              borderBottom: '1px solid #e2e8f0',
+              alignItems: 'center',
+            }}
+          >
+            <input
+              type="text"
+              placeholder="🔍 Search transaction details..."
+              value={ledgerSearch}
+              onChange={(e) => setLedgerSearch(e.target.value)}
+              className="input-field"
+              style={{
+                flex: 1,
+                padding: '6px 12px',
+                fontSize: '0.75rem',
+                borderRadius: '6px',
+                border: '1px solid var(--border-strong)',
+              }}
+            />
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.72rem',
+                color: 'var(--text-secondary)',
+                background: 'var(--bg-card)',
+                padding: '4px 8px',
+                borderRadius: '6px',
+                border: '1px solid var(--border-strong)',
+              }}
+            >
+              <span>From:</span>
+              <input
+                type="date"
+                value={filterStartDate}
+                onChange={(e) => setFilterStartDate(e.target.value)}
+                style={{ border: 'none', outline: 'none', fontSize: '0.72rem' }}
+              />
+              <span>To:</span>
+              <input
+                type="date"
+                value={filterEndDate}
+                onChange={(e) => setFilterEndDate(e.target.value)}
+                style={{ border: 'none', outline: 'none', fontSize: '0.72rem' }}
+              />
+            </div>
+          </div>
+
+          {/* TABLE */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 2.5fr 1fr 1fr 1fr',
+                background: 'var(--brand-primary)',
+                color: '#fff',
+                padding: '12px 16px',
+                fontSize: '0.75rem',
+                fontWeight: 'bold',
+                textTransform: 'uppercase',
+                position: 'sticky',
+                top: 0,
+                zIndex: 10,
+              }}
+            >
+              <span>Date</span>
+              <span>Particulars / Notes</span>
+              <span style={{ textAlign: 'right' }}>Udhaar (Debit +)</span>
+              <span style={{ textAlign: 'right' }}>Jama (Credit -)</span>
+              <span style={{ textAlign: 'right' }}>Balance</span>
+            </div>
+
+            {filteredLedger.length === 0 ? (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '40px',
+                  color: '#94a3b8',
+                  fontSize: '0.85rem',
+                }}
+              >
+                No ledger records found.
+              </div>
+            ) : (
+              filteredLedger.map((entry, idx) => (
+                <div
+                  key={entry.id}
+                  onClick={() => {
+                    setEditingRecord(entry);
+                    setEntryData({
+                      date: entry.created_at
+                        ? entry.created_at.substring(0, 10)
+                        : '',
+                      notes: entry.description,
+                      amount: entry.debit || entry.credit,
+                      ref: '',
+                    });
+                    setIsEditRecordModalOpen(true);
+                  }}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 2.5fr 1fr 1fr 1fr',
+                    padding: '12px 16px',
+                    fontSize: '0.8rem',
+                    borderBottom: '1px solid #f1f5f9',
+                    cursor: 'pointer',
+                    background: idx % 2 === 0 ? '#fff' : '#f8fafc',
+                  }}
+                  className="hover:bg-slate-50 transition-colors"
+                >
+                  <span style={{ color: 'var(--text-secondary)' }}>
+                    {entry.created_at ? entry.created_at.substring(0, 10) : ''}
+                  </span>
+                  <span
+                    style={{ color: 'var(--text-primary)', fontWeight: '500' }}
+                  >
+                    {entry.description}
+                  </span>
+                  <span
+                    className="monospace"
+                    style={{
+                      textAlign: 'right',
+                      color: entry.debit > 0 ? 'var(--danger)' : '#cbd5e1',
+                      fontWeight: entry.debit > 0 ? 'bold' : 'normal',
+                    }}
+                  >
+                    {entry.debit > 0
+                      ? `Rs. ${entry.debit.toLocaleString()}`
+                      : '—'}
+                  </span>
+                  <span
+                    className="monospace"
+                    style={{
+                      textAlign: 'right',
+                      color: entry.credit > 0 ? 'var(--success)' : '#cbd5e1',
+                      fontWeight: entry.credit > 0 ? 'bold' : 'normal',
+                    }}
+                  >
+                    {entry.credit > 0
+                      ? `Rs. ${entry.credit.toLocaleString()}`
+                      : '—'}
+                  </span>
+                  <span
+                    className="monospace"
+                    style={{
+                      textAlign: 'right',
+                      fontWeight: 'bold',
+                      color:
+                        entry.balance_after === 0
+                          ? 'var(--success)'
+                          : '#1e293b',
+                    }}
+                  >
+                    Rs. {entry.balance_after?.toLocaleString()}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      ) : (
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--bg-card)',
+            borderRadius: '10px',
+            border: '1.5px solid var(--border-color)',
+            color: '#94a3b8',
+          }}
+        >
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '10px' }}>📒</div>
+            <h3>Select a party from above to view their Khata</h3>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODALS --- */}
+
+      {/* ADD ENTRY MODAL */}
+      {isAddEntryModalOpen && (
+        <div
+          className="receipt-modal-backdrop"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50,
+          }}
+        >
           <div
             className="card"
             style={{
               width: '400px',
-              background: '#fff',
-              padding: '20px',
-              borderRadius: '8px',
+              background: 'var(--bg-card)',
+              padding: '24px',
+              borderRadius: '10px',
             }}
           >
-            <h3 style={{ margin: '0 0 12px 0', color: '#0d5c75' }}>
+            <h3
+              style={{
+                margin: '0 0 16px 0',
+                color: 'var(--text-primary)',
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+              }}
+            >
+              {entryType === 'DEBIT'
+                ? '➕ Add New Udhaar'
+                : '💵 Receive Payment'}
+            </h3>
+
+            <div
+              style={{
+                display: 'flex',
+                gap: '8px',
+                marginBottom: '16px',
+                background: 'var(--bg-hover)',
+                padding: '4px',
+                borderRadius: '6px',
+              }}
+            >
+              <button
+                style={{
+                  flex: 1,
+                  padding: '8px',
+                  background:
+                    entryType === 'DEBIT' ? 'var(--danger)' : 'transparent',
+                  color: entryType === 'DEBIT' ? '#fff' : '#64748b',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                }}
+                onClick={() => setEntryType('DEBIT')}
+              >
+                Debit (Udhaar)
+              </button>
+              <button
+                style={{
+                  flex: 1,
+                  padding: '8px',
+                  background:
+                    entryType === 'CREDIT' ? 'var(--success)' : 'transparent',
+                  color: entryType === 'CREDIT' ? '#fff' : '#64748b',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                }}
+                onClick={() => setEntryType('CREDIT')}
+              >
+                Credit (Jama)
+              </button>
+            </div>
+
+            <form
+              onSubmit={handleAddEntry}
+              style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+            >
+              <div>
+                <label
+                  style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    color: '#475569',
+                  }}
+                >
+                  Amount (Rs.)*
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={entryData.amount}
+                  onChange={(e) =>
+                    setEntryData({ ...entryData, amount: e.target.value })
+                  }
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-strong)',
+                  }}
+                />
+              </div>
+              <div>
+                <label
+                  style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    color: '#475569',
+                  }}
+                >
+                  Date
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={entryData.date}
+                  onChange={(e) =>
+                    setEntryData({ ...entryData, date: e.target.value })
+                  }
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-strong)',
+                  }}
+                />
+              </div>
+
+              {entryType === 'CREDIT' && (
+                <div>
+                  <label
+                    style={{
+                      fontSize: '0.7rem',
+                      fontWeight: 'bold',
+                      color: '#475569',
+                    }}
+                  >
+                    Payment Method
+                  </label>
+                  <select
+                    value={entryData.method}
+                    onChange={(e) =>
+                      setEntryData({ ...entryData, method: e.target.value })
+                    }
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--border-strong)',
+                    }}
+                  >
+                    <option value="CASH">Cash</option>
+                    <option value="BANK">Bank Transfer</option>
+                    <option value="CHEQUE">Cheque</option>
+                    <option value="DISCOUNT">Discount / Return</option>
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label
+                  style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    color: '#475569',
+                  }}
+                >
+                  Invoice # / Reference (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={entryData.ref}
+                  onChange={(e) =>
+                    setEntryData({ ...entryData, ref: e.target.value })
+                  }
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-strong)',
+                  }}
+                />
+              </div>
+              <div>
+                <label
+                  style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    color: '#475569',
+                  }}
+                >
+                  Notes / Particulars*
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={entryData.notes}
+                  onChange={(e) =>
+                    setEntryData({ ...entryData, notes: e.target.value })
+                  }
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-strong)',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    background:
+                      entryType === 'DEBIT'
+                        ? 'var(--danger)'
+                        : 'var(--success)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: 'bold',
+                    cursor: isSaving ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {isSaving ? 'Saving...' : 'Save Entry'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAddEntryModalOpen(false)}
+                  style={{
+                    padding: '10px 16px',
+                    background: '#e2e8f0',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT RECORD MODAL */}
+      {isEditRecordModalOpen && editingRecord && (
+        <div
+          className="receipt-modal-backdrop"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50,
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              width: '400px',
+              background: 'var(--bg-card)',
+              padding: '24px',
+              borderRadius: '10px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '16px',
+              }}
+            >
+              <h3
+                style={{
+                  margin: 0,
+                  color: 'var(--text-primary)',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                }}
+              >
+                ✏️ Edit Record
+              </h3>
+              <button
+                onClick={() => setIsEditRecordModalOpen(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: '1.2rem',
+                  cursor: 'pointer',
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form
+              onSubmit={handleEditRecord}
+              style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+            >
+              <div>
+                <label
+                  style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    color: '#475569',
+                  }}
+                >
+                  Amount (Locked)
+                </label>
+                <input
+                  type="text"
+                  disabled
+                  value={`Rs. ${parseFloat(entryData.amount).toLocaleString()}`}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-strong)',
+                    background: 'var(--bg-hover)',
+                    color: '#94a3b8',
+                    cursor: 'not-allowed',
+                  }}
+                />
+              </div>
+              <div>
+                <label
+                  style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    color: '#475569',
+                  }}
+                >
+                  Date
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={entryData.date}
+                  onChange={(e) =>
+                    setEntryData({ ...entryData, date: e.target.value })
+                  }
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-strong)',
+                  }}
+                />
+              </div>
+              <div>
+                <label
+                  style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    color: '#475569',
+                  }}
+                >
+                  Notes / Particulars
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={entryData.notes}
+                  onChange={(e) =>
+                    setEntryData({ ...entryData, notes: e.target.value })
+                  }
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-strong)',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button
+                  type="submit"
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    background: 'var(--brand-primary)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Update Record
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteRecord(editingRecord.id)}
+                  style={{
+                    padding: '10px 16px',
+                    background: '#fee2e2',
+                    color: 'var(--danger)',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT PROFILE MODAL */}
+      {isCustomerModalOpen && (
+        <div
+          className="receipt-modal-backdrop"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50,
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              width: '400px',
+              background: 'var(--bg-card)',
+              padding: '24px',
+              borderRadius: '10px',
+            }}
+          >
+            <h3
+              style={{
+                margin: '0 0 16px 0',
+                color: 'var(--brand-primary)',
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+              }}
+            >
               {editingCustomer
                 ? '✏️ Edit Party Profile'
                 : '+ Register New Party'}
             </h3>
             <form
               onSubmit={handleSaveCustomer}
-              style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
             >
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '12px',
-                  background: '#f8fafc',
+                  background: 'var(--bg-hover)',
                   padding: '8px',
                   borderRadius: '6px',
                 }}
@@ -1121,38 +1592,67 @@ export default function KhataLedger({ currentUser }) {
                       color: '#475569',
                     }}
                   >
-                    Party Avatar / Badge
+                    Avatar
                   </label>
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={handleAvatarUpload}
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () =>
+                          setCustomerForm((prev) => ({
+                            ...prev,
+                            avatar: reader.result,
+                          }));
+                        reader.readAsDataURL(file);
+                      }
+                    }}
                     style={{ fontSize: '0.7rem', marginTop: '2px' }}
                   />
                 </div>
               </div>
-
               <input
                 type="text"
                 className="input-field"
+                required
                 value={customerForm.name}
                 onChange={(e) =>
                   setCustomerForm({ ...customerForm, name: e.target.value })
                 }
-                placeholder="Party Full Name*"
-                required
+                placeholder="Party Full Name"
+                style={{
+                  padding: '10px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border-strong)',
+                }}
               />
               <input
                 type="text"
                 className="input-field"
                 value={customerForm.phone}
                 onChange={(e) =>
-                  setCustomerForm({ ...customerForm, phone: e.target.value })
+                  setCustomerForm({
+                    ...customerForm,
+                    phone: sanitizePhone(e.target.value),
+                  })
                 }
                 placeholder="Phone Number"
+                style={{
+                  padding: '10px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border-strong)',
+                }}
               />
               <div>
-                <label style={{ fontSize: '0.68rem', color: '#64748b' }}>
+                <label
+                  style={{
+                    fontSize: '0.7rem',
+                    color: 'var(--text-secondary)',
+                    fontWeight: 'bold',
+                  }}
+                >
                   Credit Limit (Rs.) [0 for unlimited]
                 </label>
                 <input
@@ -1165,219 +1665,44 @@ export default function KhataLedger({ currentUser }) {
                       credit_limit: parseFloat(e.target.value) || 0,
                     })
                   }
+                  style={{
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-strong)',
+                    width: '100%',
+                  }}
                 />
               </div>
-
-              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  style={{ flex: 1, background: '#0d5c75', fontWeight: 'bold' }}
+                  style={{
+                    flex: 1,
+                    background: 'var(--brand-primary)',
+                    fontWeight: 'bold',
+                    color: '#fff',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
                 >
-                  {editingCustomer ? 'Update Party' : 'Save Party'}
+                  {editingCustomer ? 'Save Changes' : 'Save Party'}
                 </button>
                 <button
                   type="button"
                   className="btn"
-                  style={{ background: '#cbd5e0' }}
+                  style={{
+                    background: '#e2e8f0',
+                    color: 'var(--text-primary)',
+                    padding: '10px 16px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                  }}
                   onClick={() => setIsCustomerModalOpen(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* RECEIVE CASH MODAL */}
-      {isPaymentModalOpen && (
-        <div className="receipt-modal-backdrop">
-          <div
-            className="card"
-            style={{
-              width: '380px',
-              background: '#fff',
-              padding: '18px',
-              borderRadius: '8px',
-            }}
-          >
-            <h3 style={{ margin: '0 0 10px 0', color: '#10b981' }}>
-              💵 Receive Cash Payment
-            </h3>
-            <form
-              onSubmit={handleRecordPayment}
-              style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
-            >
-              <input
-                type="number"
-                step="0.01"
-                className="input-field"
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                placeholder="Amount (Rs.)"
-                required
-              />
-              <select
-                className="input-field"
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-              >
-                <option value="CASH">Cash Counter</option>
-                <option value="BANK">Bank Transfer</option>
-                <option value="CHEQUE">Cheque / Demand Draft</option>
-              </select>
-              <input
-                type="text"
-                className="input-field"
-                value={paymentNotes}
-                onChange={(e) => setPaymentNotes(e.target.value)}
-                placeholder="Notes / Reference"
-              />
-              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                <button
-                  type="submit"
-                  className="btn btn-success"
-                  style={{
-                    flex: 1,
-                    background: '#10b981',
-                    color: '#fff',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  Confirm Payment
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  style={{ background: '#cbd5e0' }}
-                  onClick={() => setIsPaymentModalOpen(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ADD DEBT MODAL */}
-      {isDebtModalOpen && (
-        <div className="receipt-modal-backdrop">
-          <div
-            className="card"
-            style={{
-              width: '380px',
-              background: '#fff',
-              padding: '18px',
-              borderRadius: '8px',
-            }}
-          >
-            <h3 style={{ margin: '0 0 10px 0', color: '#dc2626' }}>
-              + Add Debt (Debit Entry)
-            </h3>
-            <form
-              onSubmit={handleAddDebt}
-              style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
-            >
-              <input
-                type="number"
-                step="0.01"
-                className="input-field"
-                value={debtAmount}
-                onChange={(e) => setDebtAmount(e.target.value)}
-                placeholder="Debt Amount (Rs.)"
-                required
-              />
-              <input
-                type="text"
-                className="input-field"
-                value={debtNotes}
-                onChange={(e) => setDebtNotes(e.target.value)}
-                placeholder="Reason / Particulars"
-                required
-              />
-              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  style={{
-                    flex: 1,
-                    background: '#dc2626',
-                    color: '#fff',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  Add Debt
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  style={{ background: '#cbd5e0' }}
-                  onClick={() => setIsDebtModalOpen(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ADD CREDIT / DISCOUNT MODAL */}
-      {isCreditModalOpen && (
-        <div className="receipt-modal-backdrop">
-          <div
-            className="card"
-            style={{
-              width: '380px',
-              background: '#fff',
-              padding: '18px',
-              borderRadius: '8px',
-            }}
-          >
-            <h3 style={{ margin: '0 0 10px 0', color: '#0284c7' }}>
-              + Add Credit / Discount Adjustment
-            </h3>
-            <form
-              onSubmit={handleAddCreditAdjustment}
-              style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
-            >
-              <input
-                type="number"
-                step="0.01"
-                className="input-field"
-                value={creditAmount}
-                onChange={(e) => setCreditAmount(e.target.value)}
-                placeholder="Credit / Discount Amount (Rs.)"
-                required
-              />
-              <input
-                type="text"
-                className="input-field"
-                value={creditNotes}
-                onChange={(e) => setCreditNotes(e.target.value)}
-                placeholder="Reason (e.g. Special Discount / Return)"
-                required
-              />
-              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  style={{
-                    flex: 1,
-                    background: '#0284c7',
-                    color: '#fff',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  Apply Credit
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  style={{ background: '#cbd5e0' }}
-                  onClick={() => setIsCreditModalOpen(false)}
                 >
                   Cancel
                 </button>
