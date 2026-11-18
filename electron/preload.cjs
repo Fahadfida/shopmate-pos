@@ -65,6 +65,9 @@ const validInvokeChannels = [
   'export-database-backup',
   'restore-database-backup',
   'link-cloud-account',
+  //updates
+  'check-for-updates',
+  'download-update',
 ];
 
 contextBridge.exposeInMainWorld('electronAPI', {

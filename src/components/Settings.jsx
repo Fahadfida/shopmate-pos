@@ -204,6 +204,15 @@ export default function Settings({ currentUser }) {
   const [newPassword, setNewPassword] = useState('');
   const [passwordStatus, setPasswordStatus] = useState('');
 
+  // 👇 THESE ARE NOW SAFELY INSIDE THE COMPONENT 👇
+  const [updateStatus, setUpdateStatus] = useState(''); // '', 'checking', 'available', 'up-to-date', 'error'
+  const [updateInfo, setUpdateInfo] = useState({
+    version: '',
+    currentVersion: '',
+  });
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  // 👆 ------------------------------------------ 👆
+
   const loadSettingsAndUsers = async () => {
     const ipc = getIpc();
     if (ipc) {
@@ -216,12 +225,47 @@ export default function Settings({ currentUser }) {
     }
   };
 
+  const handleCheckUpdates = async () => {
+    setUpdateStatus('checking');
+    const ipc = getIpc();
+
+    if (ipc) {
+      const res = await ipc.invoke('check-for-updates');
+      if (res.success) {
+        if (res.hasUpdate) {
+          setUpdateInfo({
+            version: res.version,
+            currentVersion: res.currentVersion,
+          });
+          setUpdateStatus('available');
+          setIsUpdateModalOpen(true);
+        } else {
+          setUpdateStatus('up-to-date');
+          setUpdateInfo({ currentVersion: res.version });
+        }
+      } else {
+        setUpdateStatus('error');
+        alert(res.error);
+      }
+    } else {
+      setUpdateStatus('error');
+      alert('Updates require the desktop app.');
+    }
+  };
+
+  const handleStartUpdate = async () => {
+    const ipc = getIpc();
+    if (ipc) {
+      await ipc.invoke('download-update');
+      setIsUpdateModalOpen(false);
+      alert('Download started! The app will prompt you to restart when ready.');
+    }
+  };
+
   useEffect(() => {
-    // Load theme preference
     const savedTheme = localStorage.getItem('shopmate_theme') || 'light';
     setCurrentTheme(savedTheme);
     document.documentElement.setAttribute('data-theme', savedTheme);
-
     loadSettingsAndUsers();
   }, [currentUser]);
 
@@ -320,7 +364,7 @@ export default function Settings({ currentUser }) {
       style={{
         display: 'flex',
         gap: '24px',
-        flex: 1, // 👈 ADD THIS
+        flex: 1,
         height: '100%',
         fontFamily: "'Inter', sans-serif",
       }}
@@ -337,7 +381,6 @@ export default function Settings({ currentUser }) {
           display: 'flex',
           flexDirection: 'column',
           gap: '6px',
-          // height: 'fit-content',
         }}
       >
         <h3
@@ -352,7 +395,6 @@ export default function Settings({ currentUser }) {
         >
           Settings
         </h3>
-
         {[
           { id: 'shop', label: 'Shop Info & SKU', icon: StoreIcon },
           { id: 'theme', label: 'Appearance', icon: PaletteIcon },
@@ -441,7 +483,6 @@ export default function Settings({ currentUser }) {
                   receipt prints.
                 </p>
               </div>
-
               {saveStatus && (
                 <div
                   style={{
@@ -458,7 +499,6 @@ export default function Settings({ currentUser }) {
                   {saveStatus}
                 </div>
               )}
-
               <div
                 style={{
                   display: 'grid',
@@ -592,7 +632,6 @@ export default function Settings({ currentUser }) {
                     </option>
                   </select>
                 </div>
-
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label
                     style={{
@@ -656,7 +695,6 @@ export default function Settings({ currentUser }) {
                 </div>
               </div>
             </div>
-
             <div
               style={{
                 padding: '20px 32px',
@@ -724,7 +762,6 @@ export default function Settings({ currentUser }) {
                   is saved automatically.
                 </p>
               </div>
-
               <div
                 style={{
                   display: 'grid',
@@ -732,7 +769,6 @@ export default function Settings({ currentUser }) {
                   gap: '24px',
                 }}
               >
-                {/* Light Mode Card */}
                 <div
                   onClick={() => handleThemeChange('light')}
                   style={{
@@ -803,8 +839,6 @@ export default function Settings({ currentUser }) {
                     </span>
                   )}
                 </div>
-
-                {/* Dark Mode Card */}
                 <div
                   onClick={() => handleThemeChange('dark')}
                   style={{
@@ -914,7 +948,6 @@ export default function Settings({ currentUser }) {
                   Securely update operator credentials and manager passwords.
                 </p>
               </div>
-
               {currentUser?.role?.toUpperCase() !== 'ADMIN' ? (
                 <div
                   style={{
@@ -1022,7 +1055,6 @@ export default function Settings({ currentUser }) {
                 </>
               )}
             </div>
-
             {currentUser?.role?.toUpperCase() === 'ADMIN' && (
               <div
                 style={{
@@ -1092,7 +1124,6 @@ export default function Settings({ currentUser }) {
                   your database or restore from a previous archive.
                 </p>
               </div>
-
               {backupStatus && (
                 <div
                   style={{
@@ -1109,7 +1140,6 @@ export default function Settings({ currentUser }) {
                   {backupStatus}
                 </div>
               )}
-
               <div
                 style={{
                   display: 'grid',
@@ -1117,7 +1147,6 @@ export default function Settings({ currentUser }) {
                   gap: '20px',
                 }}
               >
-                {/* Export Card */}
                 <div
                   style={{
                     background: 'var(--info-bg)',
@@ -1184,8 +1213,6 @@ export default function Settings({ currentUser }) {
                     Download .sqlite File
                   </button>
                 </div>
-
-                {/* Restore Card */}
                 <div
                   style={{
                     background: 'var(--danger-bg)',
@@ -1306,11 +1333,11 @@ export default function Settings({ currentUser }) {
                       fontWeight: '600',
                     }}
                   >
-                    Version 1.0.0 (Offline Desktop WAL Edition)
+                    Version {updateInfo.currentVersion || '1.1.0'} (Offline
+                    Desktop WAL Edition)
                   </p>
                 </div>
               </div>
-
               <p
                 style={{
                   fontSize: '0.85rem',
@@ -1323,6 +1350,121 @@ export default function Settings({ currentUser }) {
                 Khata management system built for high performance, accuracy,
                 and reliability.
               </p>
+
+              <div
+                style={{
+                  background: 'var(--bg-hover)',
+                  padding: '24px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--border-color)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px',
+                  marginBottom: '20px',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <div>
+                    <h5
+                      style={{
+                        margin: 0,
+                        color: 'var(--text-primary)',
+                        fontSize: '0.95rem',
+                        fontWeight: '800',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Software Updates
+                    </h5>
+                    <p
+                      style={{
+                        margin: '4px 0 0 0',
+                        fontSize: '0.8rem',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      Check for the latest features and security patches.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleCheckUpdates}
+                    disabled={updateStatus === 'checking'}
+                    className="btn btn-primary"
+                    style={{
+                      padding: '10px 20px',
+                      fontSize: '0.85rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      opacity: updateStatus === 'checking' ? 0.7 : 1,
+                      cursor: updateStatus === 'checking' ? 'wait' : 'pointer',
+                    }}
+                  >
+                    {updateStatus === 'checking' ? (
+                      <>
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          style={{ animation: 'spin 1s linear infinite' }}
+                        >
+                          <polyline points="23 4 23 10 17 10"></polyline>
+                          <polyline points="1 20 1 14 7 14"></polyline>
+                          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                        Checking...
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="23 4 23 10 17 10"></polyline>
+                          <polyline points="1 20 1 14 7 14"></polyline>
+                          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                        Check for Updates
+                      </>
+                    )}
+                  </button>
+                </div>
+                {updateStatus === 'up-to-date' && (
+                  <div
+                    style={{
+                      background: 'var(--success-bg)',
+                      color: 'var(--success)',
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      fontSize: '0.85rem',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    ✅ You are on the latest version (v
+                    {updateInfo.currentVersion}).
+                  </div>
+                )}
+              </div>
 
               <div
                 style={{
@@ -1368,6 +1510,111 @@ export default function Settings({ currentUser }) {
                     +92 331 546 9223
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* UPDATE CONFIRM MODAL */}
+        {isUpdateModalOpen && (
+          <div
+            className="receipt-modal-backdrop"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(15, 23, 42, 0.6)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+            }}
+          >
+            <div
+              style={{
+                background: 'var(--bg-card)',
+                borderRadius: '12px',
+                width: '400px',
+                padding: '28px',
+                border: '1px solid var(--border-color)',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  marginBottom: '16px',
+                }}
+              >
+                <div
+                  style={{
+                    background: 'var(--info-bg)',
+                    color: 'var(--info)',
+                    padding: '12px',
+                    borderRadius: '50%',
+                  }}
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                </div>
+                <h3
+                  style={{
+                    margin: 0,
+                    color: 'var(--text-primary)',
+                    fontSize: '1.1rem',
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  }}
+                >
+                  Update Available
+                </h3>
+              </div>
+              <p
+                style={{
+                  fontSize: '0.9rem',
+                  color: 'var(--text-secondary)',
+                  lineHeight: '1.5',
+                  marginBottom: '24px',
+                }}
+              >
+                ShopMate <strong>v{updateInfo.version}</strong> is available!
+                Your current version is{' '}
+                <strong>v{updateInfo.currentVersion}</strong>.<br />
+                <br />
+                Do you want to download and install the update now?
+              </p>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  onClick={handleStartUpdate}
+                  className="btn btn-primary"
+                  style={{ flex: 1, padding: '12px', fontSize: '0.9rem' }}
+                >
+                  Yes, Update Now
+                </button>
+                <button
+                  onClick={() => setIsUpdateModalOpen(false)}
+                  className="btn"
+                  style={{
+                    padding: '12px 20px',
+                    background: 'var(--bg-hover)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--border-color)',
+                  }}
+                >
+                  Later
+                </button>
               </div>
             </div>
           </div>

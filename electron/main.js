@@ -8,7 +8,8 @@ const { machineIdSync } = pkg;
 import crypto from 'crypto';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
+import updaterPkg from 'electron-updater';
+const { autoUpdater } = updaterPkg;
 let mainWindow = null;
 
 // Initialize SQLite Tables & Auto-migrations
@@ -2017,3 +2018,45 @@ ipcMain.handle(
     }
   },
 );
+
+// 📡 MANUAL UPDATE CHECKER
+ipcMain.handle('check-for-updates', async () => {
+  try {
+    // Only allow in production builds
+    if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
+      return {
+        success: false,
+        error: 'Updates are disabled in development mode.',
+      };
+    }
+
+    const result = await autoUpdater.checkForUpdates();
+
+    if (result && result.updateInfo) {
+      const currentVersion = app.getVersion();
+      const latestVersion = result.updateInfo.version;
+
+      if (latestVersion !== currentVersion) {
+        return {
+          success: true,
+          hasUpdate: true,
+          version: latestVersion,
+          currentVersion,
+        };
+      }
+    }
+    return { success: true, hasUpdate: false, version: app.getVersion() };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// 📥 TRIGGER MANUAL DOWNLOAD
+ipcMain.handle('download-update', () => {
+  try {
+    autoUpdater.downloadUpdate();
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});

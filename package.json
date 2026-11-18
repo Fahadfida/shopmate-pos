@@ -9,6 +9,7 @@
     "dev:vite": "vite",
     "dev:electron": "wait-on tcp:5173 && cross-env NODE_ENV=development electron .",
     "build": "vite build",
+    "release": "electron-builder --publish always",
     "pack:linux": "electron-builder --linux",
     "dist": "npm run build && electron-builder",
     "postinstall": "electron-builder install-app-deps"
@@ -16,6 +17,13 @@
   "build": {
     "appId": "com.shopmate.pos",
     "productName": "ShopMate",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Fahadfida",
+        "repo": "shopmate-pos"
+      }
+    ],
     "directories": {
       "output": "dist_electron"
     },
