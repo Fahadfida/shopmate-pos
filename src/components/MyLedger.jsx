@@ -1,9 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useId } from 'react';
 import { getIpc } from '../utils/ipc';
-
-// ─────────────────────────────────────────────────────────────
-// Icons (Lucide 16px/18px 1.5 stroke)
-// ─────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────
 // Icons (Lucide 16px 1.5 stroke)
@@ -20,21 +16,21 @@ const iconBase = {
 };
 
 const UserIcon = () => (
-  <svg {...iconBase}>
+  <svg {...iconBase} aria-hidden="true">
     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
     <circle cx="12" cy="7" r="4" />
   </svg>
 );
 
 const CreditCardIcon = () => (
-  <svg {...iconBase}>
+  <svg {...iconBase} aria-hidden="true">
     <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
     <line x1="1" y1="10" x2="23" y2="10" />
   </svg>
 );
 
 const CalendarIcon = () => (
-  <svg {...iconBase}>
+  <svg {...iconBase} aria-hidden="true">
     <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
     <line x1="16" y1="2" x2="16" y2="6" />
     <line x1="8" y1="2" x2="8" y2="6" />
@@ -43,64 +39,101 @@ const CalendarIcon = () => (
 );
 
 const ChevronDownIcon = () => (
-  <svg {...iconBase} width={14} height={14}>
+  <svg {...iconBase} width={14} height={14} aria-hidden="true">
     <polyline points="6 9 12 15 18 9" />
   </svg>
 );
 
-// const inputStyle = {
-//   padding: '9px 12px',
-//   borderRadius: '6px',
-//   border: '1px solid var(--ink-3)',
-//   background: 'var(--ink-0)',
-//   color: 'var(--ink-fg)',
-//   fontSize: '0.82rem',
-//   outline: 'none',
-//   fontFamily: 'inherit',
-//   cursor: 'pointer',
-// };
-// const iconBase = {
-//   width: 16,
-//   height: 16,
-//   viewBox: '0 0 24 24',
-//   fill: 'none',
-//   stroke: 'currentColor',
-//   strokeWidth: 1.5,
-//   strokeLinecap: 'round',
-//   strokeLinejoin: 'round',
-// };
-
-const SearchIcon = () => (
-  <svg {...iconBase}>
-    <circle cx="11" cy="11" r="8" />
-    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-  </svg>
-);
-
 const CloseIcon = () => (
-  <svg {...iconBase}>
+  <svg {...iconBase} aria-hidden="true">
     <line x1="18" y1="6" x2="6" y2="18" />
     <line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
 
 const EditIcon = () => (
-  <svg {...iconBase}>
+  <svg {...iconBase} aria-hidden="true">
     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
   </svg>
 );
 
 const TrashIcon = () => (
-  <svg {...iconBase}>
+  <svg {...iconBase} aria-hidden="true">
     <polyline points="3 6 5 6 21 6" />
     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
   </svg>
 );
 
+const DownloadIcon = () => (
+  <svg {...iconBase} aria-hidden="true">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </svg>
+);
+
+const RefreshIcon = () => (
+  <svg {...iconBase} aria-hidden="true">
+    <polyline points="23 4 23 10 17 10" />
+    <polyline points="1 20 1 14 7 14" />
+    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+  </svg>
+);
+
+const PlusIcon = () => (
+  <svg {...iconBase} aria-hidden="true">
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+
 // ─────────────────────────────────────────────────────────────
-// Toast Component
+// Typography & Primitive Tokens
 // ─────────────────────────────────────────────────────────────
+const sansFamily = {
+  fontFamily: 'var(--font-sans)',
+};
+
+const typeScale = {
+  sectionTitle: {
+    ...sansFamily,
+    fontSize: '0.9375rem', // 15px
+    fontWeight: 600,
+    lineHeight: 1.4,
+  },
+  body: {
+    ...sansFamily,
+    fontSize: '0.875rem', // 14px
+    fontWeight: 400,
+    lineHeight: 1.45,
+  },
+  label: {
+    ...sansFamily,
+    fontSize: '0.8125rem', // 13px
+    fontWeight: 500,
+    lineHeight: 1.35,
+  },
+  helper: {
+    ...sansFamily,
+    fontSize: '0.8125rem', // 13px
+    fontWeight: 400,
+    lineHeight: 1.4,
+  },
+  control: {
+    ...sansFamily,
+    fontSize: '0.8125rem', // 13px
+    fontWeight: 500,
+    lineHeight: 1.3,
+  },
+  badge: {
+    ...sansFamily,
+    fontSize: '0.75rem', // 12px
+    fontWeight: 600,
+    lineHeight: 1.2,
+  },
+};
+
 const Toast = ({ message, type, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(onClose, 4000);
@@ -111,10 +144,12 @@ const Toast = ({ message, type, onClose }) => {
 
   return (
     <div
+      role="status"
       style={{
+        ...typeScale.control,
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
+        gap: '12px',
         background: 'var(--ink-0)',
         border: '1px solid var(--ink-3)',
         borderLeft: `4px solid ${isError ? 'var(--ink-danger)' : 'var(--ink-success)'}`,
@@ -123,12 +158,11 @@ const Toast = ({ message, type, onClose }) => {
         borderRadius: '8px',
         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
         minWidth: '280px',
-        fontWeight: 500,
-        fontSize: '0.82rem',
       }}
     >
       <span style={{ flex: 1 }}>{message}</span>
       <button
+        type="button"
         onClick={onClose}
         aria-label="Dismiss"
         style={{
@@ -146,17 +180,13 @@ const Toast = ({ message, type, onClose }) => {
   );
 };
 
-// ─────────────────────────────────────────────────────────────
-// Primitives
-// ─────────────────────────────────────────────────────────────
-const Field = ({ label, children }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+const Field = ({ label, htmlFor, children }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
     <label
+      htmlFor={htmlFor}
       style={{
-        fontSize: '0.75rem',
-        fontWeight: 500,
+        ...typeScale.label,
         color: 'var(--ink-fg-2)',
-        letterSpacing: '0.01em',
       }}
     >
       {label}
@@ -166,21 +196,26 @@ const Field = ({ label, children }) => (
 );
 
 const inputStyle = {
-  padding: '9px 12px',
-  borderRadius: '6px',
+  ...typeScale.body,
+  minHeight: '38px',
+  padding: '8px 12px',
+  borderRadius: '8px',
   border: '1px solid var(--ink-3)',
   background: 'var(--ink-0)',
   color: 'var(--ink-fg)',
-  fontSize: '0.85rem',
   width: '100%',
   outline: 'none',
-  fontFamily: 'inherit',
+  transition: 'border-color 150ms ease, background-color 150ms ease',
 };
 
 // ─────────────────────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────────────────────
 export default function FinancialLedger({ currentUser }) {
+  const expenseCategoryId = useId();
+  const expenseAmountId = useId();
+  const expenseDescId = useId();
+
   const [ledgerData, setLedgerData] = useState({
     expenses: [],
     purchases: [],
@@ -241,7 +276,7 @@ export default function FinancialLedger({ currentUser }) {
       const data = await ipc.invoke('get-financial-ledger', {
         startDate,
         endDate,
-        user_id: selectedUser ? parseInt(selectedUser) : null,
+        user_id: selectedUser ? parseInt(selectedUser, 10) : null,
         payment_type: paymentType,
         sortBy,
       });
@@ -322,7 +357,7 @@ export default function FinancialLedger({ currentUser }) {
         currentUser,
       });
       if (res.success) {
-        addToast('Record deleted successfully!', 'success');
+        addToast('Record deleted successfully.', 'success');
         loadFinancials();
       } else {
         addToast('Failed to delete record: ' + res.error, 'error');
@@ -367,7 +402,7 @@ export default function FinancialLedger({ currentUser }) {
       setIsEditModalOpen(false);
       setEditingRecord(null);
       loadFinancials();
-      addToast('Ledger entry successfully updated!', 'success');
+      addToast('Ledger entry successfully updated.', 'success');
     } else {
       addToast('Update Failed: ' + res.error, 'error');
     }
@@ -427,19 +462,20 @@ export default function FinancialLedger({ currentUser }) {
     sales = [],
     refunds = [],
   } = ledgerData;
+
   const unifiedGridTemplate =
     '1.1fr 0.8fr 1.2fr 0.8fr 0.7fr 1.2fr 0.5fr 0.8fr 0.8fr 1.3fr 0.9fr';
 
   return (
     <div
       style={{
+        ...typeScale.body,
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
         flex: 1,
-        height: 'calc(100vh - 90px)',
+        height: 'calc(100vh - 96px)',
         overflow: 'hidden',
-        fontFamily: "'Inter', sans-serif",
         color: 'var(--ink-fg)',
       }}
     >
@@ -464,71 +500,8 @@ export default function FinancialLedger({ currentUser }) {
           />
         ))}
       </div>
-      {/* HEADER */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          background: 'var(--ink-0)',
-          padding: '16px 20px',
-          borderRadius: '10px',
-          border: '1px solid var(--ink-3)',
-        }}
-      >
-        <div>
-          <h3
-            style={{
-              margin: 0,
-              color: 'var(--ink-fg)',
-              fontSize: '1.05rem',
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
-              fontWeight: 600,
-              letterSpacing: '-0.01em',
-            }}
-          >
-            Ledger ( Profit & Loss )
-          </h3>
-        </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: 'var(--ink-1)',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              fontSize: '0.75rem',
-              color: 'var(--ink-fg)',
-              fontWeight: 500,
-              border: '1px solid var(--ink-3)',
-            }}
-          >
-            <span>👤 On Duty:</span>
-            <span style={{ textTransform: 'uppercase', fontWeight: 600 }}>
-              {currentUser?.username || 'Manager'} (
-              {currentUser?.role || 'ADMIN'})
-            </span>
-          </div>
-          <button
-            style={{
-              fontSize: '0.78rem',
-              padding: '7px 14px',
-              background: 'var(--brand-primary)',
-              color: '#fff',
-              fontWeight: 500,
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-            onClick={handleExportA4PDF}
-          >
-            Export PDF Statement
-          </button>
-        </div>
-      </div>
-      {/* 5-COLUMN KPI SUMMARY CARDS */}
+
+      {/* 5-COLUMN KPI SUMMARY CARDS (MOVED UP TO THE VERY TOP) */}
       <div
         style={{
           display: 'grid',
@@ -541,7 +514,7 @@ export default function FinancialLedger({ currentUser }) {
           style={{
             padding: '16px',
             background: 'var(--ink-0)',
-            borderRadius: '10px',
+            borderRadius: '12px',
             border: '1px solid var(--ink-3)',
             display: 'flex',
             flexDirection: 'column',
@@ -551,23 +524,22 @@ export default function FinancialLedger({ currentUser }) {
           <div>
             <p
               style={{
+                ...typeScale.badge,
                 margin: 0,
-                fontSize: '0.7rem',
-                fontWeight: 600,
                 color: 'var(--brand-primary)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.03em',
               }}
             >
-              Total Retail Sales
+              Total retail sales
             </p>
             <div
               className="monospace tabular"
               style={{
+                ...sansFamily,
                 fontSize: '1.25rem',
                 fontWeight: 600,
                 color: 'var(--ink-fg)',
-                marginTop: '6px',
+                marginTop: '10px',
+                fontVariantNumeric: 'tabular-nums',
               }}
             >
               Rs. {Number(summary.totalSales || 0).toLocaleString()}
@@ -575,12 +547,13 @@ export default function FinancialLedger({ currentUser }) {
           </div>
           <div
             style={{
-              fontSize: '0.68rem',
+              ...typeScale.helper,
+              fontSize: '0.75rem',
               color: 'var(--ink-fg-3)',
               marginTop: '8px',
             }}
           >
-            Sum of all Sale Invoices
+            Sum of all sale invoices
           </div>
         </div>
 
@@ -589,7 +562,7 @@ export default function FinancialLedger({ currentUser }) {
           style={{
             padding: '16px',
             background: 'var(--ink-0)',
-            borderRadius: '10px',
+            borderRadius: '12px',
             border: '1px solid var(--ink-3)',
             display: 'flex',
             flexDirection: 'column',
@@ -599,23 +572,22 @@ export default function FinancialLedger({ currentUser }) {
           <div>
             <p
               style={{
+                ...typeScale.badge,
                 margin: 0,
-                fontSize: '0.7rem',
-                fontWeight: 600,
                 color: 'var(--ink-danger)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.03em',
               }}
             >
-              Operating Expenses
+              Operating expenses
             </p>
             <div
               className="monospace tabular"
               style={{
+                ...sansFamily,
                 fontSize: '1.25rem',
                 fontWeight: 600,
                 color: 'var(--ink-fg)',
                 marginTop: '6px',
+                fontVariantNumeric: 'tabular-nums',
               }}
             >
               Rs. {Number(summary.totalExpenses || 0).toLocaleString()}
@@ -623,12 +595,13 @@ export default function FinancialLedger({ currentUser }) {
           </div>
           <div
             style={{
-              fontSize: '0.68rem',
+              ...typeScale.helper,
+              fontSize: '0.75rem',
               color: 'var(--ink-fg-3)',
               marginTop: '8px',
             }}
           >
-            Sum of all Expenses logged
+            Sum of all expenses logged
           </div>
         </div>
 
@@ -637,7 +610,7 @@ export default function FinancialLedger({ currentUser }) {
           style={{
             padding: '16px',
             background: 'var(--ink-0)',
-            borderRadius: '10px',
+            borderRadius: '12px',
             border: '1px solid var(--ink-3)',
             display: 'flex',
             flexDirection: 'column',
@@ -647,23 +620,22 @@ export default function FinancialLedger({ currentUser }) {
           <div>
             <p
               style={{
+                ...typeScale.badge,
                 margin: 0,
-                fontSize: '0.7rem',
-                fontWeight: 600,
                 color: 'var(--ink-fg-2)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.03em',
               }}
             >
-              Total Purchases (GRN)
+              Total purchases (GRN)
             </p>
             <div
               className="monospace tabular"
               style={{
+                ...sansFamily,
                 fontSize: '1.25rem',
                 fontWeight: 600,
                 color: 'var(--ink-fg)',
                 marginTop: '6px',
+                fontVariantNumeric: 'tabular-nums',
               }}
             >
               Rs. {Number(summary.totalPurchases || 0).toLocaleString()}
@@ -671,12 +643,13 @@ export default function FinancialLedger({ currentUser }) {
           </div>
           <div
             style={{
-              fontSize: '0.68rem',
+              ...typeScale.helper,
+              fontSize: '0.75rem',
               color: 'var(--ink-fg-3)',
               marginTop: '8px',
             }}
           >
-            Sum of (Qty Received × Unit Cost)
+            Sum of (Qty received × Unit cost)
           </div>
         </div>
 
@@ -685,7 +658,7 @@ export default function FinancialLedger({ currentUser }) {
           style={{
             padding: '16px',
             background: 'var(--ink-0)',
-            borderRadius: '10px',
+            borderRadius: '12px',
             border: '1px solid var(--ink-3)',
             display: 'flex',
             flexDirection: 'column',
@@ -695,23 +668,22 @@ export default function FinancialLedger({ currentUser }) {
           <div>
             <p
               style={{
+                ...typeScale.badge,
                 margin: 0,
-                fontSize: '0.7rem',
-                fontWeight: 600,
                 color: 'var(--ink-fg-2)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.03em',
               }}
             >
-              Supplier Payables
+              Supplier payables
             </p>
             <div
               className="monospace tabular"
               style={{
+                ...sansFamily,
                 fontSize: '1.25rem',
                 fontWeight: 600,
                 color: 'var(--ink-fg)',
                 marginTop: '6px',
+                fontVariantNumeric: 'tabular-nums',
               }}
             >
               Rs. {Number(totalSupplierPayables || 0).toLocaleString()}
@@ -719,12 +691,13 @@ export default function FinancialLedger({ currentUser }) {
           </div>
           <div
             style={{
-              fontSize: '0.68rem',
+              ...typeScale.helper,
+              fontSize: '0.75rem',
               color: 'var(--ink-fg-3)',
               marginTop: '8px',
             }}
           >
-            Sum of Supplier Balances
+            Sum of supplier balances
           </div>
         </div>
 
@@ -733,7 +706,7 @@ export default function FinancialLedger({ currentUser }) {
           style={{
             padding: '16px',
             background: 'var(--ink-0)',
-            borderRadius: '10px',
+            borderRadius: '12px',
             border: '1px solid var(--ink-3)',
             display: 'flex',
             flexDirection: 'column',
@@ -743,22 +716,20 @@ export default function FinancialLedger({ currentUser }) {
           <div>
             <p
               style={{
+                ...typeScale.badge,
                 margin: 0,
-                fontSize: '0.7rem',
-                fontWeight: 600,
                 color:
                   summary.netCashFlow >= 0
                     ? 'var(--ink-success)'
                     : 'var(--ink-danger)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.03em',
               }}
             >
-              Net Cash Flow
+              Net cash flow
             </p>
             <div
               className="monospace tabular"
               style={{
+                ...sansFamily,
                 fontSize: '1.25rem',
                 fontWeight: 600,
                 color:
@@ -766,6 +737,7 @@ export default function FinancialLedger({ currentUser }) {
                     ? 'var(--ink-success)'
                     : 'var(--ink-danger)',
                 marginTop: '6px',
+                fontVariantNumeric: 'tabular-nums',
               }}
             >
               Rs. {Number(summary.netCashFlow || 0).toLocaleString()}
@@ -773,7 +745,8 @@ export default function FinancialLedger({ currentUser }) {
           </div>
           <div
             style={{
-              fontSize: '0.68rem',
+              ...typeScale.helper,
+              fontSize: '0.75rem',
               color: 'var(--ink-fg-3)',
               marginTop: '8px',
             }}
@@ -782,16 +755,17 @@ export default function FinancialLedger({ currentUser }) {
           </div>
         </div>
       </div>
-      {/* FILTER TOOLBAR */}
+
+      {/* FILTER TOOLBAR (INCLUDES ON DUTY & EXPORT PDF) */}
       <div
         style={{
           background: 'var(--ink-0)',
-          padding: '16px 20px',
-          borderRadius: '10px',
+          padding: '16px',
+          borderRadius: '12px',
           border: '1px solid var(--ink-3)',
           display: 'flex',
           flexWrap: 'wrap',
-          gap: '16px',
+          gap: '12px',
           alignItems: 'center',
           justifyContent: 'space-between',
         }}
@@ -803,64 +777,57 @@ export default function FinancialLedger({ currentUser }) {
             alignItems: 'center',
             gap: '10px',
             background: 'var(--ink-1)',
-            padding: '8px 14px',
+            padding: '6px 12px',
             borderRadius: '8px',
             border: '1px solid var(--ink-3)',
           }}
         >
           <CalendarIcon />
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span
-              style={{
-                fontSize: '0.78rem',
-                fontWeight: 500,
-                color: 'var(--ink-fg-2)',
-              }}
-            >
+            <span style={{ ...typeScale.control, color: 'var(--ink-fg-2)' }}>
               From:
             </span>
             <input
               type="date"
+              aria-label="Start date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               style={{
+                ...typeScale.control,
                 border: 'none',
-                fontSize: '0.78rem',
                 background: 'transparent',
                 color: startDate ? 'var(--ink-fg)' : 'var(--ink-fg-3)',
                 outline: 'none',
-                fontFamily: 'inherit',
                 cursor: 'pointer',
               }}
             />
             <span
               style={{
-                fontSize: '0.78rem',
-                fontWeight: 500,
+                ...typeScale.control,
                 color: 'var(--ink-fg-2)',
-                marginLeft: '8px',
+                marginLeft: '4px',
               }}
             >
               To:
             </span>
             <input
               type="date"
+              aria-label="End date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               style={{
+                ...typeScale.control,
                 border: 'none',
-                fontSize: '0.78rem',
                 background: 'transparent',
                 color: endDate ? 'var(--ink-fg)' : 'var(--ink-fg-3)',
                 outline: 'none',
-                fontFamily: 'inherit',
                 cursor: 'pointer',
               }}
             />
           </div>
         </div>
 
-        {/* Dropdowns & Reset */}
+        {/* Dropdowns, Reset, On Duty & Export PDF */}
         <div
           style={{
             display: 'flex',
@@ -889,16 +856,18 @@ export default function FinancialLedger({ currentUser }) {
               <UserIcon />
             </span>
             <select
+              aria-label="Filter by operator"
               value={selectedUser}
               onChange={(e) => setSelectedUser(e.target.value)}
               style={{
                 ...inputStyle,
+                minHeight: '36px',
                 paddingLeft: '36px',
                 paddingRight: '32px',
                 appearance: 'none',
               }}
             >
-              <option value="">All Operators</option>
+              <option value="">All operators</option>
               {users.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.username} ({u.role})
@@ -938,16 +907,18 @@ export default function FinancialLedger({ currentUser }) {
               <CreditCardIcon />
             </span>
             <select
+              aria-label="Filter by payment type"
               value={paymentType}
               onChange={(e) => setPaymentType(e.target.value)}
               style={{
                 ...inputStyle,
+                minHeight: '36px',
                 paddingLeft: '36px',
                 paddingRight: '32px',
                 appearance: 'none',
               }}
             >
-              <option value="">All Payments</option>
+              <option value="">All payments</option>
               <option value="CASH">Cash</option>
               <option value="CREDIT">Credit</option>
               <option value="COD">COD</option>
@@ -985,19 +956,21 @@ export default function FinancialLedger({ currentUser }) {
               <CalendarIcon />
             </span>
             <select
+              aria-label="Sort ledger records"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               style={{
                 ...inputStyle,
+                minHeight: '36px',
                 paddingLeft: '36px',
                 paddingRight: '32px',
                 appearance: 'none',
               }}
             >
-              <option value="date_desc">Latest to Oldest</option>
-              <option value="date_asc">Oldest to Latest</option>
-              <option value="amount_desc">Highest to Lowest Amt</option>
-              <option value="amount_asc">Lowest to Highest Amt</option>
+              <option value="date_desc">Latest to oldest</option>
+              <option value="date_asc">Oldest to latest</option>
+              <option value="amount_desc">Highest to lowest amt</option>
+              <option value="amount_asc">Lowest to highest amt</option>
             </select>
             <span
               style={{
@@ -1019,32 +992,80 @@ export default function FinancialLedger({ currentUser }) {
             paymentType ||
             sortBy !== 'date_desc') && (
             <button
+              type="button"
               style={{
-                fontSize: '0.78rem',
-                padding: '9px 14px',
+                ...typeScale.control,
+                padding: '8px 12px',
                 background: 'var(--ink-1)',
                 color: 'var(--ink-danger)',
                 border: '1px solid var(--ink-3)',
-                fontWeight: 500,
-                borderRadius: '6px',
+                borderRadius: '8px',
                 cursor: 'pointer',
-                transition: 'background 120ms ease',
+                transition: 'background-color 150ms ease',
               }}
               onClick={clearFilters}
             >
-              ✕ Reset
+              Reset
             </button>
           )}
+
+          {/* ON DUTY BADGE (MOVED HERE) */}
+          <div
+            style={{
+              ...typeScale.control,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'var(--ink-1)',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              color: 'var(--ink-fg)',
+              border: '1px solid var(--ink-3)',
+            }}
+          >
+            <UserIcon />
+            <span>
+              On Duty:{' '}
+              <strong>
+                {currentUser?.username || 'Manager'} (
+                {currentUser?.role || 'ADMIN'})
+              </strong>
+            </span>
+          </div>
+
+          {/* EXPORT PDF BUTTON (MOVED HERE) */}
+          <button
+            type="button"
+            onClick={handleExportA4PDF}
+            style={{
+              ...typeScale.control,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              minHeight: '36px',
+              padding: '8px 16px',
+              background: 'var(--brand-primary)',
+              color: 'var(--ink-0)',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'opacity 150ms ease, transform 120ms ease',
+            }}
+          >
+            <DownloadIcon />
+            <span>Export PDF</span>
+          </button>
         </div>
       </div>
 
       {/* TABLE CONTAINER & TABS */}
       <div
         style={{
+          ...sansFamily,
           flex: 1,
           background: 'var(--ink-0)',
           padding: '16px',
-          borderRadius: '10px',
+          borderRadius: '12px',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
@@ -1063,72 +1084,84 @@ export default function FinancialLedger({ currentUser }) {
         >
           <div style={{ display: 'flex', gap: '8px' }}>
             {[
-              { id: 'SALES', label: `🛒 Retail Sales (${sales.length})` },
+              { id: 'SALES', label: `Retail sales (${sales.length})` },
               {
                 id: 'REFUNDS',
-                label: `🔄 Refunds & Returns (${refunds.length})`,
+                label: `Refunds & returns (${refunds.length})`,
               },
               {
                 id: 'EXPENSES',
-                label: `💸 Operating Expenses (${expenses.length})`,
+                label: `Operating expenses (${expenses.length})`,
               },
               {
                 id: 'PURCHASES',
-                label: `📦 Stock Purchases (${purchases.length})`,
+                label: `Stock purchases (${purchases.length})`,
               },
             ].map((tab) => (
               <button
                 key={tab.id}
+                type="button"
+                aria-pressed={activeTab === tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 style={{
+                  ...typeScale.control,
                   padding: '6px 12px',
-                  fontSize: '0.75rem',
-                  fontWeight: 500,
-                  borderRadius: '6px',
+                  borderRadius: '8px',
                   cursor: 'pointer',
                   border: '1px solid var(--ink-3)',
                   background:
                     activeTab === tab.id
                       ? 'var(--brand-primary)'
                       : 'var(--ink-1)',
-                  color: activeTab === tab.id ? '#fff' : 'var(--ink-fg-2)',
+                  color:
+                    activeTab === tab.id ? 'var(--ink-0)' : 'var(--ink-fg-2)',
+                  transition: 'background-color 150ms ease, color 150ms ease',
                 }}
               >
                 {tab.label}
               </button>
             ))}
           </div>
+
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
+              type="button"
+              onClick={loadFinancials}
               style={{
-                fontSize: '0.75rem',
+                ...typeScale.control,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
                 padding: '6px 12px',
                 background: 'var(--ink-1)',
                 border: '1px solid var(--ink-3)',
-                borderRadius: '6px',
+                borderRadius: '8px',
                 cursor: 'pointer',
-                fontWeight: 500,
                 color: 'var(--ink-fg)',
               }}
-              onClick={loadFinancials}
             >
-              🔄 Refresh
+              <RefreshIcon />
+              <span>Refresh</span>
             </button>
             {activeTab === 'EXPENSES' && (
               <button
+                type="button"
+                onClick={() => setIsExpenseModalOpen(true)}
                 style={{
-                  fontSize: '0.75rem',
+                  ...typeScale.control,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
                   padding: '6px 12px',
                   background: 'var(--brand-primary)',
-                  color: '#fff',
-                  fontWeight: 500,
+                  color: 'var(--ink-0)',
                   border: 'none',
-                  borderRadius: '6px',
+                  borderRadius: '8px',
                   cursor: 'pointer',
                 }}
-                onClick={() => setIsExpenseModalOpen(true)}
               >
-                + Log New Expense
+                <PlusIcon />
+                <span>Log expense</span>
               </button>
             )}
           </div>
@@ -1139,28 +1172,25 @@ export default function FinancialLedger({ currentUser }) {
           style={{
             display: 'grid',
             gridTemplateColumns: unifiedGridTemplate,
-            fontSize: '0.7rem',
-            fontWeight: 600,
+            ...typeScale.badge,
             background: 'var(--ink-1)',
             color: 'var(--ink-fg-2)',
-            padding: '10px 12px',
-            borderRadius: '6px',
+            padding: '8px 8px',
+            borderRadius: '8px',
             borderBottom: '1px solid var(--ink-3)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.03em',
           }}
         >
-          <span>DATE</span>
-          <span>INVOICE ID</span>
-          <span>CUSTOMER/SUPPLIER</span>
-          <span>PAYMENT TYPE</span>
-          <span>OPERATOR</span>
-          <span>ITEM NAME</span>
-          <span style={{ textAlign: 'right' }}>QTY</span>
-          <span style={{ textAlign: 'right' }}>AMOUNT</span>
-          <span style={{ textAlign: 'right' }}>TOTAL</span>
-          <span>DESCRIPTION</span>
-          <span style={{ textAlign: 'center' }}>ACTIONS</span>
+          <span>Date</span>
+          <span>Invoice ID</span>
+          <span>Customer</span>
+          <span>Payment </span>
+          <span>Operator</span>
+          <span>Item name</span>
+          <span>Qty</span>
+          <span>Amount</span>
+          <span>Total</span>
+          <span>Description</span>
+          <span>Actions</span>
         </div>
 
         {/* TABLES */}
@@ -1170,8 +1200,8 @@ export default function FinancialLedger({ currentUser }) {
             overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
-            gap: '6px',
-            marginTop: '6px',
+            gap: '8px',
+            marginTop: '8px',
           }}
         >
           {activeTab === 'SALES' &&
@@ -1181,7 +1211,7 @@ export default function FinancialLedger({ currentUser }) {
                 style={{
                   display: 'grid',
                   gridTemplateColumns: unifiedGridTemplate,
-                  fontSize: '0.75rem',
+                  fontSize: '0.8125rem', // 13px
                   alignItems: 'center',
                   background: 'var(--ink-1)',
                   padding: '10px 12px',
@@ -1189,10 +1219,21 @@ export default function FinancialLedger({ currentUser }) {
                   border: '1px solid var(--ink-3)',
                 }}
               >
-                <span style={{ color: 'var(--ink-fg-3)' }}>{s.date}</span>
+                <span
+                  style={{
+                    color: 'var(--ink-fg-3)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  {s.date}
+                </span>
                 <span
                   className="monospace"
-                  style={{ fontWeight: 600, color: 'var(--brand-primary)' }}
+                  style={{
+                    fontWeight: 600,
+                    color: 'var(--brand-primary)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
                 >
                   #INV-{s.sale_id}
                 </span>
@@ -1212,9 +1253,9 @@ export default function FinancialLedger({ currentUser }) {
                     style={{
                       background: 'var(--ink-0)',
                       color: 'var(--ink-fg-2)',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      fontSize: '0.68rem',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      fontSize: '0.75rem',
                       fontWeight: 500,
                       border: '1px solid var(--ink-3)',
                     }}
@@ -1238,13 +1279,21 @@ export default function FinancialLedger({ currentUser }) {
                 </span>
                 <span
                   className="monospace tabular"
-                  style={{ textAlign: 'right', fontWeight: 600 }}
+                  style={{
+                    textAlign: 'right',
+                    fontWeight: 600,
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
                 >
                   {s.qty_sold}
                 </span>
                 <span
                   className="monospace tabular"
-                  style={{ textAlign: 'right', color: 'var(--ink-fg-3)' }}
+                  style={{
+                    textAlign: 'right',
+                    color: 'var(--ink-fg-3)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
                 >
                   Rs. {Number(s.unit_price || 0).toLocaleString()}
                 </span>
@@ -1254,6 +1303,7 @@ export default function FinancialLedger({ currentUser }) {
                     textAlign: 'right',
                     fontWeight: 600,
                     color: 'var(--ink-success)',
+                    fontVariantNumeric: 'tabular-nums',
                   }}
                 >
                   Rs. {Number(s.total_line || 0).toLocaleString()}
@@ -1266,7 +1316,7 @@ export default function FinancialLedger({ currentUser }) {
                     textOverflow: 'ellipsis',
                   }}
                 >
-                  Retail Sale Item
+                  Retail sale item
                 </span>
                 <div
                   style={{
@@ -1276,13 +1326,15 @@ export default function FinancialLedger({ currentUser }) {
                   }}
                 >
                   <button
+                    type="button"
+                    aria-label={`Edit sale #${s.sale_id}`}
                     style={{
                       background: 'var(--ink-0)',
                       color: 'var(--brand-primary)',
                       border: '1px solid var(--ink-3)',
                       padding: '4px 6px',
                       cursor: 'pointer',
-                      borderRadius: '4px',
+                      borderRadius: '6px',
                       display: 'flex',
                     }}
                     onClick={() => openEditModal(s, 'SALES')}
@@ -1291,13 +1343,15 @@ export default function FinancialLedger({ currentUser }) {
                   </button>
                   {currentUser?.role?.toUpperCase() === 'ADMIN' && (
                     <button
+                      type="button"
+                      aria-label={`Delete sale #${s.sale_id}`}
                       style={{
                         background: 'var(--ink-0)',
                         color: 'var(--ink-danger)',
                         border: '1px solid var(--ink-3)',
                         padding: '4px 6px',
                         cursor: 'pointer',
-                        borderRadius: '4px',
+                        borderRadius: '6px',
                         display: 'flex',
                       }}
                       onClick={() => handleDeleteRecord(s.sale_id, 'SALES')}
@@ -1316,7 +1370,7 @@ export default function FinancialLedger({ currentUser }) {
                 style={{
                   display: 'grid',
                   gridTemplateColumns: unifiedGridTemplate,
-                  fontSize: '0.75rem',
+                  fontSize: '0.8125rem', // 13px
                   alignItems: 'center',
                   background: 'var(--ink-1)',
                   padding: '10px 12px',
@@ -1324,10 +1378,21 @@ export default function FinancialLedger({ currentUser }) {
                   border: '1px solid var(--ink-3)',
                 }}
               >
-                <span style={{ color: 'var(--ink-fg-3)' }}>{r.date}</span>
+                <span
+                  style={{
+                    color: 'var(--ink-fg-3)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  {r.date}
+                </span>
                 <span
                   className="monospace"
-                  style={{ fontWeight: 600, color: 'var(--ink-danger)' }}
+                  style={{
+                    fontWeight: 600,
+                    color: 'var(--ink-danger)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
                 >
                   REF-{r.id}
                 </span>
@@ -1347,9 +1412,9 @@ export default function FinancialLedger({ currentUser }) {
                     style={{
                       background: 'var(--ink-0)',
                       color: 'var(--ink-danger)',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      fontSize: '0.68rem',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      fontSize: '0.75rem',
                       fontWeight: 500,
                       border: '1px solid var(--ink-3)',
                     }}
@@ -1369,17 +1434,25 @@ export default function FinancialLedger({ currentUser }) {
                     textOverflow: 'ellipsis',
                   }}
                 >
-                  {r.item_name || 'General Return'}
+                  {r.item_name || 'General return'}
                 </span>
                 <span
                   className="monospace tabular"
-                  style={{ textAlign: 'right', fontWeight: 600 }}
+                  style={{
+                    textAlign: 'right',
+                    fontWeight: 600,
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
                 >
                   {r.qty}
                 </span>
                 <span
                   className="monospace tabular"
-                  style={{ textAlign: 'right', color: 'var(--ink-fg-3)' }}
+                  style={{
+                    textAlign: 'right',
+                    color: 'var(--ink-fg-3)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
                 >
                   Rs. {Number(r.amount_refunded || 0).toLocaleString()}
                 </span>
@@ -1389,6 +1462,7 @@ export default function FinancialLedger({ currentUser }) {
                     textAlign: 'right',
                     fontWeight: 600,
                     color: 'var(--ink-danger)',
+                    fontVariantNumeric: 'tabular-nums',
                   }}
                 >
                   − Rs. {Number(r.amount_refunded || 0).toLocaleString()}
@@ -1401,7 +1475,7 @@ export default function FinancialLedger({ currentUser }) {
                     textOverflow: 'ellipsis',
                   }}
                 >
-                  {r.description || 'Item Returned'}
+                  {r.description || 'Item returned'}
                 </span>
                 <div
                   style={{
@@ -1411,13 +1485,15 @@ export default function FinancialLedger({ currentUser }) {
                   }}
                 >
                   <button
+                    type="button"
+                    aria-label={`Edit refund #${r.id}`}
                     style={{
                       background: 'var(--ink-0)',
                       color: 'var(--brand-primary)',
                       border: '1px solid var(--ink-3)',
                       padding: '4px 6px',
                       cursor: 'pointer',
-                      borderRadius: '4px',
+                      borderRadius: '6px',
                       display: 'flex',
                     }}
                     onClick={() => openEditModal(r, 'REFUNDS')}
@@ -1426,13 +1502,15 @@ export default function FinancialLedger({ currentUser }) {
                   </button>
                   {currentUser?.role?.toUpperCase() === 'ADMIN' && (
                     <button
+                      type="button"
+                      aria-label={`Delete refund #${r.id}`}
                       style={{
                         background: 'var(--ink-0)',
                         color: 'var(--ink-danger)',
                         border: '1px solid var(--ink-3)',
                         padding: '4px 6px',
                         cursor: 'pointer',
-                        borderRadius: '4px',
+                        borderRadius: '6px',
                         display: 'flex',
                       }}
                       onClick={() => handleDeleteRecord(r.id, 'REFUNDS')}
@@ -1451,7 +1529,7 @@ export default function FinancialLedger({ currentUser }) {
                 style={{
                   display: 'grid',
                   gridTemplateColumns: unifiedGridTemplate,
-                  fontSize: '0.75rem',
+                  fontSize: '0.8125rem', // 13px
                   alignItems: 'center',
                   background: 'var(--ink-1)',
                   padding: '10px 12px',
@@ -1459,24 +1537,35 @@ export default function FinancialLedger({ currentUser }) {
                   border: '1px solid var(--ink-3)',
                 }}
               >
-                <span style={{ color: 'var(--ink-fg-3)' }}>{exp.date}</span>
+                <span
+                  style={{
+                    color: 'var(--ink-fg-3)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  {exp.date}
+                </span>
                 <span
                   className="monospace"
-                  style={{ fontWeight: 600, color: 'var(--ink-danger)' }}
+                  style={{
+                    fontWeight: 600,
+                    color: 'var(--ink-danger)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
                 >
                   EXP-{exp.id}
                 </span>
                 <span style={{ fontWeight: 500, color: 'var(--ink-fg)' }}>
-                  Store Overhead
+                  Store overhead
                 </span>
                 <span>
                   <span
                     style={{
                       background: 'var(--ink-0)',
                       color: 'var(--ink-fg-2)',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      fontSize: '0.68rem',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      fontSize: '0.75rem',
                       fontWeight: 500,
                       border: '1px solid var(--ink-3)',
                     }}
@@ -1492,13 +1581,20 @@ export default function FinancialLedger({ currentUser }) {
                 </span>
                 <span
                   className="monospace tabular"
-                  style={{ textAlign: 'right' }}
+                  style={{
+                    textAlign: 'right',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
                 >
                   1
                 </span>
                 <span
                   className="monospace tabular"
-                  style={{ textAlign: 'right', color: 'var(--ink-fg-3)' }}
+                  style={{
+                    textAlign: 'right',
+                    color: 'var(--ink-fg-3)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
                 >
                   Rs. {Number(exp.amount || 0).toLocaleString()}
                 </span>
@@ -1508,6 +1604,7 @@ export default function FinancialLedger({ currentUser }) {
                     textAlign: 'right',
                     fontWeight: 600,
                     color: 'var(--ink-danger)',
+                    fontVariantNumeric: 'tabular-nums',
                   }}
                 >
                   − Rs. {Number(exp.amount || 0).toLocaleString()}
@@ -1531,13 +1628,15 @@ export default function FinancialLedger({ currentUser }) {
                   }}
                 >
                   <button
+                    type="button"
+                    aria-label={`Edit expense #${exp.id}`}
                     style={{
                       background: 'var(--ink-0)',
                       color: 'var(--brand-primary)',
                       border: '1px solid var(--ink-3)',
                       padding: '4px 6px',
                       cursor: 'pointer',
-                      borderRadius: '4px',
+                      borderRadius: '6px',
                       display: 'flex',
                     }}
                     onClick={() => openEditModal(exp, 'EXPENSES')}
@@ -1546,13 +1645,15 @@ export default function FinancialLedger({ currentUser }) {
                   </button>
                   {currentUser?.role?.toUpperCase() === 'ADMIN' && (
                     <button
+                      type="button"
+                      aria-label={`Delete expense #${exp.id}`}
                       style={{
                         background: 'var(--ink-0)',
                         color: 'var(--ink-danger)',
                         border: '1px solid var(--ink-3)',
                         padding: '4px 6px',
                         cursor: 'pointer',
-                        borderRadius: '4px',
+                        borderRadius: '6px',
                         display: 'flex',
                       }}
                       onClick={() => handleDeleteRecord(exp.id, 'EXPENSES')}
@@ -1571,7 +1672,7 @@ export default function FinancialLedger({ currentUser }) {
                 style={{
                   display: 'grid',
                   gridTemplateColumns: unifiedGridTemplate,
-                  fontSize: '0.75rem',
+                  fontSize: '0.8125rem', // 13px
                   alignItems: 'center',
                   background: 'var(--ink-1)',
                   padding: '10px 12px',
@@ -1579,10 +1680,21 @@ export default function FinancialLedger({ currentUser }) {
                   border: '1px solid var(--ink-3)',
                 }}
               >
-                <span style={{ color: 'var(--ink-fg-3)' }}>{p.date}</span>
+                <span
+                  style={{
+                    color: 'var(--ink-fg-3)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  {p.date}
+                </span>
                 <span
                   className="monospace"
-                  style={{ fontWeight: 600, color: 'var(--brand-primary)' }}
+                  style={{
+                    fontWeight: 600,
+                    color: 'var(--brand-primary)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
                 >
                   {p.invoice_no || `GRN-${p.id}`}
                 </span>
@@ -1595,16 +1707,16 @@ export default function FinancialLedger({ currentUser }) {
                     textOverflow: 'ellipsis',
                   }}
                 >
-                  {p.supplier_name || 'Direct Stock'}
+                  {p.supplier_name || 'Direct stock'}
                 </span>
                 <span>
                   <span
                     style={{
                       background: 'var(--ink-0)',
                       color: 'var(--ink-fg-2)',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      fontSize: '0.68rem',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      fontSize: '0.75rem',
                       fontWeight: 500,
                       border: '1px solid var(--ink-3)',
                     }}
@@ -1628,13 +1740,21 @@ export default function FinancialLedger({ currentUser }) {
                 </span>
                 <span
                   className="monospace tabular"
-                  style={{ textAlign: 'right', fontWeight: 600 }}
+                  style={{
+                    textAlign: 'right',
+                    fontWeight: 600,
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
                 >
                   {p.qty_received}
                 </span>
                 <span
                   className="monospace tabular"
-                  style={{ textAlign: 'right', color: 'var(--ink-fg-3)' }}
+                  style={{
+                    textAlign: 'right',
+                    color: 'var(--ink-fg-3)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
                 >
                   Rs. {Number(p.unit_cost || 0).toLocaleString()}
                 </span>
@@ -1644,6 +1764,7 @@ export default function FinancialLedger({ currentUser }) {
                     textAlign: 'right',
                     fontWeight: 600,
                     color: 'var(--ink-fg)',
+                    fontVariantNumeric: 'tabular-nums',
                   }}
                 >
                   Rs.{' '}
@@ -1659,7 +1780,7 @@ export default function FinancialLedger({ currentUser }) {
                     textOverflow: 'ellipsis',
                   }}
                 >
-                  Stock Intake
+                  Stock intake
                 </span>
                 <div
                   style={{
@@ -1669,13 +1790,15 @@ export default function FinancialLedger({ currentUser }) {
                   }}
                 >
                   <button
+                    type="button"
+                    aria-label={`Edit purchase #${p.id}`}
                     style={{
                       background: 'var(--ink-0)',
                       color: 'var(--brand-primary)',
                       border: '1px solid var(--ink-3)',
                       padding: '4px 6px',
                       cursor: 'pointer',
-                      borderRadius: '4px',
+                      borderRadius: '6px',
                       display: 'flex',
                     }}
                     onClick={() => openEditModal(p, 'PURCHASES')}
@@ -1684,13 +1807,15 @@ export default function FinancialLedger({ currentUser }) {
                   </button>
                   {currentUser?.role?.toUpperCase() === 'ADMIN' && (
                     <button
+                      type="button"
+                      aria-label={`Delete purchase #${p.id}`}
                       style={{
                         background: 'var(--ink-0)',
                         color: 'var(--ink-danger)',
                         border: '1px solid var(--ink-3)',
                         padding: '4px 6px',
                         cursor: 'pointer',
-                        borderRadius: '4px',
+                        borderRadius: '6px',
                         display: 'flex',
                       }}
                       onClick={() => handleDeleteRecord(p.id, 'PURCHASES')}
@@ -1708,10 +1833,10 @@ export default function FinancialLedger({ currentUser }) {
             (activeTab === 'PURCHASES' && purchases.length === 0)) && (
             <div
               style={{
+                ...typeScale.helper,
                 textAlign: 'center',
                 color: 'var(--ink-fg-3)',
                 padding: '40px 0',
-                fontSize: '0.8rem',
               }}
             >
               No records found matching your criteria.
@@ -1719,155 +1844,21 @@ export default function FinancialLedger({ currentUser }) {
           )}
         </div>
       </div>
+
       {/* MODALS */}
       {isExpenseModalOpen && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="expense-modal-title"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) setIsExpenseModalOpen(false);
           }}
           style={{
+            ...sansFamily,
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0, 0, 0, 0.55)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 50,
-            padding: '16px',
-          }}
-        >
-          <div
-            style={{
-              width: '380px',
-              maxWidth: '100%',
-              background: 'var(--ink-0)',
-              padding: '20px',
-              borderRadius: '12px',
-              border: '1px solid var(--ink-3)',
-            }}
-          >
-            <h3
-              style={{
-                marginTop: 0,
-                fontSize: '0.95rem',
-                fontWeight: 600,
-                color: 'var(--ink-fg)',
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                marginBottom: '14px',
-              }}
-            >
-              💸 Record Operating Expense
-            </h3>
-            <form
-              onSubmit={handleAddExpense}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-              }}
-            >
-              <Field label="Category">
-                <select
-                  style={inputStyle}
-                  value={expenseForm.category}
-                  onChange={(e) =>
-                    setExpenseForm({ ...expenseForm, category: e.target.value })
-                  }
-                >
-                  <option value="Rent">🏢 Store Rent</option>
-                  <option value="Utilities">💡 Electricity & Utilities</option>
-                  <option value="Travel">🚗 Travel & Transport</option>
-                  <option value="Salaries">👨‍💼 Staff Salaries</option>
-                  <option value="Food">🍲 Food / Refreshments</option>
-                  <option value="Other">📦 Miscellaneous</option>
-                </select>
-              </Field>
-
-              <Field label="Amount (Rs.) *">
-                <input
-                  type="number"
-                  step="0.01"
-                  className="monospace tabular"
-                  style={{ ...inputStyle, fontWeight: 600 }}
-                  value={expenseForm.amount}
-                  onChange={(e) =>
-                    setExpenseForm({ ...expenseForm, amount: e.target.value })
-                  }
-                  placeholder="0.00"
-                  required
-                />
-              </Field>
-
-              <Field label="Description / Note">
-                <input
-                  type="text"
-                  style={inputStyle}
-                  value={expenseForm.description}
-                  onChange={(e) =>
-                    setExpenseForm({
-                      ...expenseForm,
-                      description: e.target.value,
-                    })
-                  }
-                  placeholder="e.g. October electric bill..."
-                />
-              </Field>
-
-              <div
-                style={{
-                  display: 'flex',
-                  gap: '8px',
-                  justifyContent: 'flex-end',
-                  marginTop: '6px',
-                  paddingTop: '12px',
-                  borderTop: '1px solid var(--ink-3)',
-                }}
-              >
-                <button
-                  type="button"
-                  style={{
-                    padding: '8px 16px',
-                    background: 'var(--ink-1)',
-                    color: 'var(--ink-fg-2)',
-                    border: '1px solid var(--ink-3)',
-                    borderRadius: '6px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    fontSize: '0.8rem',
-                  }}
-                  onClick={() => setIsExpenseModalOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  style={{
-                    padding: '8px 16px',
-                    background: 'var(--brand-primary)',
-                    color: '#fff',
-                    borderRadius: '6px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontWeight: 500,
-                    fontSize: '0.8rem',
-                  }}
-                >
-                  Record Expense
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      {isEditModalOpen && editingRecord && (
-        <div
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setIsEditModalOpen(false);
-          }}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0, 0, 0, 0.55)',
+            background: 'var(--ink-2)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -1880,7 +1871,155 @@ export default function FinancialLedger({ currentUser }) {
               width: '400px',
               maxWidth: '100%',
               background: 'var(--ink-0)',
-              padding: '20px',
+              padding: '24px',
+              borderRadius: '12px',
+              border: '1px solid var(--ink-3)',
+            }}
+          >
+            <h3
+              id="expense-modal-title"
+              style={{
+                ...typeScale.sectionTitle,
+                marginTop: 0,
+                color: 'var(--ink-fg)',
+                marginBottom: '16px',
+              }}
+            >
+              Record operating expense
+            </h3>
+            <form
+              onSubmit={handleAddExpense}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+              }}
+            >
+              <Field label="Category" htmlFor={expenseCategoryId}>
+                <select
+                  id={expenseCategoryId}
+                  style={inputStyle}
+                  value={expenseForm.category}
+                  onChange={(e) =>
+                    setExpenseForm({ ...expenseForm, category: e.target.value })
+                  }
+                >
+                  <option value="Rent">Store rent</option>
+                  <option value="Utilities">Electricity & utilities</option>
+                  <option value="Travel">Travel & transport</option>
+                  <option value="Salaries">Staff salaries</option>
+                  <option value="Food">Food & refreshments</option>
+                  <option value="Other">Miscellaneous</option>
+                </select>
+              </Field>
+
+              <Field label="Amount (Rs.) *" htmlFor={expenseAmountId}>
+                <input
+                  id={expenseAmountId}
+                  type="number"
+                  step="0.01"
+                  className="monospace tabular"
+                  style={{
+                    ...inputStyle,
+                    fontWeight: 600,
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                  value={expenseForm.amount}
+                  onChange={(e) =>
+                    setExpenseForm({ ...expenseForm, amount: e.target.value })
+                  }
+                  placeholder="0.00"
+                  required
+                />
+              </Field>
+
+              <Field label="Description or note" htmlFor={expenseDescId}>
+                <input
+                  id={expenseDescId}
+                  type="text"
+                  style={inputStyle}
+                  value={expenseForm.description}
+                  onChange={(e) =>
+                    setExpenseForm({
+                      ...expenseForm,
+                      description: e.target.value,
+                    })
+                  }
+                  placeholder="e.g. October electric bill"
+                />
+              </Field>
+
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '8px',
+                  justifyContent: 'flex-end',
+                  marginTop: '8px',
+                  paddingTop: '16px',
+                  borderTop: '1px solid var(--ink-3)',
+                }}
+              >
+                <button
+                  type="button"
+                  style={{
+                    ...typeScale.control,
+                    padding: '8px 16px',
+                    background: 'var(--ink-1)',
+                    color: 'var(--ink-fg-2)',
+                    border: '1px solid var(--ink-3)',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => setIsExpenseModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    ...typeScale.control,
+                    padding: '8px 16px',
+                    background: 'var(--brand-primary)',
+                    color: 'var(--ink-0)',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Record expense
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isEditModalOpen && editingRecord && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-modal-title"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setIsEditModalOpen(false);
+          }}
+          style={{
+            ...sansFamily,
+            position: 'fixed',
+            inset: 0,
+            background: 'var(--ink-2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50,
+            padding: '16px',
+          }}
+        >
+          <div
+            style={{
+              width: '420px',
+              maxWidth: '100%',
+              background: 'var(--ink-0)',
+              padding: '24px',
               borderRadius: '12px',
               border: '1px solid var(--ink-3)',
             }}
@@ -1890,32 +2029,32 @@ export default function FinancialLedger({ currentUser }) {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '14px',
-                paddingBottom: '10px',
+                marginBottom: '16px',
+                paddingBottom: '12px',
                 borderBottom: '1px solid var(--ink-3)',
               }}
             >
               <h3
+                id="edit-modal-title"
                 style={{
+                  ...typeScale.sectionTitle,
                   margin: 0,
-                  fontSize: '0.95rem',
-                  fontWeight: 600,
                   color: 'var(--ink-fg)',
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
                 }}
               >
-                ✏️ Edit{' '}
+                Edit{' '}
                 {editingRecord.type === 'SALES'
-                  ? 'Sale Invoice'
+                  ? 'sale invoice'
                   : editingRecord.type === 'REFUNDS'
-                    ? 'Refund Record'
+                    ? 'refund record'
                     : editingRecord.type === 'EXPENSES'
-                      ? 'Expense Record'
-                      : 'Stock Purchase'}
+                      ? 'expense record'
+                      : 'stock purchase'}
               </h3>
               <button
+                type="button"
                 onClick={() => setIsEditModalOpen(false)}
-                aria-label="Close"
+                aria-label="Close modal"
                 style={{
                   background: 'var(--ink-1)',
                   border: '1px solid var(--ink-3)',
@@ -1931,16 +2070,20 @@ export default function FinancialLedger({ currentUser }) {
             </div>
             <form
               onSubmit={handleSaveEdit}
-              style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
             >
               {editingRecord.type === 'SALES' && (
                 <>
-                  <Field label="Total Invoice Amount (Rs.)">
+                  <Field label="Total invoice amount (Rs.)">
                     <input
                       type="number"
                       step="0.01"
                       className="monospace tabular"
-                      style={{ ...inputStyle, fontWeight: 600 }}
+                      style={{
+                        ...inputStyle,
+                        fontWeight: 600,
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
                       value={editForm.total_amount}
                       onChange={(e) =>
                         setEditForm({
@@ -1951,7 +2094,7 @@ export default function FinancialLedger({ currentUser }) {
                       required
                     />
                   </Field>
-                  <Field label="Payment Type">
+                  <Field label="Payment type">
                     <select
                       style={inputStyle}
                       value={editForm.payment_type}
@@ -1972,12 +2115,16 @@ export default function FinancialLedger({ currentUser }) {
 
               {editingRecord.type === 'REFUNDS' && (
                 <>
-                  <Field label="Refund Amount (Rs.)">
+                  <Field label="Refund amount (Rs.)">
                     <input
                       type="number"
                       step="0.01"
                       className="monospace tabular"
-                      style={{ ...inputStyle, fontWeight: 600 }}
+                      style={{
+                        ...inputStyle,
+                        fontWeight: 600,
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
                       value={editForm.amount_refunded}
                       onChange={(e) =>
                         setEditForm({
@@ -1988,11 +2135,15 @@ export default function FinancialLedger({ currentUser }) {
                       required
                     />
                   </Field>
-                  <Field label="Quantity Returned">
+                  <Field label="Quantity returned">
                     <input
                       type="number"
                       className="monospace tabular"
-                      style={{ ...inputStyle, fontWeight: 600 }}
+                      style={{
+                        ...inputStyle,
+                        fontWeight: 600,
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
                       value={editForm.qty}
                       onChange={(e) =>
                         setEditForm({ ...editForm, qty: e.target.value })
@@ -2000,7 +2151,7 @@ export default function FinancialLedger({ currentUser }) {
                       required
                     />
                   </Field>
-                  <Field label="Description / Reason">
+                  <Field label="Description or reason">
                     <input
                       type="text"
                       style={inputStyle}
@@ -2034,7 +2185,11 @@ export default function FinancialLedger({ currentUser }) {
                       type="number"
                       step="0.01"
                       className="monospace tabular"
-                      style={{ ...inputStyle, fontWeight: 600 }}
+                      style={{
+                        ...inputStyle,
+                        fontWeight: 600,
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
                       value={editForm.amount}
                       onChange={(e) =>
                         setEditForm({ ...editForm, amount: e.target.value })
@@ -2042,7 +2197,7 @@ export default function FinancialLedger({ currentUser }) {
                       required
                     />
                   </Field>
-                  <Field label="Description / Remarks">
+                  <Field label="Description or remarks">
                     <input
                       type="text"
                       style={inputStyle}
@@ -2060,11 +2215,15 @@ export default function FinancialLedger({ currentUser }) {
 
               {editingRecord.type === 'PURCHASES' && (
                 <>
-                  <Field label="Received Quantity">
+                  <Field label="Received quantity">
                     <input
                       type="number"
                       className="monospace tabular"
-                      style={{ ...inputStyle, fontWeight: 600 }}
+                      style={{
+                        ...inputStyle,
+                        fontWeight: 600,
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
                       value={editForm.qty_received}
                       onChange={(e) =>
                         setEditForm({
@@ -2075,12 +2234,16 @@ export default function FinancialLedger({ currentUser }) {
                       required
                     />
                   </Field>
-                  <Field label="Unit Cost (Rs.)">
+                  <Field label="Unit cost (Rs.)">
                     <input
                       type="number"
                       step="0.01"
                       className="monospace tabular"
-                      style={{ ...inputStyle, fontWeight: 600 }}
+                      style={{
+                        ...inputStyle,
+                        fontWeight: 600,
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
                       value={editForm.unit_cost}
                       onChange={(e) =>
                         setEditForm({ ...editForm, unit_cost: e.target.value })
@@ -2088,7 +2251,7 @@ export default function FinancialLedger({ currentUser }) {
                       required
                     />
                   </Field>
-                  <Field label="Payment Mode">
+                  <Field label="Payment mode">
                     <select
                       style={inputStyle}
                       value={editForm.payment_type}
@@ -2111,22 +2274,21 @@ export default function FinancialLedger({ currentUser }) {
                   display: 'flex',
                   gap: '8px',
                   justifyContent: 'flex-end',
-                  marginTop: '6px',
-                  paddingTop: '12px',
+                  marginTop: '8px',
+                  paddingTop: '16px',
                   borderTop: '1px solid var(--ink-3)',
                 }}
               >
                 <button
                   type="button"
                   style={{
+                    ...typeScale.control,
                     padding: '8px 16px',
                     background: 'var(--ink-1)',
                     color: 'var(--ink-fg-2)',
                     border: '1px solid var(--ink-3)',
-                    borderRadius: '6px',
-                    fontWeight: 500,
+                    borderRadius: '8px',
                     cursor: 'pointer',
-                    fontSize: '0.8rem',
                   }}
                   onClick={() => setIsEditModalOpen(false)}
                 >
@@ -2135,17 +2297,16 @@ export default function FinancialLedger({ currentUser }) {
                 <button
                   type="submit"
                   style={{
+                    ...typeScale.control,
                     padding: '8px 16px',
                     background: 'var(--brand-primary)',
-                    fontWeight: 500,
-                    color: '#fff',
-                    borderRadius: '6px',
+                    color: 'var(--ink-0)',
+                    borderRadius: '8px',
                     border: 'none',
                     cursor: 'pointer',
-                    fontSize: '0.8rem',
                   }}
                 >
-                  Save Changes
+                  Save changes
                 </button>
               </div>
             </form>

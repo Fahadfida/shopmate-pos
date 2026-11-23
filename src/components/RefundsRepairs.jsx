@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useId } from 'react';
 import { getIpc } from '../utils/ipc';
 
 // ─────────────────────────────────────────────────────────────
-// Icons (Lucide 16px/18px 1.5 stroke)
+// Icons (16px 1.5 stroke)
 // ─────────────────────────────────────────────────────────────
 const iconBase = {
   width: 16,
@@ -16,30 +16,93 @@ const iconBase = {
 };
 
 const SearchIcon = () => (
-  <svg {...iconBase}>
+  <svg {...iconBase} aria-hidden="true">
     <circle cx="11" cy="11" r="8" />
     <line x1="21" y1="21" x2="16.65" y2="16.65" />
   </svg>
 );
 
 const CloseIcon = () => (
-  <svg {...iconBase}>
+  <svg {...iconBase} aria-hidden="true">
     <line x1="18" y1="6" x2="6" y2="18" />
     <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+const PlusIcon = () => (
+  <svg {...iconBase} aria-hidden="true">
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+
+const RefundIcon = () => (
+  <svg {...iconBase} aria-hidden="true">
+    <polyline points="1 4 1 10 7 10" />
+    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+  </svg>
+);
+
+const RepairIcon = () => (
+  <svg {...iconBase} aria-hidden="true">
+    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
   </svg>
 );
 
 // Helper for product initials
 const getInitials = (name) => {
   if (!name) return '?';
-  const words = name.trim().split(' ');
+  const words = name.trim().split(/\s+/);
   if (words.length === 1) return words[0].substring(0, 2).toUpperCase();
   return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 };
 
 // ─────────────────────────────────────────────────────────────
-// Toast Component
+// Typography & Surface Primitives (4px grid, POS scale)
 // ─────────────────────────────────────────────────────────────
+const sansFamily = {
+  fontFamily: 'var(--font-sans)',
+};
+
+const typeScale = {
+  pageTitle: {
+    ...sansFamily,
+    fontSize: '1.125rem', // 18px
+    fontWeight: 600,
+    lineHeight: 1.3,
+  },
+  sectionTitle: {
+    ...sansFamily,
+    fontSize: '0.9375rem', // 15px
+    fontWeight: 600,
+    lineHeight: 1.4,
+  },
+  body: {
+    ...sansFamily,
+    fontSize: '0.875rem', // 14px
+    fontWeight: 400,
+    lineHeight: 1.45,
+  },
+  label: {
+    ...sansFamily,
+    fontSize: '0.8125rem', // 13px
+    fontWeight: 500,
+    lineHeight: 1.35,
+  },
+  helper: {
+    ...sansFamily,
+    fontSize: '0.8125rem', // 13px
+    fontWeight: 400,
+    lineHeight: 1.4,
+  },
+  control: {
+    ...sansFamily,
+    fontSize: '0.8125rem', // 13px
+    fontWeight: 500,
+    lineHeight: 1.3,
+  },
+};
+
 const Toast = ({ message, type, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(onClose, 4000);
@@ -50,10 +113,12 @@ const Toast = ({ message, type, onClose }) => {
 
   return (
     <div
+      role="status"
       style={{
+        ...typeScale.control,
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
+        gap: '12px',
         background: 'var(--ink-0)',
         border: '1px solid var(--ink-3)',
         borderLeft: `4px solid ${isError ? 'var(--ink-danger)' : 'var(--ink-success)'}`,
@@ -62,12 +127,11 @@ const Toast = ({ message, type, onClose }) => {
         borderRadius: '8px',
         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
         minWidth: '280px',
-        fontWeight: 500,
-        fontSize: '0.82rem',
       }}
     >
       <span style={{ flex: 1 }}>{message}</span>
       <button
+        type="button"
         onClick={onClose}
         aria-label="Dismiss"
         style={{
@@ -85,17 +149,13 @@ const Toast = ({ message, type, onClose }) => {
   );
 };
 
-// ─────────────────────────────────────────────────────────────
-// Primitives
-// ─────────────────────────────────────────────────────────────
-const Field = ({ label, children }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+const Field = ({ label, htmlFor, children }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
     <label
+      htmlFor={htmlFor}
       style={{
-        fontSize: '0.75rem',
-        fontWeight: 500,
+        ...typeScale.label,
         color: 'var(--ink-fg-2)',
-        letterSpacing: '0.01em',
       }}
     >
       {label}
@@ -105,21 +165,32 @@ const Field = ({ label, children }) => (
 );
 
 const inputStyle = {
-  padding: '9px 12px',
-  borderRadius: '6px',
+  ...typeScale.body,
+  minHeight: '38px',
+  padding: '8px 12px',
+  borderRadius: '8px',
   border: '1px solid var(--ink-3)',
   background: 'var(--ink-0)',
   color: 'var(--ink-fg)',
-  fontSize: '0.85rem',
   width: '100%',
   outline: 'none',
-  fontFamily: 'inherit',
+  transition: 'border-color 150ms ease, background-color 150ms ease',
 };
 
 // ─────────────────────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────────────────────
 export default function RefundsRepairs({ currentUser }) {
+  const customerNameId = useId();
+  const phoneId = useId();
+  const productSearchId = useId();
+  const customItemId = useId();
+  const qtyId = useId();
+  const amountId = useId();
+  const statusId = useId();
+  const descriptionId = useId();
+  const catalogSearchId = useId();
+
   const [items, setItems] = useState([]);
   const [recentRecords, setRecentRecords] = useState([]);
   const [catalogSearch, setCatalogSearch] = useState('');
@@ -192,7 +263,7 @@ export default function RefundsRepairs({ currentUser }) {
 
       if (res.success) {
         addToast(
-          `${form.type === 'REFUND' ? 'Refund' : 'Repair ticket'} logged successfully!`,
+          `${form.type === 'REFUND' ? 'Refund' : 'Repair ticket'} logged successfully.`,
           'success',
         );
         setForm({
@@ -239,13 +310,13 @@ export default function RefundsRepairs({ currentUser }) {
   return (
     <div
       style={{
+        ...typeScale.body,
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
         flex: 1,
-        height: 'calc(100vh - 90px)',
+        height: 'calc(100vh - 96px)',
         overflow: 'hidden',
-        fontFamily: "'Inter', sans-serif",
         color: 'var(--ink-fg)',
       }}
     >
@@ -279,27 +350,24 @@ export default function RefundsRepairs({ currentUser }) {
           alignItems: 'center',
           background: 'var(--ink-0)',
           padding: '16px 20px',
-          borderRadius: '10px',
+          borderRadius: '12px',
           border: '1px solid var(--ink-3)',
         }}
       >
         <div>
-          <h3
+          <h2
             style={{
+              ...typeScale.pageTitle,
               margin: 0,
               color: 'var(--ink-fg)',
-              fontSize: '1.05rem',
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
-              fontWeight: 600,
-              letterSpacing: '-0.01em',
             }}
           >
-            Refunds & Repairs Management
-          </h3>
+            Refunds and repairs
+          </h2>
           <p
             style={{
-              margin: '2px 0 0 0',
-              fontSize: '0.75rem',
+              ...typeScale.helper,
+              margin: '4px 0 0 0',
               color: 'var(--ink-fg-3)',
             }}
           >
@@ -321,7 +389,7 @@ export default function RefundsRepairs({ currentUser }) {
           style={{
             flex: 1.1,
             background: 'var(--ink-0)',
-            borderRadius: '10px',
+            borderRadius: '12px',
             padding: '20px',
             border: '1px solid var(--ink-3)',
             overflowY: 'auto',
@@ -335,34 +403,35 @@ export default function RefundsRepairs({ currentUser }) {
               justifyContent: 'space-between',
               alignItems: 'center',
               marginBottom: '16px',
-              paddingBottom: '10px',
+              paddingBottom: '12px',
               borderBottom: '1px solid var(--ink-3)',
             }}
           >
-            <h4
+            <h3
               style={{
+                ...typeScale.sectionTitle,
                 margin: 0,
-                fontSize: '0.9rem',
-                fontWeight: 600,
                 color: 'var(--ink-fg)',
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
               }}
             >
-              Log Transaction
-            </h4>
+              Log transaction
+            </h3>
             <button
               type="button"
               style={{
-                fontSize: '0.72rem',
-                padding: '5px 10px',
+                ...typeScale.control,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
                 background: isManualMode
                   ? 'var(--brand-primary)'
                   : 'var(--ink-1)',
-                color: isManualMode ? '#fff' : 'var(--ink-fg-2)',
-                fontWeight: 500,
+                color: isManualMode ? 'var(--ink-0)' : 'var(--ink-fg-2)',
                 border: '1px solid var(--ink-3)',
-                borderRadius: '6px',
+                borderRadius: '8px',
                 cursor: 'pointer',
+                transition: 'background-color 150ms ease, color 150ms ease',
               }}
               onClick={() => {
                 setIsManualMode(!isManualMode);
@@ -370,55 +439,85 @@ export default function RefundsRepairs({ currentUser }) {
                 setItemSearchText('');
               }}
             >
-              {isManualMode ? '🔍 Use Catalog' : '+ Custom Item'}
+              {isManualMode ? (
+                <>
+                  <SearchIcon />
+                  <span>Use catalog</span>
+                </>
+              ) : (
+                <>
+                  <PlusIcon />
+                  <span>Custom item</span>
+                </>
+              )}
             </button>
           </div>
 
           <form
             onSubmit={handleSubmit}
-            style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
+            style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
           >
-            <Field label="Operation Type">
+            <Field label="Operation type">
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   type="button"
+                  aria-pressed={form.type === 'REFUND'}
                   onClick={() => setForm({ ...form, type: 'REFUND' })}
                   style={{
+                    ...typeScale.control,
                     flex: 1,
-                    padding: '8px',
-                    fontSize: '0.75rem',
-                    borderRadius: '6px',
+                    minHeight: '38px',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
                     background:
                       form.type === 'REFUND'
                         ? 'var(--ink-danger)'
                         : 'var(--ink-1)',
-                    color: form.type === 'REFUND' ? '#fff' : 'var(--ink-fg-2)',
-                    fontWeight: 500,
+                    color:
+                      form.type === 'REFUND'
+                        ? 'var(--ink-0)'
+                        : 'var(--ink-fg-2)',
                     border: '1px solid var(--ink-3)',
                     cursor: 'pointer',
+                    transition: 'background-color 150ms ease, color 150ms ease',
                   }}
                 >
-                  🔄 Item Refund
+                  <RefundIcon />
+                  <span>Item refund</span>
                 </button>
                 <button
                   type="button"
+                  aria-pressed={form.type === 'REPAIR'}
                   onClick={() => setForm({ ...form, type: 'REPAIR' })}
                   style={{
+                    ...typeScale.control,
                     flex: 1,
-                    padding: '8px',
-                    fontSize: '0.75rem',
-                    borderRadius: '6px',
+                    minHeight: '38px',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
                     background:
                       form.type === 'REPAIR'
                         ? 'var(--brand-primary)'
                         : 'var(--ink-1)',
-                    color: form.type === 'REPAIR' ? '#fff' : 'var(--ink-fg-2)',
-                    fontWeight: 500,
+                    color:
+                      form.type === 'REPAIR'
+                        ? 'var(--ink-0)'
+                        : 'var(--ink-fg-2)',
                     border: '1px solid var(--ink-3)',
                     cursor: 'pointer',
+                    transition: 'background-color 150ms ease, color 150ms ease',
                   }}
                 >
-                  🛠️ Device Repair
+                  <RepairIcon />
+                  <span>Device repair</span>
                 </button>
               </div>
             </Field>
@@ -427,11 +526,12 @@ export default function RefundsRepairs({ currentUser }) {
               style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
-                gap: '10px',
+                gap: '12px',
               }}
             >
-              <Field label="Customer Name *">
+              <Field label="Customer name *" htmlFor={customerNameId}>
                 <input
+                  id={customerNameId}
                   type="text"
                   style={inputStyle}
                   value={form.customer_name}
@@ -441,10 +541,11 @@ export default function RefundsRepairs({ currentUser }) {
                   required
                 />
               </Field>
-              <Field label="Phone">
+              <Field label="Phone" htmlFor={phoneId}>
                 <input
+                  id={phoneId}
                   type="text"
-                  style={inputStyle}
+                  style={{ ...inputStyle, fontVariantNumeric: 'tabular-nums' }}
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   placeholder="0300-0000000"
@@ -454,24 +555,28 @@ export default function RefundsRepairs({ currentUser }) {
 
             {!isManualMode ? (
               <div style={{ position: 'relative' }} ref={dropdownRef}>
-                <Field label="Select Product (Search Name/SKU)">
+                <Field
+                  label="Select product (search name or SKU)"
+                  htmlFor={productSearchId}
+                >
                   <div style={{ position: 'relative' }}>
                     <input
+                      id={productSearchId}
                       type="text"
-                      placeholder="Type to search..."
+                      placeholder="Type to search"
                       value={itemSearchText}
                       onChange={(e) => {
                         setItemSearchText(e.target.value);
                         setIsItemDropdownOpen(true);
                       }}
                       onFocus={() => setIsItemDropdownOpen(true)}
-                      style={{ ...inputStyle, paddingRight: '32px' }}
+                      style={{ ...inputStyle, paddingRight: '36px' }}
                       required={!form.item_id && !isManualMode}
                     />
                     <span
                       style={{
                         position: 'absolute',
-                        right: '10px',
+                        right: '12px',
                         top: '50%',
                         transform: 'translateY(-50%)',
                         color: 'var(--ink-fg-3)',
@@ -491,7 +596,7 @@ export default function RefundsRepairs({ currentUser }) {
                       top: '100%',
                       left: 0,
                       right: 0,
-                      maxHeight: '180px',
+                      maxHeight: '192px',
                       overflowY: 'auto',
                       background: 'var(--ink-0)',
                       border: '1px solid var(--ink-3)',
@@ -504,8 +609,8 @@ export default function RefundsRepairs({ currentUser }) {
                     {filteredLookupItems.length === 0 ? (
                       <div
                         style={{
+                          ...typeScale.helper,
                           padding: '12px',
-                          fontSize: '0.78rem',
                           color: 'var(--ink-fg-3)',
                           textAlign: 'center',
                         }}
@@ -514,8 +619,9 @@ export default function RefundsRepairs({ currentUser }) {
                       </div>
                     ) : (
                       filteredLookupItems.map((i) => (
-                        <div
+                        <button
                           key={i.id}
+                          type="button"
                           onClick={() => {
                             setForm({
                               ...form,
@@ -526,13 +632,18 @@ export default function RefundsRepairs({ currentUser }) {
                             setIsItemDropdownOpen(false);
                           }}
                           style={{
+                            ...sansFamily,
+                            width: '100%',
                             padding: '10px 12px',
-                            fontSize: '0.78rem',
+                            fontSize: '0.8125rem', // 13px
                             cursor: 'pointer',
+                            background: 'transparent',
+                            border: 'none',
                             borderBottom: '1px solid var(--ink-3)',
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
+                            textAlign: 'left',
                           }}
                         >
                           <span
@@ -548,26 +659,28 @@ export default function RefundsRepairs({ currentUser }) {
                           </span>
                           <span
                             style={{
-                              fontSize: '0.7rem',
+                              fontSize: '0.75rem', // 12px
                               color: 'var(--brand-primary)',
                               background: 'var(--ink-1)',
-                              padding: '2px 6px',
-                              borderRadius: '4px',
+                              padding: '2px 8px',
+                              borderRadius: '6px',
                               fontWeight: 600,
                               border: '1px solid var(--ink-3)',
+                              fontVariantNumeric: 'tabular-nums',
                             }}
                           >
                             Stock: {i.stock_qty}
                           </span>
-                        </div>
+                        </button>
                       ))
                     )}
                   </div>
                 )}
               </div>
             ) : (
-              <Field label="Custom Item Name *">
+              <Field label="Custom item name *" htmlFor={customItemId}>
                 <input
+                  id={customItemId}
                   type="text"
                   style={inputStyle}
                   value={manualItemName}
@@ -582,14 +695,19 @@ export default function RefundsRepairs({ currentUser }) {
               style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
-                gap: '10px',
+                gap: '12px',
               }}
             >
-              <Field label="Quantity">
+              <Field label="Quantity" htmlFor={qtyId}>
                 <input
+                  id={qtyId}
                   type="number"
                   className="monospace tabular"
-                  style={{ ...inputStyle, fontWeight: 600 }}
+                  style={{
+                    ...inputStyle,
+                    fontWeight: 600,
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
                   value={form.qty}
                   onChange={(e) => setForm({ ...form, qty: e.target.value })}
                   min="1"
@@ -599,15 +717,21 @@ export default function RefundsRepairs({ currentUser }) {
               <Field
                 label={
                   form.type === 'REFUND'
-                    ? 'Amount Refunded (Rs.)'
-                    : 'Repair Charge (Rs.)'
+                    ? 'Amount refunded (Rs.)'
+                    : 'Repair charge (Rs.)'
                 }
+                htmlFor={amountId}
               >
                 <input
+                  id={amountId}
                   type="number"
                   step="0.01"
                   className="monospace tabular"
-                  style={{ ...inputStyle, fontWeight: 600 }}
+                  style={{
+                    ...inputStyle,
+                    fontWeight: 600,
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
                   value={form.amount_refunded}
                   onChange={(e) =>
                     setForm({ ...form, amount_refunded: e.target.value })
@@ -618,52 +742,57 @@ export default function RefundsRepairs({ currentUser }) {
             </div>
 
             {form.type === 'REPAIR' && (
-              <Field label="Repair Status">
+              <Field label="Repair status" htmlFor={statusId}>
                 <select
+                  id={statusId}
                   style={inputStyle}
                   value={form.status}
                   onChange={(e) => setForm({ ...form, status: e.target.value })}
                 >
-                  <option value="PENDING">Pending (In Workshop)</option>
+                  <option value="PENDING">Pending (In workshop)</option>
                   <option value="COMPLETED">
-                    Completed (Ready for Pickup)
+                    Completed (Ready for pickup)
                   </option>
                   <option value="DELIVERED">
-                    Delivered (Handed to Customer)
+                    Delivered (Handed to customer)
                   </option>
                 </select>
               </Field>
             )}
 
-            <Field label="Reason / Repair Details">
+            <Field label="Reason or repair details" htmlFor={descriptionId}>
               <textarea
-                style={{ ...inputStyle, height: '64px', resize: 'vertical' }}
+                id={descriptionId}
+                style={{ ...inputStyle, minHeight: '68px', resize: 'vertical' }}
                 value={form.description}
                 onChange={(e) =>
                   setForm({ ...form, description: e.target.value })
                 }
-                placeholder="e.g. Screen replacement / Defective return..."
+                placeholder="e.g. Screen replacement or defective return"
               />
             </Field>
 
             <button
               type="submit"
               style={{
-                padding: '11px 16px',
+                ...sansFamily,
+                minHeight: '40px',
+                padding: '10px 16px',
                 background:
                   form.type === 'REFUND'
                     ? 'var(--ink-danger)'
                     : 'var(--brand-primary)',
                 fontWeight: 500,
-                fontSize: '0.85rem',
-                borderRadius: '6px',
+                fontSize: '0.875rem', // 14px
+                borderRadius: '8px',
                 border: 'none',
-                color: '#fff',
+                color: 'var(--ink-0)',
                 cursor: 'pointer',
                 marginTop: '4px',
+                transition: 'opacity 150ms ease, transform 120ms ease',
               }}
             >
-              Submit & Post to Ledger
+              Submit and post to ledger
             </button>
           </form>
         </div>
@@ -682,7 +811,7 @@ export default function RefundsRepairs({ currentUser }) {
           <div
             style={{
               background: 'var(--ink-0)',
-              borderRadius: '10px',
+              borderRadius: '12px',
               padding: '16px',
               border: '1px solid var(--ink-3)',
               display: 'flex',
@@ -697,26 +826,25 @@ export default function RefundsRepairs({ currentUser }) {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 marginBottom: '12px',
-                paddingBottom: '8px',
+                paddingBottom: '10px',
                 borderBottom: '1px solid var(--ink-3)',
               }}
             >
-              <h4
+              <h3
                 style={{
+                  ...typeScale.sectionTitle,
                   margin: 0,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
                   color: 'var(--ink-fg)',
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
                 }}
               >
-                Recent Activity
-              </h4>
+                Recent activity
+              </h3>
               <span
                 style={{
-                  fontSize: '0.7rem',
+                  ...typeScale.helper,
                   color: 'var(--ink-fg-3)',
                   fontWeight: 500,
+                  fontVariantNumeric: 'tabular-nums',
                 }}
               >
                 Last 20 records
@@ -728,16 +856,16 @@ export default function RefundsRepairs({ currentUser }) {
                 overflowY: 'auto',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '6px',
+                gap: '8px',
               }}
             >
               {recentRecords.length === 0 ? (
                 <div
                   style={{
+                    ...typeScale.helper,
                     textAlign: 'center',
                     color: 'var(--ink-fg-3)',
-                    padding: '30px 0',
-                    fontSize: '0.8rem',
+                    padding: '32px 0',
                   }}
                 >
                   No records found.
@@ -748,13 +876,14 @@ export default function RefundsRepairs({ currentUser }) {
                     key={rec.id}
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: '0.5fr 2fr 1fr 1fr 1fr',
-                      fontSize: '0.75rem',
+                      gridTemplateColumns: '0.55fr 2fr 1.15fr 1fr 1fr',
+                      fontSize: '0.8125rem', // 13px
                       alignItems: 'center',
                       background: 'var(--ink-1)',
                       padding: '10px 12px',
                       borderRadius: '8px',
                       border: '1px solid var(--ink-3)',
+                      gap: '8px',
                     }}
                   >
                     <span
@@ -778,12 +907,14 @@ export default function RefundsRepairs({ currentUser }) {
                           textOverflow: 'ellipsis',
                         }}
                       >
-                        {rec.item_name || 'Custom Item'}
+                        {rec.item_name || 'Custom item'}
                       </div>
                       <div
                         style={{
-                          fontSize: '0.68rem',
+                          fontSize: '0.75rem', // 12px
                           color: 'var(--ink-fg-3)',
+                          marginTop: '2px',
+                          fontVariantNumeric: 'tabular-nums',
                         }}
                       >
                         {rec.customer_name} |{' '}
@@ -795,6 +926,7 @@ export default function RefundsRepairs({ currentUser }) {
                       style={{
                         textAlign: 'right',
                         fontWeight: 600,
+                        fontVariantNumeric: 'tabular-nums',
                         color:
                           rec.type === 'REFUND'
                             ? 'var(--ink-danger)'
@@ -807,14 +939,16 @@ export default function RefundsRepairs({ currentUser }) {
                     <div style={{ textAlign: 'center' }}>
                       {rec.type === 'REPAIR' ? (
                         <select
+                          aria-label={`Status for ${rec.item_name || 'repair'}`}
                           value={rec.status || 'PENDING'}
                           onChange={(e) =>
                             handleStatusUpdate(rec.id, e.target.value)
                           }
                           style={{
-                            padding: '3px 6px',
-                            fontSize: '0.68rem',
-                            borderRadius: '4px',
+                            ...sansFamily,
+                            padding: '4px 8px',
+                            fontSize: '0.75rem', // 12px
+                            borderRadius: '6px',
                             border: '1px solid var(--ink-3)',
                             background: 'var(--ink-0)',
                             color: 'var(--ink-fg)',
@@ -830,7 +964,7 @@ export default function RefundsRepairs({ currentUser }) {
                       ) : (
                         <span
                           style={{
-                            fontSize: '0.68rem',
+                            fontSize: '0.75rem', // 12px
                             color: 'var(--ink-fg-3)',
                             fontWeight: 500,
                           }}
@@ -842,7 +976,7 @@ export default function RefundsRepairs({ currentUser }) {
                     <span
                       style={{
                         textAlign: 'right',
-                        fontSize: '0.68rem',
+                        fontSize: '0.75rem', // 12px
                         color: 'var(--ink-fg-3)',
                       }}
                     >
@@ -858,10 +992,10 @@ export default function RefundsRepairs({ currentUser }) {
           <div
             style={{
               background: 'var(--ink-0)',
-              borderRadius: '10px',
+              borderRadius: '12px',
               padding: '16px',
               border: '1px solid var(--ink-3)',
-              height: '210px',
+              height: '220px',
               display: 'flex',
               flexDirection: 'column',
             }}
@@ -871,37 +1005,39 @@ export default function RefundsRepairs({ currentUser }) {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '10px',
+                marginBottom: '12px',
               }}
             >
-              <h4
+              <h3
                 style={{
+                  ...typeScale.sectionTitle,
                   margin: 0,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
                   color: 'var(--ink-fg)',
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
                 }}
               >
-                Quick Select from Catalog
-              </h4>
-              <div style={{ position: 'relative', width: '180px' }}>
+                Quick select from catalog
+              </h3>
+              <div style={{ position: 'relative', width: '200px' }}>
+                <label htmlFor={catalogSearchId} className="sr-only">
+                  Search catalog
+                </label>
                 <input
+                  id={catalogSearchId}
                   type="text"
-                  placeholder="Search..."
+                  placeholder="Search"
                   value={catalogSearch}
                   onChange={(e) => setCatalogSearch(e.target.value)}
                   style={{
                     ...inputStyle,
-                    padding: '6px 10px',
-                    paddingRight: '28px',
-                    fontSize: '0.75rem',
+                    minHeight: '34px',
+                    padding: '6px 32px 6px 10px',
+                    fontSize: '0.8125rem', // 13px
                   }}
                 />
                 <span
                   style={{
                     position: 'absolute',
-                    right: '8px',
+                    right: '10px',
                     top: '50%',
                     transform: 'translateY(-50%)',
                     color: 'var(--ink-fg-3)',
@@ -924,8 +1060,9 @@ export default function RefundsRepairs({ currentUser }) {
               }}
             >
               {filteredCatalogItems.map((item) => (
-                <div
+                <button
                   key={item.id}
+                  type="button"
                   onClick={() => {
                     setIsManualMode(false);
                     setForm({
@@ -936,6 +1073,7 @@ export default function RefundsRepairs({ currentUser }) {
                     setItemSearchText(`${item.name} (${item.code})`);
                   }}
                   style={{
+                    ...sansFamily,
                     background: 'var(--ink-1)',
                     border: '1px solid var(--ink-3)',
                     borderRadius: '8px',
@@ -944,7 +1082,9 @@ export default function RefundsRepairs({ currentUser }) {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
-                    transition: 'all 120ms ease',
+                    textAlign: 'left',
+                    transition:
+                      'border-color 150ms ease, background-color 150ms ease',
                   }}
                   onMouseEnter={(e) =>
                     (e.currentTarget.style.borderColor = 'var(--brand-primary)')
@@ -955,8 +1095,8 @@ export default function RefundsRepairs({ currentUser }) {
                 >
                   <div
                     style={{
-                      width: '30px',
-                      height: '30px',
+                      width: '32px',
+                      height: '32px',
                       background: 'var(--ink-0)',
                       borderRadius: '6px',
                       display: 'flex',
@@ -979,7 +1119,7 @@ export default function RefundsRepairs({ currentUser }) {
                     ) : (
                       <span
                         style={{
-                          fontSize: '0.7rem',
+                          fontSize: '0.75rem', // 12px
                           fontWeight: 600,
                           color: 'var(--ink-fg-3)',
                         }}
@@ -991,7 +1131,7 @@ export default function RefundsRepairs({ currentUser }) {
                   <div style={{ minWidth: 0 }}>
                     <div
                       style={{
-                        fontSize: '0.75rem',
+                        fontSize: '0.8125rem', // 13px
                         fontWeight: 500,
                         color: 'var(--ink-fg)',
                         whiteSpace: 'nowrap',
@@ -1004,14 +1144,15 @@ export default function RefundsRepairs({ currentUser }) {
                     <div
                       className="monospace tabular"
                       style={{
-                        fontSize: '0.68rem',
+                        fontSize: '0.75rem', // 12px
                         color: 'var(--ink-fg-3)',
+                        fontVariantNumeric: 'tabular-nums',
                       }}
                     >
                       Rs. {Number(item.selling_price || 0).toLocaleString()}
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>

@@ -663,7 +663,7 @@ export default function SupplierLedger({ currentUser, showToast }) {
         ))}
       </div>
 
-      {/* HEADER */}
+      {/* HEADER WITH SEARCH + REGISTER SUPPLIER */}
       <div
         style={{
           display: 'flex',
@@ -696,66 +696,78 @@ export default function SupplierLedger({ currentUser, showToast }) {
             Manage vendor bills and payment schedules
           </p>
         </div>
-        <button
-          onClick={() => {
-            setEditingSupplier(null);
-            setSupplierForm({
-              name: '',
-              company: '',
-              phone: '',
-              address: '',
-              avatar: '',
-              credit_limit: 0,
-              opening_balance: 0,
-            });
-            setIsSupplierModalOpen(true);
-          }}
+
+        <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
-            padding: '8px 14px',
-            fontSize: '0.8rem',
-            fontWeight: 500,
-            background: 'var(--brand-primary)',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
+            gap: '8px',
+            flexWrap: 'wrap',
           }}
         >
-          <PlusIcon /> Register supplier
-        </button>
-      </div>
+          <div style={{ position: 'relative', width: '240px' }}>
+            <span
+              style={{
+                position: 'absolute',
+                left: '10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--ink-fg-3)',
+                display: 'flex',
+              }}
+            >
+              <SearchIcon />
+            </span>
+            <input
+              type="text"
+              placeholder="Search suppliers or companies..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                ...inputStyle,
+                paddingLeft: '32px',
+                height: '34px',
+              }}
+            />
+          </div>
 
-      {/* SEARCH & SUPPLIERS GRID */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <div style={{ position: 'relative', maxWidth: '320px' }}>
-          <span
+          <button
+            onClick={() => {
+              setEditingSupplier(null);
+              setSupplierForm({
+                name: '',
+                company: '',
+                phone: '',
+                address: '',
+                avatar: '',
+                credit_limit: 0,
+                opening_balance: 0,
+              });
+              setIsSupplierModalOpen(true);
+            }}
             style={{
-              position: 'absolute',
-              left: '10px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: 'var(--ink-fg-3)',
               display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              height: '34px',
+              fontSize: '0.8rem',
+              fontWeight: 500,
+              background: 'var(--brand-primary)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
             }}
           >
-            <SearchIcon />
-          </span>
-          <input
-            type="text"
-            placeholder="Search suppliers or companies..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              ...inputStyle,
-              paddingLeft: '32px',
-              height: '32px',
-            }}
-          />
+            <PlusIcon /> Register supplier
+          </button>
         </div>
+      </div>
 
+      {/* SUPPLIERS GRID */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {filteredSuppliers.length === 0 ? (
           <div
             style={{

@@ -421,28 +421,39 @@ function generateNextSku(category, name) {
   const setting = db
     .prepare('SELECT value FROM settings WHERE key = ?')
     .get('sku_format') || { value: 'CAT_SEQ' };
-  const countRow = db.prepare('SELECT COUNT(*) as count FROM items').get();
-  const nextId = (countRow.count + 1).toString().padStart(4, '0');
   const catPrefix = (category ? category.substring(0, 3) : 'GEN').toUpperCase();
-  return `${catPrefix}-${nextId}`;
-}
 
+  const countRow = db.prepare('SELECT COUNT(*) as count FROM items').get();
+  let seq = countRow.count + 1;
+
+  const checkStmt = db.prepare('SELECT 1 FROM items WHERE code = ?');
+  let sku = `${catPrefix}-${seq.toString().padStart(4, '0')}`;
+
+  while (checkStmt.get(sku)) {
+    seq += 1;
+    sku = `${catPrefix}-${seq.toString().padStart(4, '0')}`;
+  }
+
+  return sku;
+}
 ipcMain.handle('add-item', (event, { item, currentUser }) => {
   try {
     const autoCode = item.code || generateNextSku(item.category, item.name);
-    db.prepare(
-      `
+    const info = db
+      .prepare(
+        `
       INSERT INTO items (code, name, description, condition, category, stock_qty, avg_cost, min_price, max_price, selling_price, unit, image_path)
       VALUES (@code, @name, @description, @condition, @category, @stock_qty, @avg_cost, @min_price, @max_price, @selling_price, @unit, @image_path)
     `,
-    ).run({
-      code: autoCode,
-      description: '',
-      condition: 'New',
-      category: 'General',
-      image_path: '',
-      ...item,
-    });
+      )
+      .run({
+        description: '',
+        condition: 'New',
+        category: 'General',
+        image_path: '',
+        ...item,
+        code: autoCode,
+      });
 
     db.prepare(
       'INSERT INTO audit_logs (user_id, username, action, details) VALUES (?, ?, ?, ?)',
@@ -453,12 +464,15 @@ ipcMain.handle('add-item', (event, { item, currentUser }) => {
       `Added item ${item.name} (${autoCode})`,
     );
 
-    return { success: true, id: info.lastInsertRowid };
+    return {
+      success: true,
+      id: info.lastInsertRowid,
+      itemId: info.lastInsertRowid,
+    };
   } catch (err) {
     return { success: false, error: err.message };
   }
 });
-
 // 2. UPDATE ITEM PRICING & DETAILS (Supports manual cost, selling price, max price & WAC override)
 ipcMain.handle('update-item', (event, { id, item, currentUser }) => {
   try {
@@ -1063,8 +1077,20 @@ ipcMain.handle('get-supplier-ledger', (event, supplierId) => {
   return db
     .prepare(
       `
-    SELECT l.*, u.username as user_name FROM supplier_ledger l LEFT JOIN users u ON l.user_id = u.id WHERE l.supplier_id = ? ORDER BY l.id ASC
-  `,
+      SELECT
+        l.*,
+        u.username AS user_name,
+        i.name AS item_name,
+        pl.qty_received AS qty
+      FROM supplier_ledger l
+      LEFT JOIN users u ON l.user_id = u.id
+      LEFT JOIN purchase_lines pl
+        ON l.transaction_type = 'PURCHASE'
+        AND l.reference_id = pl.id
+      LEFT JOIN items i ON pl.item_id = i.id
+      WHERE l.supplier_id = ?
+      ORDER BY l.id ASC
+      `,
     )
     .all(supplierId);
 });
@@ -1078,7 +1104,8 @@ ipcMain.handle(
         .get(supplier_id);
       if (!supp) throw new Error('Supplier not found');
 
-      const newBal = (supp.balance || 0) - amount;
+      const paidAmt = Number(amount) || 0;
+      const newBal = (Number(supp.balance) || 0) - paidAmt;
       db.prepare('UPDATE suppliers SET balance = ? WHERE id = ?').run(
         newBal,
         supplier_id,
@@ -1086,15 +1113,17 @@ ipcMain.handle(
 
       db.prepare(
         `
-      INSERT INTO supplier_ledger (supplier_id, transaction_type, description, debit, balance_after, user_id)
-      VALUES (?, 'PAYMENT', ?, ?, ?, ?)
-    `,
+        INSERT INTO supplier_ledger (
+          supplier_id, transaction_type, description, debit, credit, balance_after, user_id
+        )
+        VALUES (?, 'PAYMENT', ?, 0, ?, ?, ?)
+        `,
       ).run(
         supplier_id,
         `Payment Paid (${payment_method}) - ${notes || 'Vendor Settlement'}`,
-        amount,
+        paidAmt,
         newBal,
-        currentUser.id,
+        currentUser?.id || null,
       );
 
       return { success: true, newBal };
@@ -1124,48 +1153,61 @@ ipcMain.handle(
         ? `${date} 00:00:00`
         : new Date().toISOString().replace('T', ' ').substring(0, 19);
       const mode = payment_type || 'CREDIT';
+      const qty = Number(qty_received) || 0;
+      const cost = Number(unit_cost) || 0;
+      const billTotal = Number((qty * cost).toFixed(2));
 
-      // 1. Insert into purchase_lines with the correct payment_type mode ('CASH' or 'CREDIT')
-      db.prepare(
-        `
-        INSERT INTO purchase_lines (supplier_id, item_id, qty_received, unit_cost, payment_type, invoice_no, user_id, date)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `,
-      ).run(
-        supplier_id || null,
-        item_id,
-        qty_received,
-        unit_cost,
-        mode,
-        invoice_no || 'DIRECT-GRN',
-        currentUser.id,
-        purchaseDate,
-      );
+      const lineInfo = db
+        .prepare(
+          `
+          INSERT INTO purchase_lines (
+            supplier_id, item_id, qty_received, unit_cost, payment_type, invoice_no, user_id, date
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `,
+        )
+        .run(
+          supplier_id || null,
+          item_id || null,
+          qty,
+          cost,
+          mode,
+          invoice_no || 'DIRECT-GRN',
+          currentUser?.id || null,
+          purchaseDate,
+        );
 
-      // 2. Only update supplier balance and ledger if it's a CREDIT purchase
       if (supplier_id && mode === 'CREDIT') {
         const supp = db
           .prepare('SELECT balance FROM suppliers WHERE id = ?')
           .get(supplier_id);
-        const billTotal = qty_received * unit_cost;
-        const newSuppBal = (supp.balance || 0) + billTotal;
+        if (!supp) throw new Error('Supplier not found');
 
+        const newSuppBal = (Number(supp.balance) || 0) + billTotal;
         db.prepare('UPDATE suppliers SET balance = ? WHERE id = ?').run(
           newSuppBal,
           supplier_id,
         );
 
+        const itemRow = item_id
+          ? db.prepare('SELECT name FROM items WHERE id = ?').get(item_id)
+          : null;
+
         db.prepare(
           `
-          INSERT INTO supplier_ledger (supplier_id, transaction_type, description, credit, balance_after, user_id, date)
-          VALUES (?, 'PURCHASE', ?, ?, ?, ?, ?)
-        `,
+          INSERT INTO supplier_ledger (
+            supplier_id, transaction_type, reference_id, description,
+            debit, credit, balance_after, user_id, date
+          )
+          VALUES (?, 'PURCHASE', ?, ?, ?, 0, ?, ?, ?)
+          `,
         ).run(
           supplier_id,
-          `GRN Credit Purchase (Invoice: ${invoice_no})`,
+          lineInfo.lastInsertRowid,
+          `GRN Credit Purchase${itemRow?.name ? ` (${itemRow.name})` : ''} (Invoice: ${invoice_no || 'DIRECT-GRN'})`,
           billTotal,
           newSuppBal,
-          currentUser.id,
+          currentUser?.id || null,
           purchaseDate,
         );
       }
@@ -2027,7 +2069,6 @@ ipcMain.handle(
 // 📡 MANUAL UPDATE CHECKER
 ipcMain.handle('check-for-updates', async () => {
   try {
-    // Only allow in production builds
     if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
       return {
         success: false,
@@ -2057,11 +2098,63 @@ ipcMain.handle('check-for-updates', async () => {
 });
 
 // 📥 TRIGGER MANUAL DOWNLOAD
-ipcMain.handle('download-update', () => {
+ipcMain.handle('download-update', async () => {
   try {
-    autoUpdater.downloadUpdate();
+    if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
+      return {
+        success: false,
+        error: 'Updates are disabled in development mode.',
+      };
+    }
+    await autoUpdater.downloadUpdate();
     return { success: true };
   } catch (err) {
     return { success: false, error: err.message };
+  }
+});
+
+// 🚀 INSTALL DOWNLOADED UPDATE & RESTART
+ipcMain.handle('install-update', () => {
+  try {
+    if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
+      return {
+        success: false,
+        error: 'Updates are disabled in development mode.',
+      };
+    }
+    setImmediate(() => {
+      autoUpdater.quitAndInstall(false, true);
+    });
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = true;
+
+autoUpdater.on('download-progress', (progress) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(
+      'update-download-progress',
+      Math.round(progress.percent || 0),
+    );
+  }
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('update-downloaded', info);
+  }
+});
+
+autoUpdater.on('error', (err) => {
+  console.error('AutoUpdater error:', err);
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(
+      'update-error',
+      err?.message || 'Update download failed.',
+    );
   }
 });

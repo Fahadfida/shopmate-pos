@@ -230,7 +230,7 @@ export default function MasterLedger({ currentUser }) {
       }}
     >
       {/* HEADER */}
-      <div
+      {/* <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -264,45 +264,8 @@ export default function MasterLedger({ currentUser }) {
             Consolidated chronological audit feed across all modules.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            style={{
-              fontSize: '0.78rem',
-              padding: '7px 14px',
-              background: 'var(--brand-primary)',
-              color: '#fff',
-              fontWeight: 500,
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-            onClick={handleExportPDF}
-          >
-            <DownloadIcon /> Export PDF
-          </button>
-          <button
-            style={{
-              fontSize: '0.78rem',
-              padding: '7px 14px',
-              background: 'var(--ink-1)',
-              color: 'var(--ink-fg)',
-              fontWeight: 500,
-              borderRadius: '6px',
-              border: '1px solid var(--ink-3)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-            onClick={loadMasterLedger}
-          >
-            <RefreshIcon /> Refresh
-          </button>
-        </div>
-      </div>
+        
+      </div> */}
 
       {/* KPI SUMMARY CARDS */}
       <div
@@ -633,6 +596,45 @@ export default function MasterLedger({ currentUser }) {
               ✕ Reset
             </button>
           )}
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              style={{
+                fontSize: '0.78rem',
+                padding: '7px 14px',
+                background: 'var(--brand-primary)',
+                color: '#fff',
+                fontWeight: 500,
+                borderRadius: '6px',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+              onClick={handleExportPDF}
+            >
+              <DownloadIcon /> Export PDF
+            </button>
+            <button
+              style={{
+                fontSize: '0.78rem',
+                padding: '7px 14px',
+                background: 'var(--ink-1)',
+                color: 'var(--ink-fg)',
+                fontWeight: 500,
+                borderRadius: '6px',
+                border: '1px solid var(--ink-3)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+              onClick={loadMasterLedger}
+            >
+              <RefreshIcon /> Refresh
+            </button>
+          </div>
         </div>
       </div>
 

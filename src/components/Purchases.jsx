@@ -519,6 +519,7 @@ export default function Purchases({ currentUser, showToast }) {
             padding: '16px',
             border: '1px solid var(--ink-3)',
             overflowY: 'auto',
+            font: 'var(--font-sans)',
           }}
         >
           <div
@@ -571,6 +572,7 @@ export default function Purchases({ currentUser, showToast }) {
                   background: 'var(--ink-1)',
                   border: '1px solid var(--ink-3)',
                   borderRadius: '8px',
+                  font: 'var(--font-sans)',
                 }}
               >
                 <SegmentChip

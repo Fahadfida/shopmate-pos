@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useId } from 'react';
 import { getIpc } from '../utils/ipc';
 
 // ─────────────────────────────────────────────────────────────
@@ -11,17 +11,45 @@ const getInitials = (name) => {
   return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 };
 
-const fmt = (n) =>
-  `Rs. ${Number(n || 0).toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  })}`;
-
 const fmt2 = (n) =>
   `Rs. ${Number(n || 0).toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+
+const todayIso = () => new Date().toISOString().substring(0, 10);
+
+const defaultInvoiceNo = () =>
+  `GRN-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+function emptyForm() {
+  return {
+    code: '',
+    name: '',
+    category: 'General',
+    stock_qty: 0,
+    avg_cost: 0,
+    min_price: 0,
+    max_price: 0,
+    selling_price: 0,
+    unit: 'Pcs',
+    image_path: '',
+  };
+}
+
+function emptyPurchaseForm() {
+  return {
+    enabled: false,
+    mode: 'NEW', // 'NEW' (opening stock) | 'EXISTING' (restock existing item_id)
+    existing_item_id: '',
+    supplier_id: '',
+    qty_received: '',
+    unit_cost: '',
+    payment_type: 'CREDIT',
+    invoice_no: defaultInvoiceNo(),
+    date: todayIso(),
+  };
+}
 
 // ─────────────────────────────────────────────────────────────
 // Icons — 16px, 1.5 stroke
@@ -38,44 +66,44 @@ const iconBase = {
 };
 
 const SearchIcon = () => (
-  <svg {...iconBase}>
+  <svg {...iconBase} aria-hidden="true">
     <circle cx="11" cy="11" r="8" />
     <line x1="21" y1="21" x2="16.65" y2="16.65" />
   </svg>
 );
 const PlusIcon = () => (
-  <svg {...iconBase}>
+  <svg {...iconBase} aria-hidden="true">
     <line x1="12" y1="5" x2="12" y2="19" />
     <line x1="5" y1="12" x2="19" y2="12" />
   </svg>
 );
 const EditIcon = () => (
-  <svg {...iconBase}>
+  <svg {...iconBase} aria-hidden="true">
     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
   </svg>
 );
 const ArchiveIcon = () => (
-  <svg {...iconBase}>
+  <svg {...iconBase} aria-hidden="true">
     <polyline points="21 8 21 21 3 21 3 8" />
     <rect x="1" y="3" width="22" height="5" />
     <line x1="10" y1="12" x2="14" y2="12" />
   </svg>
 );
 const RestoreIcon = () => (
-  <svg {...iconBase}>
+  <svg {...iconBase} aria-hidden="true">
     <polyline points="1 4 1 10 7 10" />
     <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
   </svg>
 );
 const CloseIcon = () => (
-  <svg {...iconBase}>
+  <svg {...iconBase} aria-hidden="true">
     <line x1="18" y1="6" x2="6" y2="18" />
     <line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
 const GridIcon = () => (
-  <svg {...iconBase} width="14" height="14">
+  <svg {...iconBase} width="14" height="14" aria-hidden="true">
     <rect x="3" y="3" width="7" height="7" />
     <rect x="14" y="3" width="7" height="7" />
     <rect x="14" y="14" width="7" height="7" />
@@ -83,7 +111,7 @@ const GridIcon = () => (
   </svg>
 );
 const ListIcon = () => (
-  <svg {...iconBase} width="14" height="14">
+  <svg {...iconBase} width="14" height="14" aria-hidden="true">
     <line x1="8" y1="6" x2="21" y2="6" />
     <line x1="8" y1="12" x2="21" y2="12" />
     <line x1="8" y1="18" x2="21" y2="18" />
@@ -93,10 +121,15 @@ const ListIcon = () => (
   </svg>
 );
 const BoxIcon = () => (
-  <svg {...iconBase} width="28" height="28">
+  <svg {...iconBase} width="28" height="28" aria-hidden="true">
     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
     <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
     <line x1="12" y1="22.08" x2="12" y2="12" />
+  </svg>
+);
+const ChevronDownIcon = () => (
+  <svg {...iconBase} width="14" height="14" aria-hidden="true">
+    <polyline points="6 9 12 15 18 9" />
   </svg>
 );
 
@@ -106,6 +139,7 @@ const BoxIcon = () => (
 const SegmentChip = ({ active, onClick, icon, children }) => (
   <button
     type="button"
+    aria-pressed={active}
     onClick={onClick}
     style={{
       position: 'relative',
@@ -129,9 +163,10 @@ const SegmentChip = ({ active, onClick, icon, children }) => (
   </button>
 );
 
-const Field = ({ label, children }) => (
+const Field = ({ label, htmlFor, children }) => (
   <div>
     <label
+      htmlFor={htmlFor}
       style={{
         fontSize: '0.72rem',
         fontWeight: 500,
@@ -162,48 +197,50 @@ const inputStyle = {
 // ─────────────────────────────────────────────────────────────
 export default function Inventory({ currentUser, showToast }) {
   const [items, setItems] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
   const [search, setSearch] = useState('');
   const [filterMode, setFilterMode] = useState('active');
   const [viewMode, setViewMode] = useState('GRID');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [submittingAdd, setSubmittingAdd] = useState(false);
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [confirmArchive, setConfirmArchive] = useState(null); // id | null
+  const [confirmArchive, setConfirmArchive] = useState(null);
 
   // Form
   const [addMarginType, setAddMarginType] = useState('custom');
   const [editMarginType, setEditMarginType] = useState('custom');
   const [itemForm, setItemForm] = useState(emptyForm());
-
-  function emptyForm() {
-    return {
-      code: '',
-      name: '',
-      category: 'General',
-      stock_qty: 0,
-      avg_cost: 0,
-      min_price: 0,
-      max_price: 0,
-      selling_price: 0,
-      unit: 'Pcs',
-      image_path: '',
-    };
-  }
+  const [purchaseForm, setPurchaseForm] = useState(emptyPurchaseForm());
 
   const toast = (msg, type = 'info') => {
     if (showToast) showToast(msg, type);
     else if (type === 'error') console.error(msg);
   };
 
+  const loadSuppliers = async () => {
+    const ipc = getIpc();
+    if (!ipc) return;
+    try {
+      const fetched = await ipc.invoke('get-suppliers', true);
+      const activeOnly = (fetched || []).filter(
+        (s) => s.is_active === 1 || s.is_active === undefined,
+      );
+      setSuppliers(activeOnly);
+    } catch (err) {
+      console.error('Could not load suppliers:', err);
+    }
+  };
+
   const loadItems = async () => {
     const ipc = getIpc();
     if (!ipc) return;
     try {
-      setItems(await ipc.invoke('get-items', true));
+      setItems((await ipc.invoke('get-items', true)) || []);
       setError(null);
     } catch (err) {
       setError(err?.message || 'Could not load inventory.');
@@ -214,13 +251,25 @@ export default function Inventory({ currentUser, showToast }) {
 
   useEffect(() => {
     loadItems();
+    loadSuppliers();
   }, []);
 
-  // Auto SKU
+  useEffect(() => {
+    if (isAddModalOpen) {
+      loadSuppliers();
+    }
+  }, [isAddModalOpen]);
+
+  // Auto SKU for new product
   useEffect(() => {
     const fetchSku = async () => {
       const ipc = getIpc();
-      if (ipc && itemForm.name && isAddModalOpen) {
+      if (
+        ipc &&
+        itemForm.name &&
+        isAddModalOpen &&
+        purchaseForm.mode === 'NEW'
+      ) {
         try {
           const code = await ipc.invoke('get-next-sku', {
             category: itemForm.category,
@@ -233,7 +282,7 @@ export default function Inventory({ currentUser, showToast }) {
       }
     };
     fetchSku();
-  }, [itemForm.category, itemForm.name, isAddModalOpen]);
+  }, [itemForm.category, itemForm.name, isAddModalOpen, purchaseForm.mode]);
 
   const calculateSellingPrice = (cost, marginVal) => {
     if (marginVal === 'custom') return null;
@@ -243,7 +292,7 @@ export default function Inventory({ currentUser, showToast }) {
   };
 
   const handleImageUpload = (e, isEditing = false) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -254,27 +303,175 @@ export default function Inventory({ currentUser, showToast }) {
     reader.readAsDataURL(file);
   };
 
-  const handleRegisterItem = async (e) => {
+  const resetAddModalState = () => {
+    setIsAddModalOpen(false);
+    setItemForm(emptyForm());
+    setPurchaseForm(emptyPurchaseForm());
+    setAddMarginType('custom');
+    setSubmittingAdd(false);
+  };
+
+  const handleAddOrRestockSubmit = async (e) => {
     e.preventDefault();
+    if (submittingAdd) return;
     const ipc = getIpc();
     if (!ipc) return;
+
+    const isRestockExisting = purchaseForm.mode === 'EXISTING';
+    const qty = parseFloat(purchaseForm.qty_received) || 0;
+    const unitCost = parseFloat(purchaseForm.unit_cost) || 0;
+    const supplierId = purchaseForm.supplier_id
+      ? parseInt(purchaseForm.supplier_id, 10)
+      : null;
+
+    if (isRestockExisting) {
+      if (!purchaseForm.existing_item_id) {
+        return toast('Select an existing product to restock.', 'error');
+      }
+      if (!supplierId) {
+        return toast('Select an active supplier for the purchase.', 'error');
+      }
+      if (qty <= 0) {
+        return toast('Enter a received quantity greater than 0.', 'error');
+      }
+      if (unitCost < 0) {
+        return toast('Enter a valid unit cost.', 'error');
+      }
+
+      setSubmittingAdd(true);
+      try {
+        const res = await ipc.invoke('record-purchase', {
+          supplier_id: supplierId,
+          item_id: parseInt(purchaseForm.existing_item_id, 10),
+          qty_received: qty,
+          unit_cost: unitCost,
+          payment_type: purchaseForm.payment_type || 'CREDIT',
+          invoice_no: purchaseForm.invoice_no || defaultInvoiceNo(),
+          date: purchaseForm.date || todayIso(),
+          currentUser,
+        });
+
+        if (res?.success) {
+          const supName =
+            suppliers.find((s) => s.id === supplierId)?.name || 'Supplier';
+          toast(`Stock recorded with ${supName}.`, 'success');
+          await loadItems();
+          resetAddModalState();
+        } else {
+          toast('Purchase failed: ' + (res?.error || 'Unknown error'), 'error');
+          setSubmittingAdd(false);
+        }
+      } catch (err) {
+        toast('Purchase failed: ' + err.message, 'error');
+        setSubmittingAdd(false);
+      }
+      return;
+    }
+
+    // Mode === 'NEW': Create product (+ optional opening purchase)
+    const shouldRecordPurchase =
+      purchaseForm.enabled || Boolean(supplierId) || qty > 0;
+
+    if (shouldRecordPurchase) {
+      if (!supplierId) {
+        return toast(
+          'Select an active supplier to record opening stock.',
+          'error',
+        );
+      }
+      if (qty <= 0) {
+        return toast(
+          'Enter a quantity greater than 0 for opening stock.',
+          'error',
+        );
+      }
+      if (unitCost < 0) {
+        return toast('Enter a valid unit cost.', 'error');
+      }
+    }
+
+    setSubmittingAdd(true);
     try {
-      const payload = { ...itemForm, stock_qty: 0 };
-      const res = await ipc.invoke('add-item', {
+      const payload = {
+        ...itemForm,
+        stock_qty: 0,
+        avg_cost: shouldRecordPurchase
+          ? unitCost
+          : parseFloat(itemForm.avg_cost) || 0,
+      };
+
+      const itemRes = await ipc.invoke('add-item', {
         item: payload,
         currentUser,
       });
-      if (res.success) {
-        toast('Product added.', 'success');
-        setIsAddModalOpen(false);
-        setItemForm(emptyForm());
-        setAddMarginType('custom');
-        await loadItems();
-      } else {
-        toast('Add failed: ' + res.error, 'error');
+
+      if (!itemRes?.success) {
+        toast(
+          'Add failed: ' + (itemRes?.error || 'Could not add item'),
+          'error',
+        );
+        setSubmittingAdd(false);
+        return;
       }
+
+      toast('Product added.', 'success');
+
+      const createdItemId =
+        itemRes.id ?? itemRes.item_id ?? itemRes.data?.id ?? null;
+
+      if (shouldRecordPurchase) {
+        if (!createdItemId) {
+          toast(
+            'Product added, but item ID was not returned for opening purchase.',
+            'error',
+          );
+          await loadItems();
+          resetAddModalState();
+          return;
+        }
+
+        const purRes = await ipc.invoke('record-purchase', {
+          supplier_id: supplierId,
+          item_id: createdItemId,
+          qty_received: qty,
+          unit_cost: unitCost,
+          payment_type: purchaseForm.payment_type || 'CREDIT',
+          invoice_no: purchaseForm.invoice_no || defaultInvoiceNo(),
+          date: purchaseForm.date || todayIso(),
+          currentUser,
+        });
+
+        if (!purRes?.success) {
+          // Attempt compensation delete if main process didn't wrap in a single transaction
+          try {
+            await ipc.invoke('delete-ledger-entry', {
+              type: 'ITEMS',
+              id: createdItemId,
+              currentUser,
+            });
+          } catch (_) {
+            // No-op if handler doesn't exist
+          }
+          toast(
+            'Opening stock failed: ' +
+              (purRes?.error || 'Could not record purchase'),
+            'error',
+          );
+          await loadItems();
+          setSubmittingAdd(false);
+          return;
+        }
+
+        const supName =
+          suppliers.find((s) => s.id === supplierId)?.name || 'Supplier';
+        toast(`Stock recorded with ${supName}.`, 'success');
+      }
+
+      await loadItems();
+      resetAddModalState();
     } catch (err) {
       toast('Add failed: ' + err.message, 'error');
+      setSubmittingAdd(false);
     }
   };
 
@@ -336,8 +533,8 @@ export default function Inventory({ currentUser, showToast }) {
   const filteredItems = items.filter((i) => {
     const q = search.toLowerCase();
     const matches =
-      i.name.toLowerCase().includes(q) ||
-      i.code.toLowerCase().includes(q) ||
+      (i.name || '').toLowerCase().includes(q) ||
+      (i.code || '').toLowerCase().includes(q) ||
       (i.category && i.category.toLowerCase().includes(q));
     if (!matches) return false;
     if (filterMode === 'active')
@@ -361,7 +558,13 @@ export default function Inventory({ currentUser, showToast }) {
     all: items.length,
   };
 
-  // ─── Loading
+  const openAddModal = () => {
+    setAddMarginType('custom');
+    setItemForm(emptyForm());
+    setPurchaseForm(emptyPurchaseForm());
+    setIsAddModalOpen(true);
+  };
+
   if (loading) {
     return (
       <div
@@ -375,7 +578,7 @@ export default function Inventory({ currentUser, showToast }) {
           fontFamily: "'Inter', sans-serif",
         }}
       >
-        Loading inventory…
+        Loading inventory...
       </div>
     );
   }
@@ -411,6 +614,7 @@ export default function Inventory({ currentUser, showToast }) {
         >
           <span>{error}</span>
           <button
+            type="button"
             onClick={() => setError(null)}
             style={{
               background: 'transparent',
@@ -501,11 +705,8 @@ export default function Inventory({ currentUser, showToast }) {
             />
           </div>
           <button
-            onClick={() => {
-              setAddMarginType('custom');
-              setItemForm(emptyForm());
-              setIsAddModalOpen(true);
-            }}
+            type="button"
+            onClick={openAddModal}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -638,11 +839,8 @@ export default function Inventory({ currentUser, showToast }) {
             </div>
             {!search && filterMode === 'active' && (
               <button
-                onClick={() => {
-                  setAddMarginType('custom');
-                  setItemForm(emptyForm());
-                  setIsAddModalOpen(true);
-                }}
+                type="button"
+                onClick={openAddModal}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -871,6 +1069,7 @@ export default function Inventory({ currentUser, showToast }) {
                     </div>
                     <div style={{ display: 'flex', gap: '4px' }}>
                       <button
+                        type="button"
                         onClick={() => {
                           setEditingItem(item);
                           setEditMarginType('custom');
@@ -896,6 +1095,7 @@ export default function Inventory({ currentUser, showToast }) {
                       {confirmArchive === item.id ? (
                         <div style={{ display: 'flex', gap: '4px' }}>
                           <button
+                            type="button"
                             onClick={() => handleToggleArchive(item)}
                             style={{
                               padding: '6px 10px',
@@ -911,6 +1111,7 @@ export default function Inventory({ currentUser, showToast }) {
                             Confirm
                           </button>
                           <button
+                            type="button"
                             onClick={() => setConfirmArchive(null)}
                             style={{
                               padding: '6px 10px',
@@ -928,6 +1129,7 @@ export default function Inventory({ currentUser, showToast }) {
                         </div>
                       ) : (
                         <button
+                          type="button"
                           onClick={() => setConfirmArchive(item.id)}
                           aria-label={archived ? 'Reactivate' : 'Archive'}
                           style={{
@@ -1123,6 +1325,7 @@ export default function Inventory({ currentUser, showToast }) {
                     }}
                   >
                     <button
+                      type="button"
                       onClick={() => {
                         setEditingItem(item);
                         setEditMarginType('custom');
@@ -1145,6 +1348,7 @@ export default function Inventory({ currentUser, showToast }) {
                     {confirmArchive === item.id ? (
                       <>
                         <button
+                          type="button"
                           onClick={() => handleToggleArchive(item)}
                           style={{
                             padding: '4px 8px',
@@ -1160,6 +1364,7 @@ export default function Inventory({ currentUser, showToast }) {
                           Confirm
                         </button>
                         <button
+                          type="button"
                           onClick={() => setConfirmArchive(null)}
                           style={{
                             padding: '4px 8px',
@@ -1177,6 +1382,7 @@ export default function Inventory({ currentUser, showToast }) {
                       </>
                     ) : (
                       <button
+                        type="button"
                         onClick={() => setConfirmArchive(item.id)}
                         aria-label={archived ? 'Reactivate' : 'Archive'}
                         style={{
@@ -1201,17 +1407,28 @@ export default function Inventory({ currentUser, showToast }) {
         )}
       </div>
 
-      {/* ─────────── ADD MODAL ─────────── */}
+      {/* ─────────── ADD / RESTOCK MODAL ─────────── */}
       {isAddModalOpen && (
         <ProductModal
-          title="Add product"
+          title={
+            purchaseForm.mode === 'EXISTING'
+              ? 'Add product / Restock existing'
+              : 'Add product'
+          }
           form={itemForm}
           setForm={setItemForm}
+          purchaseForm={purchaseForm}
+          setPurchaseForm={setPurchaseForm}
+          suppliers={suppliers}
+          existingItems={items.filter(
+            (i) => i.is_active === 1 || i.is_active === undefined,
+          )}
           marginType={addMarginType}
           setMarginType={setAddMarginType}
-          onSubmit={handleRegisterItem}
-          onClose={() => setIsAddModalOpen(false)}
+          onSubmit={handleAddOrRestockSubmit}
+          onClose={resetAddModalState}
           onImage={(e) => handleImageUpload(e, false)}
+          submitting={submittingAdd}
           isNew
         />
       )}
@@ -1237,19 +1454,33 @@ export default function Inventory({ currentUser, showToast }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Shared Modal
+// Shared / Intake Modal
 // ─────────────────────────────────────────────────────────────
 function ProductModal({
   title,
   form,
   setForm,
+  purchaseForm,
+  setPurchaseForm,
+  suppliers = [],
+  existingItems = [],
   marginType,
   setMarginType,
   onSubmit,
   onClose,
   onImage,
+  submitting = false,
   isNew = false,
 }) {
+  const modeExistingId = useId();
+  const existingItemSelectId = useId();
+  const supplierSelectId = useId();
+  const qtyInputId = useId();
+  const unitCostInputId = useId();
+  const paymentSelectId = useId();
+  const invoiceInputId = useId();
+  const dateInputId = useId();
+
   const calculateSellingPrice = (cost, m) => {
     if (m === 'custom') return null;
     const base = parseFloat(cost) || 0;
@@ -1257,8 +1488,36 @@ function ProductModal({
     return Math.round((base + base * (pct / 100)) * 100) / 100;
   };
 
+  const isRestockExisting = isNew && purchaseForm?.mode === 'EXISTING';
+  const purchaseSectionOpen =
+    isNew &&
+    (isRestockExisting ||
+      purchaseForm?.enabled ||
+      Boolean(purchaseForm?.supplier_id) ||
+      (parseFloat(purchaseForm?.qty_received) || 0) > 0);
+
+  const computedTotal =
+    (parseFloat(purchaseForm?.qty_received) || 0) *
+    (parseFloat(purchaseForm?.unit_cost) || 0);
+
+  const handleToggleOpeningStock = () => {
+    setPurchaseForm((prev) => {
+      const nextEnabled = !prev.enabled;
+      return {
+        ...prev,
+        enabled: nextEnabled,
+        unit_cost:
+          nextEnabled && !prev.unit_cost && form.avg_cost
+            ? String(form.avg_cost)
+            : prev.unit_cost,
+      };
+    });
+  };
+
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -1275,7 +1534,7 @@ function ProductModal({
     >
       <div
         style={{
-          width: '720px',
+          width: '740px',
           maxWidth: '100%',
           maxHeight: '92vh',
           overflowY: 'auto',
@@ -1290,9 +1549,11 @@ function ProductModal({
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
+            gap: '12px',
             marginBottom: '16px',
             paddingBottom: '12px',
             borderBottom: '1px solid var(--ink-3)',
+            flexWrap: 'wrap',
           }}
         >
           <h3
@@ -1306,7 +1567,47 @@ function ProductModal({
           >
             {title}
           </h3>
+
+          {isNew && purchaseForm && (
+            <div
+              style={{
+                display: 'flex',
+                gap: '2px',
+                padding: '2px',
+                background: 'var(--ink-1)',
+                border: '1px solid var(--ink-3)',
+                borderRadius: '8px',
+              }}
+            >
+              <SegmentChip
+                active={purchaseForm.mode === 'NEW'}
+                onClick={() =>
+                  setPurchaseForm((prev) => ({
+                    ...prev,
+                    mode: 'NEW',
+                    existing_item_id: '',
+                  }))
+                }
+              >
+                New product
+              </SegmentChip>
+              <SegmentChip
+                active={purchaseForm.mode === 'EXISTING'}
+                onClick={() =>
+                  setPurchaseForm((prev) => ({
+                    ...prev,
+                    mode: 'EXISTING',
+                    enabled: true,
+                  }))
+                }
+              >
+                Restock existing
+              </SegmentChip>
+            </div>
+          )}
+
           <button
+            type="button"
             onClick={onClose}
             aria-label="Close"
             style={{
@@ -1328,209 +1629,581 @@ function ProductModal({
           onSubmit={onSubmit}
           style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
         >
-          <div
-            style={{
-              display: 'flex',
-              gap: '20px',
-              flexWrap: 'wrap',
-            }}
-          >
-            {/* Left */}
+          {!isRestockExisting ? (
             <div
               style={{
-                flex: '1 1 260px',
                 display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
+                gap: '20px',
+                flexWrap: 'wrap',
               }}
             >
-              <Field label="SKU (auto-generated)">
-                <input
-                  type="text"
-                  className="monospace"
-                  style={{
-                    ...inputStyle,
-                    background: 'var(--ink-1)',
-                    color: 'var(--ink-fg-2)',
-                  }}
-                  value={form.code}
-                  readOnly={isNew}
-                  disabled={!isNew}
-                />
-              </Field>
-              <Field label="Name">
-                <input
-                  type="text"
-                  style={inputStyle}
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Wireless mouse"
-                  required
-                />
-              </Field>
-              <Field label="Category">
-                <input
-                  type="text"
-                  style={inputStyle}
-                  value={form.category}
-                  onChange={(e) =>
-                    setForm({ ...form, category: e.target.value })
-                  }
-                  placeholder="Electronics"
-                />
-              </Field>
-              <Field label="Unit">
-                <input
-                  type="text"
-                  style={inputStyle}
-                  value={form.unit}
-                  onChange={(e) => setForm({ ...form, unit: e.target.value })}
-                  placeholder="Pcs"
-                />
-              </Field>
-              <Field label="Thumbnail">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={onImage}
-                  style={{ fontSize: '0.78rem', color: 'var(--ink-fg-2)' }}
-                />
-                {form.image_path && (
-                  <div style={{ marginTop: '8px' }}>
-                    <img
-                      src={form.image_path}
-                      alt="Preview"
-                      style={{
-                        width: '52px',
-                        height: '52px',
-                        borderRadius: '6px',
-                        objectFit: 'cover',
-                        border: '1px solid var(--ink-3)',
-                      }}
-                    />
-                  </div>
-                )}
-              </Field>
-            </div>
+              {/* Left — product details */}
+              <div
+                style={{
+                  flex: '1 1 260px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                }}
+              >
+                <Field label="SKU (auto-generated)">
+                  <input
+                    type="text"
+                    className="monospace"
+                    style={{
+                      ...inputStyle,
+                      background: 'var(--ink-1)',
+                      color: 'var(--ink-fg-2)',
+                    }}
+                    value={form.code}
+                    readOnly={isNew}
+                    disabled={!isNew}
+                  />
+                </Field>
+                <Field label="Name *">
+                  <input
+                    type="text"
+                    style={inputStyle}
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder="Wireless mouse"
+                    required
+                  />
+                </Field>
+                <Field label="Category">
+                  <input
+                    type="text"
+                    style={inputStyle}
+                    value={form.category}
+                    onChange={(e) =>
+                      setForm({ ...form, category: e.target.value })
+                    }
+                    placeholder="Electronics"
+                  />
+                </Field>
+                <Field label="Unit">
+                  <input
+                    type="text"
+                    style={inputStyle}
+                    value={form.unit}
+                    onChange={(e) => setForm({ ...form, unit: e.target.value })}
+                    placeholder="Pcs"
+                  />
+                </Field>
+                <Field label="Thumbnail">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={onImage}
+                    style={{ fontSize: '0.78rem', color: 'var(--ink-fg-2)' }}
+                  />
+                  {form.image_path && (
+                    <div style={{ marginTop: '8px' }}>
+                      <img
+                        src={form.image_path}
+                        alt="Preview"
+                        style={{
+                          width: '52px',
+                          height: '52px',
+                          borderRadius: '6px',
+                          objectFit: 'cover',
+                          border: '1px solid var(--ink-3)',
+                        }}
+                      />
+                    </div>
+                  )}
+                </Field>
+              </div>
 
-            {/* Right — pricing */}
+              {/* Right — pricing */}
+              <div
+                style={{
+                  flex: '1 1 260px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  background: 'var(--ink-1)',
+                  padding: '14px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--ink-3)',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    color: 'var(--ink-fg)',
+                  }}
+                >
+                  Pricing
+                </div>
+                <Field label="Unit cost">
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="monospace tabular"
+                    style={inputStyle}
+                    value={form.avg_cost}
+                    onChange={(e) => {
+                      const cost = parseFloat(e.target.value) || 0;
+                      const sp =
+                        calculateSellingPrice(cost, marginType) ??
+                        form.selling_price;
+                      setForm({ ...form, avg_cost: cost, selling_price: sp });
+                    }}
+                  />
+                </Field>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '10px',
+                  }}
+                >
+                  <Field label="Margin">
+                    <select
+                      style={inputStyle}
+                      value={marginType}
+                      onChange={(e) => {
+                        const m = e.target.value;
+                        setMarginType(m);
+                        const sp = calculateSellingPrice(form.avg_cost, m);
+                        if (sp !== null)
+                          setForm({ ...form, selling_price: sp });
+                      }}
+                    >
+                      <option value="custom">Manual</option>
+                      {[10, 15, 20, 25, 50, 100].map((p) => (
+                        <option key={p} value={p}>
+                          {p}%
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Selling price *">
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="monospace tabular"
+                      style={inputStyle}
+                      value={form.selling_price}
+                      onChange={(e) => {
+                        setForm({
+                          ...form,
+                          selling_price: parseFloat(e.target.value) || 0,
+                        });
+                        setMarginType('custom');
+                      }}
+                      required
+                    />
+                  </Field>
+                </div>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '10px',
+                  }}
+                >
+                  <Field label="Min price">
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="monospace tabular"
+                      style={inputStyle}
+                      value={form.min_price}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          min_price: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                    />
+                  </Field>
+                  <Field label="Max price">
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="monospace tabular"
+                      style={inputStyle}
+                      value={form.max_price}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          max_price: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                    />
+                  </Field>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Existing product restock selector */
             <div
               style={{
-                flex: '1 1 260px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
                 background: 'var(--ink-1)',
                 padding: '14px',
                 borderRadius: '10px',
                 border: '1px solid var(--ink-3)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+              }}
+            >
+              <Field label="Existing product *" htmlFor={existingItemSelectId}>
+                <div style={{ position: 'relative' }}>
+                  <select
+                    id={existingItemSelectId}
+                    style={{
+                      ...inputStyle,
+                      appearance: 'none',
+                      paddingRight: '32px',
+                    }}
+                    value={purchaseForm.existing_item_id}
+                    onChange={(e) => {
+                      const selectedId = e.target.value;
+                      const found = existingItems.find(
+                        (i) => String(i.id) === String(selectedId),
+                      );
+                      setPurchaseForm((prev) => ({
+                        ...prev,
+                        existing_item_id: selectedId,
+                        unit_cost: found?.avg_cost
+                          ? String(found.avg_cost)
+                          : prev.unit_cost,
+                      }));
+                    }}
+                    required
+                  >
+                    <option value="">Choose product to restock</option>
+                    {existingItems.map((it) => (
+                      <option key={it.id} value={it.id}>
+                        {it.name} ({it.code}) — {it.stock_qty}{' '}
+                        {it.unit || 'pcs'} on hand
+                      </option>
+                    ))}
+                  </select>
+                  <span
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--ink-fg-3)',
+                      pointerEvents: 'none',
+                      display: 'flex',
+                    }}
+                  >
+                    <ChevronDownIcon />
+                  </span>
+                </div>
+              </Field>
+            </div>
+          )}
+
+          {/* Opening stock / Supplier purchase block (New product collapsible, Restock existing always expanded) */}
+          {isNew && purchaseForm && (
+            <div
+              style={{
+                background: 'var(--ink-1)',
+                borderRadius: '10px',
+                border: '1px solid var(--ink-3)',
+                padding: '14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
               }}
             >
               <div
                 style={{
-                  fontSize: '0.78rem',
-                  fontWeight: 600,
-                  color: 'var(--ink-fg)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '12px',
                 }}
               >
-                Pricing
-              </div>
-              <Field label="Unit cost">
-                <input
-                  type="number"
-                  className="monospace tabular"
-                  style={inputStyle}
-                  value={form.avg_cost}
-                  onChange={(e) => {
-                    const cost = parseFloat(e.target.value) || 0;
-                    const sp =
-                      calculateSellingPrice(cost, marginType) ??
-                      form.selling_price;
-                    setForm({ ...form, avg_cost: cost, selling_price: sp });
-                  }}
-                />
-              </Field>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '10px',
-                }}
-              >
-                <Field label="Margin">
-                  <select
-                    style={inputStyle}
-                    value={marginType}
-                    onChange={(e) => {
-                      const m = e.target.value;
-                      setMarginType(m);
-                      const sp = calculateSellingPrice(form.avg_cost, m);
-                      if (sp !== null) setForm({ ...form, selling_price: sp });
+                <div>
+                  <div
+                    style={{
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      color: 'var(--ink-fg)',
                     }}
                   >
-                    <option value="custom">Manual</option>
-                    {[10, 15, 20, 25, 50, 100].map((p) => (
-                      <option key={p} value={p}>
-                        {p}%
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Selling price *">
-                  <input
-                    type="number"
-                    className="monospace tabular"
-                    style={inputStyle}
-                    value={form.selling_price}
-                    onChange={(e) => {
-                      setForm({
-                        ...form,
-                        selling_price: parseFloat(e.target.value) || 0,
-                      });
-                      setMarginType('custom');
+                    {isRestockExisting
+                      ? 'Supplier purchase details'
+                      : 'Opening stock purchase (optional)'}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '0.72rem',
+                      color: 'var(--ink-fg-3)',
+                      marginTop: '2px',
                     }}
-                    required
-                  />
-                </Field>
+                  >
+                    {isRestockExisting
+                      ? 'Records a purchase in the supplier ledger and adds quantity to stock.'
+                      : 'Leave closed to create the product at 0 stock without touching any ledger.'}
+                  </div>
+                </div>
+
+                {!isRestockExisting && (
+                  <button
+                    type="button"
+                    aria-expanded={purchaseSectionOpen}
+                    onClick={handleToggleOpeningStock}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '6px 12px',
+                      fontSize: '0.75rem',
+                      fontWeight: 500,
+                      background: purchaseSectionOpen
+                        ? 'var(--ink-0)'
+                        : 'var(--ink-2)',
+                      color: 'var(--ink-fg)',
+                      border: '1px solid var(--ink-3)',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <span>
+                      {purchaseSectionOpen
+                        ? 'Remove opening stock'
+                        : '+ Add opening stock'}
+                    </span>
+                    <ChevronDownIcon />
+                  </button>
+                )}
               </div>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '10px',
-                }}
-              >
-                <Field label="Min price">
-                  <input
-                    type="number"
-                    className="monospace tabular"
-                    style={inputStyle}
-                    value={form.min_price}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        min_price: parseFloat(e.target.value) || 0,
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="Max price">
-                  <input
-                    type="number"
-                    className="monospace tabular"
-                    style={inputStyle}
-                    value={form.max_price}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        max_price: parseFloat(e.target.value) || 0,
-                      })
-                    }
-                  />
-                </Field>
-              </div>
+
+              {purchaseSectionOpen && (
+                <>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1.4fr 1fr',
+                      gap: '10px',
+                    }}
+                  >
+                    <Field
+                      label={
+                        isRestockExisting
+                          ? 'Active supplier *'
+                          : 'Supplier (optional)'
+                      }
+                      htmlFor={supplierSelectId}
+                    >
+                      {suppliers.length === 0 ? (
+                        <div
+                          id={supplierSelectId}
+                          style={{
+                            ...inputStyle,
+                            background: 'var(--ink-0)',
+                            color: 'var(--ink-fg-3)',
+                            fontSize: '0.78rem',
+                          }}
+                        >
+                          No active suppliers
+                        </div>
+                      ) : (
+                        <div style={{ position: 'relative' }}>
+                          <select
+                            id={supplierSelectId}
+                            style={{
+                              ...inputStyle,
+                              appearance: 'none',
+                              paddingRight: '32px',
+                            }}
+                            value={purchaseForm.supplier_id}
+                            onChange={(e) =>
+                              setPurchaseForm((prev) => ({
+                                ...prev,
+                                supplier_id: e.target.value,
+                              }))
+                            }
+                            required={isRestockExisting || purchaseForm.enabled}
+                          >
+                            <option value="">
+                              {isRestockExisting
+                                ? 'Choose active supplier'
+                                : 'No supplier (0 opening stock)'}
+                            </option>
+                            {suppliers.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {s.name}
+                                {s.company ? ` (${s.company})` : ''}
+                              </option>
+                            ))}
+                          </select>
+                          <span
+                            style={{
+                              position: 'absolute',
+                              right: '10px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              color: 'var(--ink-fg-3)',
+                              pointerEvents: 'none',
+                              display: 'flex',
+                            }}
+                          >
+                            <ChevronDownIcon />
+                          </span>
+                        </div>
+                      )}
+                    </Field>
+
+                    <Field label="Payment type" htmlFor={paymentSelectId}>
+                      <select
+                        id={paymentSelectId}
+                        style={inputStyle}
+                        value={purchaseForm.payment_type}
+                        onChange={(e) =>
+                          setPurchaseForm((prev) => ({
+                            ...prev,
+                            payment_type: e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="CREDIT">CREDIT</option>
+                        <option value="CASH">CASH</option>
+                      </select>
+                    </Field>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '10px',
+                    }}
+                  >
+                    <Field label="Quantity received *" htmlFor={qtyInputId}>
+                      <input
+                        id={qtyInputId}
+                        type="number"
+                        min="0"
+                        step="any"
+                        className="monospace tabular"
+                        style={inputStyle}
+                        value={purchaseForm.qty_received}
+                        onChange={(e) =>
+                          setPurchaseForm((prev) => ({
+                            ...prev,
+                            qty_received: e.target.value,
+                          }))
+                        }
+                        placeholder="25"
+                        required={
+                          isRestockExisting ||
+                          (purchaseForm.enabled &&
+                            Boolean(purchaseForm.supplier_id))
+                        }
+                      />
+                    </Field>
+
+                    <Field label="Unit cost (Rs.) *" htmlFor={unitCostInputId}>
+                      <input
+                        id={unitCostInputId}
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className="monospace tabular"
+                        style={inputStyle}
+                        value={purchaseForm.unit_cost}
+                        onChange={(e) =>
+                          setPurchaseForm((prev) => ({
+                            ...prev,
+                            unit_cost: e.target.value,
+                          }))
+                        }
+                        placeholder="0.00"
+                        required={
+                          isRestockExisting ||
+                          (purchaseForm.enabled &&
+                            Boolean(purchaseForm.supplier_id))
+                        }
+                      />
+                    </Field>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '10px',
+                    }}
+                  >
+                    <Field label="Invoice / Reference" htmlFor={invoiceInputId}>
+                      <input
+                        id={invoiceInputId}
+                        type="text"
+                        className="monospace"
+                        style={inputStyle}
+                        value={purchaseForm.invoice_no}
+                        onChange={(e) =>
+                          setPurchaseForm((prev) => ({
+                            ...prev,
+                            invoice_no: e.target.value,
+                          }))
+                        }
+                        placeholder="GRN-2026-1001"
+                      />
+                    </Field>
+
+                    <Field label="Date" htmlFor={dateInputId}>
+                      <input
+                        id={dateInputId}
+                        type="date"
+                        style={inputStyle}
+                        value={purchaseForm.date}
+                        onChange={(e) =>
+                          setPurchaseForm((prev) => ({
+                            ...prev,
+                            date: e.target.value,
+                          }))
+                        }
+                      />
+                    </Field>
+                  </div>
+
+                  {/* Read-only computed total */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      paddingTop: '10px',
+                      borderTop: '1px solid var(--ink-3)',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 500,
+                        color: 'var(--ink-fg-2)',
+                      }}
+                    >
+                      Computed purchase total (Qty × Unit cost)
+                    </span>
+                    <span
+                      className="monospace tabular"
+                      style={{
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        color: 'var(--ink-fg)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      {fmt2(computedTotal)}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
-          </div>
+          )}
 
           <div
             style={{
@@ -1544,6 +2217,7 @@ function ProductModal({
             <button
               type="button"
               onClick={onClose}
+              disabled={submitting}
               style={{
                 padding: '8px 16px',
                 background: 'var(--ink-1)',
@@ -1551,7 +2225,7 @@ function ProductModal({
                 fontWeight: 500,
                 borderRadius: '8px',
                 border: '1px solid var(--ink-3)',
-                cursor: 'pointer',
+                cursor: submitting ? 'not-allowed' : 'pointer',
                 fontSize: '0.8rem',
               }}
             >
@@ -1559,6 +2233,7 @@ function ProductModal({
             </button>
             <button
               type="submit"
+              disabled={submitting}
               style={{
                 padding: '8px 20px',
                 background: 'var(--brand-primary)',
@@ -1566,11 +2241,18 @@ function ProductModal({
                 fontWeight: 500,
                 borderRadius: '8px',
                 border: 'none',
-                cursor: 'pointer',
+                cursor: submitting ? 'not-allowed' : 'pointer',
                 fontSize: '0.8rem',
+                opacity: submitting ? 0.7 : 1,
               }}
             >
-              {isNew ? 'Save product' : 'Save changes'}
+              {submitting
+                ? 'Saving...'
+                : isNew
+                  ? isRestockExisting
+                    ? 'Record purchase'
+                    : 'Save product'
+                  : 'Save changes'}
             </button>
           </div>
         </form>

@@ -1,42 +1,22 @@
 /* ==========================================
-   SHOPMATE ENTERPRISE DESIGN SYSTEM
+   SHOPMATE ENTERPRISE DESIGN SYSTEM (INK)
    ========================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 /* =========================================================
-   1. THEME VARIABLES
+   1. INK THEME VARIABLES
    ========================================================= */
 :root {
   /* Brand */
   --brand-primary: #0d5c75;
   --brand-hover: #09485c;
 
-  /* Legacy light theme (used by unrefactored pages) */
-  --bg-app: #f1f5f9;
-  --bg-card: #ffffff;
-  --bg-hover: #f8fafc;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --border-color: #e2e8f0;
-  --border-strong: #cbd5e1;
-  --sidebar-bg: #0a1128;
-
-  --success: #059669;
-  --success-bg: #d1fae5;
-  --danger: #dc2626;
-  --danger-bg: #fee2e2;
-  --warning: #d97706;
-  --warning-bg: #fef3c7;
-  --info: #0284c7;
-  --info-bg: #e0f2fe;
-
   /* Typography */
-  --font-sans: 'Inter', sans-serif;
-  --font-heading: 'Plus Jakarta Sans', sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* ─── INK SYSTEM (Dashboard / POS / Sidebar) ─── */
+  /* Surfaces & Ink */
   --ink-0: #ffffff;
   --ink-1: #faf9f6;
   --ink-2: #f4f2ec;
@@ -46,13 +26,16 @@
   --ink-fg-2: #5c5a52;
   --ink-fg-3: #8a877c;
 
+  /* Semantic Ink Tokens */
   --ink-success: #3f7a52;
   --ink-danger: #9b3a32;
   --ink-warning: #94651b;
   --ink-info: #2f6076;
 
+  /* Charts */
   --chart-grid: #e7e4db;
 
+  /* Sidebar */
   --ink-sidebar: #171612;
   --ink-sidebar-fg: #b8b4a8;
   --ink-sidebar-fg-strong: #f1efe8;
@@ -62,29 +45,11 @@
 }
 
 [data-theme='dark'] {
-  /* Legacy dark theme */
-  --bg-app: #0f172a;
-  --bg-card: #1e293b;
-  --bg-hover: #334155;
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --border-color: #334155;
-  --border-strong: #475569;
-  --sidebar-bg: #0f172a;
-
+  /* Brand */
   --brand-primary: #38bdf8;
   --brand-hover: #7dd3fc;
 
-  --success: #34d399;
-  --success-bg: rgba(52, 211, 153, 0.15);
-  --danger: #f87171;
-  --danger-bg: rgba(248, 113, 113, 0.15);
-  --warning: #fbbf24;
-  --warning-bg: rgba(251, 191, 36, 0.15);
-  --info: #38bdf8;
-  --info-bg: rgba(56, 189, 248, 0.15);
-
-  /* ─── INK SYSTEM (dark) ─── */
+  /* Surfaces & Ink (Dark) */
   --ink-0: #1a1917;
   --ink-1: #121110;
   --ink-2: #1f1e1b;
@@ -94,13 +59,16 @@
   --ink-fg-2: #a8a49a;
   --ink-fg-3: #74716a;
 
+  /* Semantic Ink Tokens (Dark) */
   --ink-success: #6bb37f;
   --ink-danger: #e0837a;
   --ink-warning: #d6a44b;
   --ink-info: #7db2c7;
 
+  /* Charts (Dark) */
   --chart-grid: #2e2c28;
 
+  /* Sidebar (Dark) */
   --ink-sidebar: #0e0d0b;
   --ink-sidebar-fg: #a8a49a;
   --ink-sidebar-fg-strong: #f1efe8;
@@ -112,7 +80,9 @@
 /* =========================================================
    2. GLOBAL RESETS
    ========================================================= */
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -124,13 +94,13 @@ html,
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background-color: var(--ink-1) !important;
-  color: var(--text-primary);
+  background-color: var(--ink-1);
+  color: var(--ink-fg);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
+    background-color 150ms ease,
+    color 150ms ease;
 }
 
 h1,
@@ -139,8 +109,8 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font-heading);
-  color: var(--text-primary);
+  font-family: var(--font-sans);
+  color: var(--ink-fg);
 }
 
 .monospace {
@@ -160,7 +130,7 @@ h6 {
   flex-direction: row;
   width: 100vw;
   height: 100vh;
-  background-color: var(--ink-1) !important;
+  background-color: var(--ink-1);
   overflow: hidden;
 }
 
@@ -168,14 +138,14 @@ h6 {
   width: 256px;
   min-width: 256px;
   height: 100vh;
-  background: var(--sidebar-bg);
-  color: #ffffff;
+  background-color: var(--ink-sidebar);
+  color: var(--ink-sidebar-fg-strong);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   border-right: 1px solid var(--ink-sidebar-hairline);
   z-index: 10;
-  transition: transform 0.25s ease;
+  transition: transform 200ms ease;
 }
 
 .shopmate-content {
@@ -185,8 +155,7 @@ h6 {
   flex-direction: column;
   overflow-y: auto;
   padding: 24px;
-  /* background-color: var(--bg-app); */
-  background-color: var(--ink-1) !important;
+  background-color: var(--ink-1);
 }
 
 /* Nav items — used by Sidebar.jsx */
@@ -198,6 +167,7 @@ h6 {
   background: transparent;
   border: none;
   color: var(--ink-sidebar-fg);
+  font-family: var(--font-sans);
   font-size: 0.82rem;
   font-weight: 500;
   border-radius: 6px;
@@ -227,16 +197,15 @@ h6 {
   bottom: 6px;
   width: 3px;
   border-radius: 2px;
-  background: var(--brand-primary);
+  background-color: var(--brand-primary);
 }
 
 /* =========================================================
-   4. LEGACY COMPONENT UTILITIES
-   (kept for unrefactored pages)
+   4. INK COMPONENT UTILITIES
    ========================================================= */
 .card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  background-color: var(--ink-0);
+  border: 1px solid var(--ink-3);
   border-radius: 10px;
   padding: 20px;
 }
@@ -245,38 +214,37 @@ h6 {
   width: 100%;
   padding: 10px 12px;
   border-radius: 6px;
-  border: 1px solid var(--border-strong);
-  background-color: var(--bg-card);
-  color: var(--text-primary);
+  border: 1px solid var(--ink-3);
+  background-color: var(--ink-0);
+  color: var(--ink-fg);
   font-family: var(--font-sans);
   font-size: 0.88rem;
   outline: none;
   transition:
-    border-color 0.15s ease,
-    background-color 0.2s ease;
+    border-color 150ms ease,
+    background-color 150ms ease;
 }
 
 .input-field:focus {
   border-color: var(--brand-primary);
-  box-shadow: 0 0 0 2px rgba(13, 92, 117, 0.1);
 }
 
 .input-field::placeholder {
-  color: var(--text-secondary);
+  color: var(--ink-fg-3);
 }
 
 input,
 select,
 textarea {
-  background-color: var(--bg-card);
-  color: var(--text-primary);
-  border: 1px solid var(--border-strong);
+  background-color: var(--ink-0);
+  color: var(--ink-fg);
+  border: 1px solid var(--ink-3);
   font-family: var(--font-sans);
 }
 
 [data-theme='dark'] option {
-  background-color: var(--bg-card);
-  color: var(--text-primary);
+  background-color: var(--ink-0);
+  color: var(--ink-fg);
 }
 
 .btn {
@@ -287,7 +255,7 @@ textarea {
   font-weight: 500;
   font-size: 0.82rem;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: background-color 150ms ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -300,25 +268,28 @@ textarea {
 
 .btn-primary {
   background-color: var(--brand-primary);
-  color: #ffffff;
+  color: var(--ink-0);
 }
+
 .btn-primary:hover {
   background-color: var(--brand-hover);
 }
+
 .btn-success {
-  background-color: var(--success);
-  color: #ffffff;
+  background-color: var(--ink-success);
+  color: var(--ink-0);
 }
+
 .btn-danger {
-  background-color: var(--danger);
-  color: #ffffff;
+  background-color: var(--ink-danger);
+  color: var(--ink-0);
 }
 
 /* Tables (used by ledger pages) */
 .table-container {
   overflow-x: auto;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  background-color: var(--ink-0);
+  border: 1px solid var(--ink-3);
   border-radius: 8px;
 }
 
@@ -330,18 +301,18 @@ textarea {
 }
 
 .data-table th {
-  background-color: var(--bg-hover);
+  background-color: var(--ink-2);
   padding: 12px 16px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--ink-3);
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--ink-fg-2);
   font-size: 0.72rem;
 }
 
 .data-table td {
   padding: 12px 16px;
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-primary);
+  border-bottom: 1px solid var(--ink-3);
+  color: var(--ink-fg);
 }
 
 /* =========================================================
@@ -351,15 +322,18 @@ textarea {
   width: 8px;
   height: 8px;
 }
+
 ::-webkit-scrollbar-track {
-  background: var(--bg-app);
+  background: var(--ink-1);
 }
+
 ::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
+  background: var(--ink-3);
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
+  background: var(--ink-4);
 }
 
 /* =========================================================
@@ -368,7 +342,7 @@ textarea {
 .receipt-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background-color: rgba(28, 27, 23, 0.55);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -377,10 +351,10 @@ textarea {
 
 .receipt-paper {
   width: 320px;
-  background: var(--ink-1);
+  background-color: var(--ink-1);
   color: var(--ink-fg);
   padding: 24px 20px 28px 20px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   border: 1px solid var(--ink-3);
   border-radius: 10px;
 }
@@ -405,26 +379,28 @@ textarea {
   .shopmate-sidebar,
   .shopmate-content > *:not(.receipt-modal-backdrop),
   .receipt-actions-row {
-    display: none !important;
+    display: none;
   }
+
   .receipt-modal-backdrop {
-    position: absolute !important;
-    inset: 0 !important;
-    background: transparent !important;
-    display: block !important;
-    z-index: 999999 !important;
+    position: absolute;
+    inset: 0;
+    background: transparent;
+    display: block;
+    z-index: 999999;
   }
+
   .receipt-paper {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 80mm !important;
-    margin: 0 !important;
-    padding: 4mm !important;
-    background: #ffffff !important;
-    color: #000000 !important;
-    border: none !important;
-    border-radius: 0 !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 80mm;
+    margin: 0;
+    padding: 4mm;
+    background-color: #ffffff;
+    color: #000000;
+    border: none;
+    border-radius: 0;
   }
 }
 
@@ -433,7 +409,7 @@ textarea {
    ========================================================= */
 .mobile-header {
   display: none;
-  background: var(--ink-sidebar);
+  background-color: var(--ink-sidebar);
   color: var(--ink-sidebar-fg-strong);
   padding: 10px 16px;
   align-items: center;
@@ -463,21 +439,25 @@ textarea {
   .mobile-header {
     display: flex;
   }
+
   .shopmate-container {
     flex-direction: column;
   }
+
   .shopmate-sidebar {
-    position: fixed !important;
+    position: fixed;
     top: 0;
     left: 0;
     bottom: 0;
     transform: translateX(-100%);
-    width: 256px !important;
-    min-width: 256px !important;
+    width: 256px;
+    min-width: 256px;
   }
+
   .shopmate-sidebar.mobile-open {
     transform: translateX(0);
   }
+
   .shopmate-content {
     margin-top: 56px;
     height: calc(100vh - 56px);
