@@ -1,188 +1,242 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useId } from 'react';
 import logoImage from '../assets/logo.png';
 import { getIpc } from '../utils/ipc';
 
-// --- SVG ICONS ---
+// ─────────────────────────────────────────────────────────────
+// Icons (18px 1.5 stroke)
+// ─────────────────────────────────────────────────────────────
+const iconBase = {
+  width: 18,
+  height: 18,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.5,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+};
+
 const StoreIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-    <polyline points="9 22 9 12 15 12 15 22"></polyline>
-  </svg>
-);
-const ShieldIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-  </svg>
-);
-const DatabaseIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
-    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
-    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
-  </svg>
-);
-const InfoIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="10"></circle>
-    <line x1="12" y1="16" x2="12" y2="12"></line>
-    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-  </svg>
-);
-const PaletteIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="13.5" cy="6.5" r=".5"></circle>
-    <circle cx="17.5" cy="10.5" r=".5"></circle>
-    <circle cx="8.5" cy="7.5" r=".5"></circle>
-    <circle cx="6.5" cy="12.5" r=".5"></circle>
-    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path>
-  </svg>
-);
-const SunIcon = () => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="5"></circle>
-    <line x1="12" y1="1" x2="12" y2="3"></line>
-    <line x1="12" y1="21" x2="12" y2="23"></line>
-    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-    <line x1="1" y1="12" x2="3" y2="12"></line>
-    <line x1="21" y1="12" x2="23" y2="12"></line>
-    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-  </svg>
-);
-const MoonIcon = () => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-  </svg>
-);
-const UploadIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-    <polyline points="17 8 12 3 7 8"></polyline>
-    <line x1="12" y1="3" x2="12" y2="15"></line>
-  </svg>
-);
-const DownloadIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-    <polyline points="7 10 12 15 17 10"></polyline>
-    <line x1="12" y1="15" x2="12" y2="3"></line>
-  </svg>
-);
-const SaveIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-    <polyline points="17 21 17 13 7 13 7 21"></polyline>
-    <polyline points="7 3 7 8 15 8"></polyline>
-  </svg>
-);
-const LockIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+  <svg {...iconBase} aria-hidden="true">
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <polyline points="9 22 9 12 15 12 15 22" />
   </svg>
 );
 
-export default function Settings({ currentUser }) {
+const ShieldIcon = () => (
+  <svg {...iconBase} aria-hidden="true">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+  </svg>
+);
+
+const DatabaseIcon = () => (
+  <svg {...iconBase} aria-hidden="true">
+    <ellipse cx="12" cy="5" rx="9" ry="3" />
+    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+  </svg>
+);
+
+const InfoIcon = () => (
+  <svg {...iconBase} aria-hidden="true">
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="16" x2="12" y2="12" />
+    <line x1="12" y1="8" x2="12.01" y2="8" />
+  </svg>
+);
+
+const PaletteIcon = () => (
+  <svg {...iconBase} aria-hidden="true">
+    <circle cx="13.5" cy="6.5" r=".5" />
+    <circle cx="17.5" cy="10.5" r=".5" />
+    <circle cx="8.5" cy="7.5" r=".5" />
+    <circle cx="6.5" cy="12.5" r=".5" />
+    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
+  </svg>
+);
+
+const SunIcon = () => (
+  <svg {...iconBase} width={20} height={20} aria-hidden="true">
+    <circle cx="12" cy="12" r="5" />
+    <line x1="12" y1="1" x2="12" y2="3" />
+    <line x1="12" y1="21" x2="12" y2="23" />
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+    <line x1="1" y1="12" x2="3" y2="12" />
+    <line x1="21" y1="12" x2="23" y2="12" />
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+  </svg>
+);
+
+const MoonIcon = () => (
+  <svg {...iconBase} width={20} height={20} aria-hidden="true">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+  </svg>
+);
+
+const UploadIcon = () => (
+  <svg {...iconBase} width={16} height={16} aria-hidden="true">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="17 8 12 3 7 8" />
+    <line x1="12" y1="3" x2="12" y2="15" />
+  </svg>
+);
+
+const DownloadIcon = () => (
+  <svg {...iconBase} width={16} height={16} aria-hidden="true">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </svg>
+);
+
+const SaveIcon = () => (
+  <svg {...iconBase} width={16} height={16} aria-hidden="true">
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+    <polyline points="17 21 17 13 7 13 7 21" />
+    <polyline points="7 3 7 8 15 8" />
+  </svg>
+);
+
+const LockIcon = () => (
+  <svg {...iconBase} aria-hidden="true">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+
+const RefreshIcon = () => (
+  <svg {...iconBase} width={16} height={16} aria-hidden="true">
+    <polyline points="23 4 23 10 17 10" />
+    <polyline points="1 20 1 14 7 14" />
+    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+  </svg>
+);
+
+// ─────────────────────────────────────────────────────────────
+// Typography & Surface Tokens (4px grid, legible POS scale)
+// ─────────────────────────────────────────────────────────────
+const sansFamily = {
+  fontFamily: 'var(--font-sans)',
+};
+
+const typeScale = {
+  pageTitle: {
+    ...sansFamily,
+    fontSize: '1.125rem',
+    fontWeight: 600,
+    lineHeight: 1.3,
+  },
+  sectionTitle: {
+    ...sansFamily,
+    fontSize: '1.0625rem',
+    fontWeight: 600,
+    lineHeight: 1.35,
+  },
+  cardTitle: {
+    ...sansFamily,
+    fontSize: '0.9375rem',
+    fontWeight: 600,
+    lineHeight: 1.4,
+  },
+  body: {
+    ...sansFamily,
+    fontSize: '0.875rem',
+    fontWeight: 400,
+    lineHeight: 1.5,
+  },
+  label: {
+    ...sansFamily,
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    lineHeight: 1.4,
+  },
+  helper: {
+    ...sansFamily,
+    fontSize: '0.8125rem',
+    fontWeight: 400,
+    lineHeight: 1.45,
+  },
+  control: {
+    ...sansFamily,
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    lineHeight: 1.3,
+  },
+  badge: {
+    ...sansFamily,
+    fontSize: '0.75rem',
+    fontWeight: 600,
+    lineHeight: 1.2,
+  },
+};
+
+const Field = ({ label, htmlFor, children }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    <label
+      htmlFor={htmlFor}
+      style={{
+        ...typeScale.label,
+        color: 'var(--ink-fg-2)',
+      }}
+    >
+      {label}
+    </label>
+    {children}
+  </div>
+);
+
+const inputStyle = {
+  ...typeScale.body,
+  minHeight: '40px',
+  padding: '8px 12px',
+  borderRadius: '8px',
+  border: '1px solid var(--ink-3)',
+  background: 'var(--ink-0)',
+  color: 'var(--ink-fg)',
+  width: '100%',
+  outline: 'none',
+  transition: 'border-color 150ms ease, background-color 150ms ease',
+};
+
+const primaryButtonStyle = {
+  ...typeScale.control,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '8px',
+  minHeight: '38px',
+  padding: '8px 16px',
+  background: 'var(--brand-primary)',
+  color: 'var(--ink-0)',
+  borderRadius: '8px',
+  border: 'none',
+  cursor: 'pointer',
+  transition: 'opacity 150ms ease, transform 120ms ease',
+};
+
+const applyThemeToDom = (theme) => {
+  const normalized = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', normalized);
+  if (document.body) {
+    document.body.setAttribute('data-theme', normalized);
+  }
+  return normalized;
+};
+
+// ─────────────────────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────────────────────
+export default function Settings({ currentUser, showToast }) {
+  const shopNameId = useId();
+  const shopAddressId = useId();
+  const shopPhoneId = useId();
+  const skuFormatId = useId();
+  const shopLogoId = useId();
+  const operatorSelectId = useId();
+  const newPasswordId = useId();
+
   const [activeTab, setActiveTab] = useState('shop');
 
   const [settings, setSettings] = useState({
@@ -191,12 +245,16 @@ export default function Settings({ currentUser }) {
     shop_phone: '',
     shop_logo: '',
     sku_format: 'CAT_SEQ',
+    theme: 'light',
     cloud_provider: 'NONE',
     cloud_sync_enabled: false,
     last_sync_time: 'Never',
   });
 
-  const [currentTheme, setCurrentTheme] = useState('light');
+  const [currentTheme, setCurrentTheme] = useState(() => {
+    const saved = localStorage.getItem('shopmate_theme') || 'light';
+    return applyThemeToDom(saved);
+  });
   const [saveStatus, setSaveStatus] = useState('');
   const [backupStatus, setBackupStatus] = useState('');
   const [users, setUsers] = useState([]);
@@ -204,24 +262,38 @@ export default function Settings({ currentUser }) {
   const [newPassword, setNewPassword] = useState('');
   const [passwordStatus, setPasswordStatus] = useState('');
 
-  // 👇 THESE ARE NOW SAFELY INSIDE THE COMPONENT 👇
-  const [updateStatus, setUpdateStatus] = useState(''); // '', 'checking', 'available', 'up-to-date', 'error'
+  const [updateStatus, setUpdateStatus] = useState('');
+  const [downloadState, setDownloadState] = useState('idle'); // 'idle' | 'downloading' | 'downloaded' | 'error'
+  const [downloadPercent, setDownloadPercent] = useState(0);
   const [updateInfo, setUpdateInfo] = useState({
     version: '',
     currentVersion: '',
   });
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
-  // 👆 ------------------------------------------ 👆
+
+  const notify = (msg, type = 'success') => {
+    if (typeof showToast === 'function') {
+      showToast(msg, type);
+    }
+  };
 
   const loadSettingsAndUsers = async () => {
     const ipc = getIpc();
-    if (ipc) {
-      const data = await ipc.invoke('get-settings');
-      if (data) setSettings((prev) => ({ ...prev, ...data }));
-      if (currentUser?.role?.toUpperCase() === 'ADMIN') {
-        const fetchedUsers = await ipc.invoke('get-users');
-        setUsers(fetchedUsers || []);
-      }
+    if (!ipc) return;
+
+    const data = await ipc.invoke('get-settings');
+    if (data) {
+      setSettings((prev) => ({ ...prev, ...data }));
+      const persistedTheme =
+        data.theme || localStorage.getItem('shopmate_theme') || 'light';
+      const applied = applyThemeToDom(persistedTheme);
+      setCurrentTheme(applied);
+      localStorage.setItem('shopmate_theme', applied);
+    }
+
+    if (currentUser?.role?.toUpperCase() === 'ADMIN') {
+      const fetchedUsers = await ipc.invoke('get-users');
+      setUsers(fetchedUsers || []);
     }
   };
 
@@ -231,7 +303,7 @@ export default function Settings({ currentUser }) {
 
     if (ipc) {
       const res = await ipc.invoke('check-for-updates');
-      if (res.success) {
+      if (res && res.success) {
         if (res.hasUpdate) {
           setUpdateInfo({
             version: res.version,
@@ -245,7 +317,9 @@ export default function Settings({ currentUser }) {
         }
       } else {
         setUpdateStatus('error');
-        alert(res.error);
+        const msg = res?.error || 'Could not check for updates.';
+        notify(msg, 'error');
+        alert(msg);
       }
     } else {
       setUpdateStatus('error');
@@ -255,33 +329,114 @@ export default function Settings({ currentUser }) {
 
   const handleStartUpdate = async () => {
     const ipc = getIpc();
-    if (ipc) {
-      await ipc.invoke('download-update');
-      setIsUpdateModalOpen(false);
-      alert('Download started! The app will prompt you to restart when ready.');
+    if (!ipc) {
+      alert('Updates require the desktop app.');
+      return;
+    }
+
+    setDownloadState('downloading');
+    setDownloadPercent(0);
+    setIsUpdateModalOpen(false);
+    notify(`Downloading ShopMate v${updateInfo.version}...`, 'info');
+
+    const res = await ipc.invoke('download-update');
+    if (!res || !res.success) {
+      setDownloadState('error');
+      const msg = res?.error || 'Could not start update download.';
+      notify(msg, 'error');
+      alert(msg);
+    }
+  };
+
+  const handleInstallNow = async () => {
+    const ipc = getIpc();
+    if (!ipc) return;
+
+    const res = await ipc.invoke('install-update');
+    if (!res || !res.success) {
+      const msg = res?.error || 'Could not install update.';
+      notify(msg, 'error');
+      alert(msg);
     }
   };
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('shopmate_theme') || 'light';
-    setCurrentTheme(savedTheme);
-    document.documentElement.setAttribute('data-theme', savedTheme);
+    setCurrentTheme(applyThemeToDom(savedTheme));
     loadSettingsAndUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
-  const handleThemeChange = (theme) => {
-    setCurrentTheme(theme);
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('shopmate_theme', theme);
-  };
+  useEffect(() => {
+    const ipc = getIpc();
+    if (!ipc || typeof ipc.on !== 'function') return;
 
+    const onProgress = (_event, pct) => {
+      setDownloadState('downloading');
+      setDownloadPercent(pct);
+    };
+
+    const onDownloaded = (info) => {
+      setDownloadState('downloaded');
+      setDownloadPercent(100);
+      if (info?.version) {
+        setUpdateInfo((prev) => ({ ...prev, version: info.version }));
+      }
+      notify(
+        'Update downloaded. Click "Restart & install" to apply.',
+        'success',
+      );
+    };
+
+    const onError = (_event, message) => {
+      setDownloadState('error');
+      const errMsg = message || 'Update download failed.';
+      notify(errMsg, 'error');
+    };
+
+    ipc.on('update-download-progress', onProgress);
+    ipc.on('update-downloaded', onDownloaded);
+    ipc.on('update-error', onError);
+
+    return () => {
+      if (typeof ipc.removeListener === 'function') {
+        ipc.removeListener('update-download-progress', onProgress);
+        ipc.removeListener('update-downloaded', onDownloaded);
+        ipc.removeListener('update-error', onError);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleThemeChange = async (theme) => {
+    const applied = applyThemeToDom(theme);
+    setCurrentTheme(applied);
+    localStorage.setItem('shopmate_theme', applied);
+    setSettings((prev) => ({ ...prev, theme: applied }));
+
+    const ipc = getIpc();
+    if (ipc) {
+      try {
+        const res = await ipc.invoke('save-settings', { theme: applied });
+        if (!res?.success) {
+          console.warn('Theme saved locally but DB write failed:', res?.error);
+          // do NOT revert — localStorage remains authoritative
+        }
+      } catch (err) {
+        console.error('Failed to persist theme setting:', err);
+      }
+    }
+    notify(`Switched to ${applied} mode`);
+  };
   const handleSave = async (e) => {
     e.preventDefault();
     const ipc = getIpc();
     if (ipc) {
-      const res = await ipc.invoke('save-settings', settings);
+      const payload = { ...settings, theme: currentTheme };
+      const res = await ipc.invoke('save-settings', payload);
       if (res && res.success) {
-        setSaveStatus('Settings saved successfully!');
+        setSaveStatus('Settings saved');
+        notify('Shop settings saved');
         setTimeout(() => setSaveStatus(''), 3000);
       } else {
         alert('Error: ' + (res?.error || 'Unknown error'));
@@ -290,7 +445,7 @@ export default function Settings({ currentUser }) {
   };
 
   const handleLogoUpload = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () =>
@@ -302,20 +457,21 @@ export default function Settings({ currentUser }) {
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
     if (currentUser?.role?.toUpperCase() !== 'ADMIN')
-      return alert('Unauthorized.');
-    if (!selectedUserId) return alert('Select a user.');
+      return alert('Unauthorized');
+    if (!selectedUserId) return alert('Select a user');
     if (!newPassword || newPassword.length < 4)
-      return alert('Password must be at least 4 characters.');
+      return alert('Password must be at least 4 characters');
 
     const ipc = getIpc();
     if (ipc) {
       const res = await ipc.invoke('update-user-password', {
-        userId: parseInt(selectedUserId),
+        userId: parseInt(selectedUserId, 10),
         newPassword,
         currentUser,
       });
       if (res && res.success) {
-        setPasswordStatus('Operator password updated successfully!');
+        setPasswordStatus('Operator password updated');
+        notify('Operator password updated');
         setNewPassword('');
         setSelectedUserId('');
         setTimeout(() => setPasswordStatus(''), 4000);
@@ -330,9 +486,10 @@ export default function Settings({ currentUser }) {
     if (ipc) {
       setBackupStatus('Generating backup file...');
       const res = await ipc.invoke('export-database-backup');
-      if (res && res.success)
+      if (res && res.success) {
         setBackupStatus('Backup saved to: ' + res.filePath);
-      else if (res && res.canceled) setBackupStatus('');
+        notify('Database backup exported');
+      } else if (res && res.canceled) setBackupStatus('');
       else setBackupStatus('Backup failed: ' + (res?.error || 'Unknown error'));
     }
   };
@@ -340,7 +497,7 @@ export default function Settings({ currentUser }) {
   const handleRestoreBackup = async () => {
     if (
       !window.confirm(
-        'WARNING: This will overwrite all current sales, inventory, and khata records with the backup file data. Are you sure?',
+        'This will overwrite all current sales, inventory, and khata records with the backup file data. Continue?',
       )
     )
       return;
@@ -349,9 +506,7 @@ export default function Settings({ currentUser }) {
       setBackupStatus('Restoring database...');
       const res = await ipc.invoke('restore-database-backup');
       if (res && res.success) {
-        alert(
-          'Database restored successfully! The application will now reload.',
-        );
+        alert('Database restored. The application will now reload.');
         window.location.reload();
       } else if (res && res.canceled) setBackupStatus('');
       else
@@ -359,370 +514,328 @@ export default function Settings({ currentUser }) {
     }
   };
 
+  const tabs = [
+    { id: 'shop', label: 'Shop info and SKU', icon: StoreIcon },
+    { id: 'theme', label: 'Appearance', icon: PaletteIcon },
+    { id: 'security', label: 'Security and passwords', icon: ShieldIcon },
+    { id: 'backup', label: 'Backup and recovery', icon: DatabaseIcon },
+    { id: 'about', label: 'About and support', icon: InfoIcon },
+  ];
+
   return (
     <div
       style={{
+        ...typeScale.body,
         display: 'flex',
-        gap: '24px',
+        gap: '20px',
         flex: 1,
         height: '100%',
-        fontFamily: "'Inter', sans-serif",
+        color: 'var(--ink-fg)',
       }}
     >
       {/* LEFT SIDEBAR NAVIGATION */}
-      <div
+      <nav
+        aria-label="Settings sections"
         style={{
-          width: '260px',
+          ...sansFamily,
+          width: '248px',
           flexShrink: 0,
-          background: 'var(--bg-card)',
-          borderRadius: '10px',
-          border: '1.5px solid var(--border-color)',
+          background: 'var(--ink-0)',
+          borderRadius: '12px',
+          border: '1px solid var(--ink-3)',
           padding: '16px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '6px',
+          gap: '4px',
         }}
       >
-        <h3
+        <h2
           style={{
-            margin: '0 0 16px 8px',
-            color: 'var(--text-primary)',
-            fontSize: '1.05rem',
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-            fontWeight: '800',
-            textTransform: 'uppercase',
+            ...typeScale.pageTitle,
+            margin: '0 0 12px 8px',
+            color: 'var(--ink-fg)',
           }}
         >
           Settings
-        </h3>
-        {[
-          { id: 'shop', label: 'Shop Info & SKU', icon: StoreIcon },
-          { id: 'theme', label: 'Appearance', icon: PaletteIcon },
-          { id: 'security', label: 'Security & Passwords', icon: ShieldIcon },
-          { id: 'backup', label: 'Backup & Recovery', icon: DatabaseIcon },
-          { id: 'about', label: 'About & Support', icon: InfoIcon },
-        ].map((tab) => {
+        </h2>
+
+        {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
+              type="button"
+              aria-current={isActive ? 'page' : undefined}
               onClick={() => setActiveTab(tab.id)}
               style={{
+                ...sansFamily,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
-                padding: '12px 16px',
+                gap: '10px',
+                minHeight: '38px',
+                padding: '8px 12px',
                 borderRadius: '8px',
                 border: 'none',
-                background: isActive ? 'var(--info-bg)' : 'transparent',
-                color: isActive ? 'var(--info)' : 'var(--text-secondary)',
-                fontWeight: isActive ? '700' : '600',
-                fontSize: '0.85rem',
+                background: isActive ? 'var(--ink-1)' : 'transparent',
+                color: isActive ? 'var(--ink-fg)' : 'var(--ink-fg-2)',
+                fontWeight: isActive ? 600 : 500,
+                fontSize: '0.875rem',
+                lineHeight: 1.35,
                 cursor: 'pointer',
-                transition: 'all 0.15s ease',
+                textAlign: 'left',
+                width: '100%',
+                transition: 'background-color 150ms ease, color 150ms ease',
               }}
             >
-              <div
+              <span
                 style={{
-                  color: isActive ? 'var(--info)' : 'var(--text-secondary)',
+                  color: isActive ? 'var(--brand-primary)' : 'var(--ink-fg-3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '18px',
+                  flexShrink: 0,
                 }}
               >
                 <Icon />
-              </div>
-              {tab.label}
+              </span>
+              <span>{tab.label}</span>
             </button>
           );
         })}
-      </div>
+      </nav>
 
       {/* RIGHT CONTENT AREA */}
       <div
         style={{
+          ...sansFamily,
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          background: 'var(--bg-card)',
-          borderRadius: '10px',
-          border: '1.5px solid var(--border-color)',
+          background: 'var(--ink-0)',
+          borderRadius: '12px',
+          border: '1px solid var(--ink-3)',
         }}
       >
         {/* SHOP INFO TAB */}
         {activeTab === 'shop' && (
           <form
             onSubmit={handleSave}
-            style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+            style={{
+              ...sansFamily,
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+            }}
           >
-            <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+            <div
+              style={{
+                ...sansFamily,
+                flex: 1,
+                overflowY: 'auto',
+                padding: '24px',
+              }}
+            >
               <div
                 style={{
-                  marginBottom: '24px',
-                  borderBottom: '1px solid var(--border-color)',
+                  marginBottom: '20px',
+                  borderBottom: '1px solid var(--ink-3)',
                   paddingBottom: '16px',
                 }}
               >
-                <h4
+                <h3
                   style={{
+                    ...typeScale.sectionTitle,
                     margin: 0,
-                    color: 'var(--text-primary)',
-                    fontSize: '1.1rem',
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    color: 'var(--ink-fg)',
                   }}
                 >
-                  Shop Identity & Branding
-                </h4>
+                  Shop identity and branding
+                </h3>
                 <p
                   style={{
+                    ...typeScale.helper,
                     margin: '4px 0 0 0',
-                    fontSize: '0.8rem',
-                    color: 'var(--text-secondary)',
+                    color: 'var(--ink-fg-3)',
                   }}
                 >
-                  These details will automatically display on all 80mm thermal
-                  receipt prints.
+                  These details appear on 80mm thermal receipt prints and
+                  generated SKUs.
                 </p>
               </div>
+
               {saveStatus && (
                 <div
+                  role="status"
                   style={{
-                    background: 'var(--success-bg)',
-                    color: 'var(--success)',
-                    padding: '12px 16px',
+                    ...typeScale.helper,
+                    background: 'var(--ink-1)',
+                    color: 'var(--ink-success)',
+                    padding: '10px 14px',
                     borderRadius: '8px',
-                    fontSize: '0.85rem',
-                    marginBottom: '20px',
-                    border: '1px solid var(--success)',
-                    fontWeight: '600',
+                    marginBottom: '16px',
+                    border: '1px solid var(--ink-3)',
+                    fontWeight: 500,
                   }}
                 >
                   {saveStatus}
                 </div>
               )}
+
               <div
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr',
-                  gap: '20px',
+                  gap: '16px',
                 }}
               >
                 <div style={{ gridColumn: '1 / -1' }}>
-                  <label
-                    style={{
-                      fontSize: '0.8rem',
-                      fontWeight: '700',
-                      color: 'var(--text-primary)',
-                      marginBottom: '6px',
-                      display: 'block',
-                    }}
-                  >
-                    Business Name
-                  </label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    value={settings.shop_name || ''}
-                    onChange={(e) =>
-                      setSettings({ ...settings, shop_name: e.target.value })
-                    }
-                    placeholder="e.g. ShopMate Gaming & Tech"
-                    required
-                    style={{
-                      padding: '12px',
-                      borderRadius: '6px',
-                      width: '100%',
-                      fontSize: '0.9rem',
-                    }}
-                  />
+                  <Field label="Business name" htmlFor={shopNameId}>
+                    <input
+                      id={shopNameId}
+                      type="text"
+                      value={settings.shop_name || ''}
+                      onChange={(e) =>
+                        setSettings({ ...settings, shop_name: e.target.value })
+                      }
+                      placeholder="e.g. ShopMate Gaming and Tech"
+                      required
+                      style={inputStyle}
+                    />
+                  </Field>
                 </div>
+
                 <div style={{ gridColumn: '1 / -1' }}>
-                  <label
-                    style={{
-                      fontSize: '0.8rem',
-                      fontWeight: '700',
-                      color: 'var(--text-primary)',
-                      marginBottom: '6px',
-                      display: 'block',
-                    }}
-                  >
-                    Physical Address
-                  </label>
-                  <textarea
-                    className="input-field"
-                    rows="2"
-                    value={settings.shop_address || ''}
-                    onChange={(e) =>
-                      setSettings({ ...settings, shop_address: e.target.value })
-                    }
-                    placeholder="e.g. Shop #42, Main Plaza, Saddar Market"
-                    style={{
-                      padding: '12px',
-                      borderRadius: '6px',
-                      width: '100%',
-                      fontSize: '0.9rem',
-                      resize: 'vertical',
-                    }}
-                  />
+                  <Field label="Physical address" htmlFor={shopAddressId}>
+                    <textarea
+                      id={shopAddressId}
+                      rows={2}
+                      value={settings.shop_address || ''}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          shop_address: e.target.value,
+                        })
+                      }
+                      placeholder="e.g. Shop #42, Main Plaza, Saddar Market"
+                      style={{ ...inputStyle, resize: 'vertical' }}
+                    />
+                  </Field>
                 </div>
-                <div>
-                  <label
-                    style={{
-                      fontSize: '0.8rem',
-                      fontWeight: '700',
-                      color: 'var(--text-primary)',
-                      marginBottom: '6px',
-                      display: 'block',
-                    }}
-                  >
-                    Contact Phone / Helpline
-                  </label>
+
+                <Field label="Contact phone or helpline" htmlFor={shopPhoneId}>
                   <input
+                    id={shopPhoneId}
                     type="text"
-                    className="input-field"
                     value={settings.shop_phone || ''}
                     onChange={(e) =>
                       setSettings({ ...settings, shop_phone: e.target.value })
                     }
                     placeholder="e.g. +92 300 1234567"
                     style={{
-                      padding: '12px',
-                      borderRadius: '6px',
-                      width: '100%',
-                      fontSize: '0.9rem',
+                      ...inputStyle,
+                      fontVariantNumeric: 'tabular-nums',
                     }}
                   />
-                </div>
-                <div>
-                  <label
-                    style={{
-                      fontSize: '0.8rem',
-                      fontWeight: '700',
-                      color: 'var(--text-primary)',
-                      marginBottom: '6px',
-                      display: 'block',
-                    }}
-                  >
-                    Automated SKU Format
-                  </label>
+                </Field>
+
+                <Field label="Automated SKU format" htmlFor={skuFormatId}>
                   <select
-                    className="input-field"
+                    id={skuFormatId}
                     value={settings.sku_format || 'CAT_SEQ'}
                     onChange={(e) =>
                       setSettings({ ...settings, sku_format: e.target.value })
                     }
-                    style={{
-                      padding: '12px',
-                      borderRadius: '6px',
-                      width: '100%',
-                      fontSize: '0.9rem',
-                      cursor: 'pointer',
-                    }}
+                    style={{ ...inputStyle, cursor: 'pointer' }}
                   >
                     <option value="CAT_SEQ">
-                      Category Prefix + Sequential (e.g. ELE-0001)
+                      Category prefix + sequential (e.g. ELE-0001)
                     </option>
                     <option value="NAME_SEQ">
-                      Name Abbreviation + Sequential (e.g. WHP-0001)
+                      Name abbreviation + sequential (e.g. WHP-0001)
                     </option>
                     <option value="TIMESTAMP">
-                      Epoch Timestamp Hex (e.g. TS-19FA8C)
+                      Epoch timestamp hex (e.g. TS-19FA8C)
                     </option>
                     <option value="NUMERIC">
-                      Pure Numeric (e.g. 1001, 1002)
+                      Pure numeric (e.g. 1001, 1002)
                     </option>
                   </select>
-                </div>
+                </Field>
+
                 <div style={{ gridColumn: '1 / -1' }}>
-                  <label
-                    style={{
-                      fontSize: '0.8rem',
-                      fontWeight: '700',
-                      color: 'var(--text-primary)',
-                      marginBottom: '6px',
-                      display: 'block',
-                    }}
-                  >
-                    Shop Logo
-                  </label>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '16px',
-                      background: 'var(--bg-hover)',
-                      padding: '16px',
-                      borderRadius: '8px',
-                      border: '1px dashed var(--border-strong)',
-                    }}
-                  >
-                    {settings.shop_logo ? (
-                      <img
-                        src={settings.shop_logo}
-                        alt="Logo"
+                  <Field label="Shop logo" htmlFor={shopLogoId}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        background: 'var(--ink-1)',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '1px dashed var(--ink-3)',
+                      }}
+                    >
+                      {settings.shop_logo ? (
+                        <img
+                          src={settings.shop_logo}
+                          alt="Shop logo"
+                          style={{
+                            width: '44px',
+                            height: '44px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--ink-3)',
+                            background: 'var(--ink-0)',
+                            objectFit: 'contain',
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: '44px',
+                            height: '44px',
+                            background: 'var(--ink-2)',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--ink-fg-3)',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <StoreIcon />
+                        </div>
+                      )}
+                      <input
+                        id={shopLogoId}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
                         style={{
-                          height: '48px',
-                          borderRadius: '6px',
-                          border: '1px solid var(--border-color)',
-                          background: 'var(--bg-card)',
+                          ...typeScale.helper,
+                          color: 'var(--ink-fg-2)',
                         }}
                       />
-                    ) : (
-                      <div
-                        style={{
-                          width: '48px',
-                          height: '48px',
-                          background: 'var(--border-color)',
-                          borderRadius: '6px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: 'var(--text-secondary)',
-                        }}
-                      >
-                        <StoreIcon />
-                      </div>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoUpload}
-                      style={{
-                        fontSize: '0.85rem',
-                        color: 'var(--text-secondary)',
-                      }}
-                    />
-                  </div>
+                    </div>
+                  </Field>
                 </div>
               </div>
             </div>
+
             <div
               style={{
-                padding: '20px 32px',
-                borderTop: '1px solid var(--border-color)',
-                background: 'var(--bg-hover)',
-                borderRadius: '0 0 10px 10px',
+                padding: '16px 24px',
+                borderTop: '1px solid var(--ink-3)',
+                background: 'var(--ink-1)',
+                borderRadius: '0 0 12px 12px',
                 display: 'flex',
                 justifyContent: 'flex-end',
               }}
             >
-              <button
-                type="submit"
-                className="btn btn-primary"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '12px 24px',
-                  background: 'var(--brand-primary)',
-                  color: '#fff',
-                  borderRadius: '6px',
-                  fontWeight: '700',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                }}
-              >
-                <SaveIcon /> Save Shop Branding
+              <button type="submit" style={primaryButtonStyle}>
+                <SaveIcon /> Save shop branding
               </button>
             </div>
           </form>
@@ -731,184 +844,149 @@ export default function Settings({ currentUser }) {
         {/* APPEARANCE THEME TAB */}
         {activeTab === 'theme' && (
           <div
-            style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+            style={{
+              ...sansFamily,
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+            }}
           >
-            <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+            <div
+              style={{
+                ...sansFamily,
+                flex: 1,
+                overflowY: 'auto',
+                padding: '24px',
+              }}
+            >
               <div
                 style={{
-                  marginBottom: '24px',
-                  borderBottom: '1px solid var(--border-color)',
+                  marginBottom: '20px',
+                  borderBottom: '1px solid var(--ink-3)',
                   paddingBottom: '16px',
                 }}
               >
-                <h4
+                <h3
                   style={{
+                    ...typeScale.sectionTitle,
                     margin: 0,
-                    color: 'var(--text-primary)',
-                    fontSize: '1.1rem',
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    color: 'var(--ink-fg)',
                   }}
                 >
-                  App Appearance
-                </h4>
+                  App appearance
+                </h3>
                 <p
                   style={{
+                    ...typeScale.helper,
                     margin: '4px 0 0 0',
-                    fontSize: '0.8rem',
-                    color: 'var(--text-secondary)',
+                    color: 'var(--ink-fg-3)',
                   }}
                 >
-                  Customize how ShopMate looks on your screen. Your preference
-                  is saved automatically.
+                  Choose the surface contrast for your counter display. Changes
+                  save automatically and persist across logins.
                 </p>
               </div>
+
               <div
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr',
-                  gap: '24px',
+                  gap: '16px',
                 }}
               >
-                <div
-                  onClick={() => handleThemeChange('light')}
-                  style={{
-                    cursor: 'pointer',
-                    background:
-                      currentTheme === 'light'
-                        ? 'var(--info-bg)'
-                        : 'var(--bg-hover)',
-                    border:
-                      currentTheme === 'light'
-                        ? '2px solid var(--info)'
-                        : '2px solid var(--border-color)',
-                    borderRadius: '12px',
-                    padding: '24px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '16px',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  <div
-                    style={{
-                      background:
-                        currentTheme === 'light'
-                          ? 'var(--info)'
-                          : 'var(--text-secondary)',
-                      color: '#fff',
-                      padding: '16px',
-                      borderRadius: '50%',
-                    }}
-                  >
-                    <SunIcon />
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <h5
+                {[
+                  {
+                    id: 'light',
+                    label: 'Light mode',
+                    desc: 'High-contrast daylight surface for bright retail counters.',
+                    icon: SunIcon,
+                  },
+                  {
+                    id: 'dark',
+                    label: 'Dark mode',
+                    desc: 'Low-glare dark surface for evening and low-light shifts.',
+                    icon: MoonIcon,
+                  },
+                ].map((t) => {
+                  const Icon = t.icon;
+                  const isSelected = currentTheme === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      aria-pressed={isSelected}
+                      onClick={() => handleThemeChange(t.id)}
                       style={{
-                        margin: 0,
-                        fontSize: '1rem',
-                        color: 'var(--text-primary)',
-                        fontWeight: '800',
+                        ...sansFamily,
+                        cursor: 'pointer',
+                        background: isSelected
+                          ? 'var(--ink-1)'
+                          : 'var(--ink-0)',
+                        border: isSelected
+                          ? '1.5px solid var(--brand-primary)'
+                          : '1px solid var(--ink-3)',
+                        borderRadius: '12px',
+                        padding: '24px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '12px',
+                        textAlign: 'center',
+                        transition:
+                          'border-color 150ms ease, background-color 150ms ease',
                       }}
                     >
-                      Light Mode
-                    </h5>
-                    <p
-                      style={{
-                        margin: '4px 0 0 0',
-                        fontSize: '0.75rem',
-                        color: 'var(--text-secondary)',
-                      }}
-                    >
-                      Clean, bright, and professional. Best for daytime use.
-                    </p>
-                  </div>
-                  {currentTheme === 'light' && (
-                    <span
-                      style={{
-                        background: 'var(--info)',
-                        color: '#fff',
-                        fontSize: '0.7rem',
-                        fontWeight: 'bold',
-                        padding: '4px 10px',
-                        borderRadius: '20px',
-                      }}
-                    >
-                      Active
-                    </span>
-                  )}
-                </div>
-                <div
-                  onClick={() => handleThemeChange('dark')}
-                  style={{
-                    cursor: 'pointer',
-                    background:
-                      currentTheme === 'dark'
-                        ? 'var(--info-bg)'
-                        : 'var(--bg-hover)',
-                    border:
-                      currentTheme === 'dark'
-                        ? '2px solid var(--info)'
-                        : '2px solid var(--border-color)',
-                    borderRadius: '12px',
-                    padding: '24px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '16px',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  <div
-                    style={{
-                      background:
-                        currentTheme === 'dark'
-                          ? 'var(--info)'
-                          : 'var(--text-secondary)',
-                      color: '#fff',
-                      padding: '16px',
-                      borderRadius: '50%',
-                    }}
-                  >
-                    <MoonIcon />
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <h5
-                      style={{
-                        margin: 0,
-                        fontSize: '1rem',
-                        color: 'var(--text-primary)',
-                        fontWeight: '800',
-                      }}
-                    >
-                      Dark Mode
-                    </h5>
-                    <p
-                      style={{
-                        margin: '4px 0 0 0',
-                        fontSize: '0.75rem',
-                        color: 'var(--text-secondary)',
-                      }}
-                    >
-                      Sleek and easy on the eyes. Best for late-night shifts.
-                    </p>
-                  </div>
-                  {currentTheme === 'dark' && (
-                    <span
-                      style={{
-                        background: 'var(--info)',
-                        color: '#fff',
-                        fontSize: '0.7rem',
-                        fontWeight: 'bold',
-                        padding: '4px 10px',
-                        borderRadius: '20px',
-                      }}
-                    >
-                      Active
-                    </span>
-                  )}
-                </div>
+                      <div
+                        style={{
+                          background: isSelected
+                            ? 'var(--brand-primary)'
+                            : 'var(--ink-2)',
+                          color: isSelected
+                            ? 'var(--ink-0)'
+                            : 'var(--ink-fg-2)',
+                          padding: '12px',
+                          borderRadius: '50%',
+                          display: 'flex',
+                        }}
+                      >
+                        <Icon />
+                      </div>
+                      <div>
+                        <h4
+                          style={{
+                            ...typeScale.cardTitle,
+                            margin: 0,
+                            color: 'var(--ink-fg)',
+                          }}
+                        >
+                          {t.label}
+                        </h4>
+                        <p
+                          style={{
+                            ...typeScale.helper,
+                            margin: '4px 0 0 0',
+                            color: 'var(--ink-fg-3)',
+                          }}
+                        >
+                          {t.desc}
+                        </p>
+                      </div>
+                      {isSelected && (
+                        <span
+                          style={{
+                            ...typeScale.badge,
+                            background: 'var(--brand-primary)',
+                            color: 'var(--ink-0)',
+                            padding: '4px 10px',
+                            borderRadius: '999px',
+                          }}
+                        >
+                          Active
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -918,172 +996,147 @@ export default function Settings({ currentUser }) {
         {activeTab === 'security' && (
           <form
             onSubmit={handleUpdatePassword}
-            style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+            style={{
+              ...sansFamily,
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+            }}
           >
-            <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+            <div
+              style={{
+                ...sansFamily,
+                flex: 1,
+                overflowY: 'auto',
+                padding: '24px',
+              }}
+            >
               <div
                 style={{
-                  marginBottom: '24px',
-                  borderBottom: '1px solid var(--border-color)',
+                  marginBottom: '20px',
+                  borderBottom: '1px solid var(--ink-3)',
                   paddingBottom: '16px',
                 }}
               >
-                <h4
+                <h3
                   style={{
+                    ...typeScale.sectionTitle,
                     margin: 0,
-                    color: 'var(--text-primary)',
-                    fontSize: '1.1rem',
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    color: 'var(--ink-fg)',
                   }}
                 >
-                  Operator Security
-                </h4>
+                  Operator security
+                </h3>
                 <p
                   style={{
+                    ...typeScale.helper,
                     margin: '4px 0 0 0',
-                    fontSize: '0.8rem',
-                    color: 'var(--text-secondary)',
+                    color: 'var(--ink-fg-3)',
                   }}
                 >
-                  Securely update operator credentials and manager passwords.
+                  Update login passwords for staff operators and admin accounts.
                 </p>
               </div>
+
               {currentUser?.role?.toUpperCase() !== 'ADMIN' ? (
                 <div
+                  role="alert"
                   style={{
-                    background: 'var(--danger-bg)',
-                    color: 'var(--danger)',
-                    padding: '20px',
-                    borderRadius: '8px',
-                    fontSize: '0.9rem',
-                    border: '1px solid var(--danger)',
-                    fontWeight: '600',
+                    ...typeScale.body,
+                    background: 'var(--ink-1)',
+                    color: 'var(--ink-danger)',
+                    padding: '16px',
+                    borderRadius: '10px',
+                    border: '1px solid var(--ink-3)',
+                    fontWeight: 500,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px',
+                    gap: '12px',
                   }}
                 >
-                  <LockIcon /> Access Denied: Only Manager (ADMIN) accounts can
-                  access password management.
+                  <LockIcon />
+                  <span>
+                    Access restricted to ADMIN accounts. Sign in as an
+                    administrator to change operator passwords.
+                  </span>
                 </div>
               ) : (
                 <>
                   {passwordStatus && (
                     <div
+                      role="status"
                       style={{
-                        background: 'var(--success-bg)',
-                        color: 'var(--success)',
-                        padding: '12px 16px',
+                        ...typeScale.helper,
+                        background: 'var(--ink-1)',
+                        color: 'var(--ink-success)',
+                        padding: '10px 14px',
                         borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        marginBottom: '20px',
-                        border: '1px solid var(--success)',
-                        fontWeight: '600',
+                        marginBottom: '16px',
+                        border: '1px solid var(--ink-3)',
+                        fontWeight: 500,
                       }}
                     >
                       {passwordStatus}
                     </div>
                   )}
+
                   <div
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '20px',
+                      gap: '16px',
+                      maxWidth: '420px',
                     }}
                   >
-                    <div>
-                      <label
-                        style={{
-                          fontSize: '0.8rem',
-                          fontWeight: '700',
-                          color: 'var(--text-primary)',
-                          marginBottom: '6px',
-                          display: 'block',
-                        }}
-                      >
-                        Select Operator Account
-                      </label>
+                    <Field
+                      label="Select operator account"
+                      htmlFor={operatorSelectId}
+                    >
                       <select
-                        className="input-field"
+                        id={operatorSelectId}
                         value={selectedUserId}
                         onChange={(e) => setSelectedUserId(e.target.value)}
                         required
-                        style={{
-                          padding: '12px',
-                          borderRadius: '6px',
-                          width: '100%',
-                          fontSize: '0.9rem',
-                          cursor: 'pointer',
-                        }}
+                        style={{ ...inputStyle, cursor: 'pointer' }}
                       >
-                        <option value="">-- Choose Staff Operator --</option>
+                        <option value="">Choose staff operator</option>
                         {users.map((u) => (
                           <option key={u.id} value={u.id}>
                             {u.username} ({u.role})
                           </option>
                         ))}
                       </select>
-                    </div>
-                    <div>
-                      <label
-                        style={{
-                          fontSize: '0.8rem',
-                          fontWeight: '700',
-                          color: 'var(--text-primary)',
-                          marginBottom: '6px',
-                          display: 'block',
-                        }}
-                      >
-                        New Secure Password
-                      </label>
+                    </Field>
+
+                    <Field label="New password" htmlFor={newPasswordId}>
                       <input
+                        id={newPasswordId}
                         type="password"
-                        className="input-field"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Enter new password (min 4 chars)"
+                        placeholder="Minimum 4 characters"
                         required
-                        style={{
-                          padding: '12px',
-                          borderRadius: '6px',
-                          width: '100%',
-                          fontSize: '0.9rem',
-                        }}
+                        style={inputStyle}
                       />
-                    </div>
+                    </Field>
                   </div>
                 </>
               )}
             </div>
+
             {currentUser?.role?.toUpperCase() === 'ADMIN' && (
               <div
                 style={{
-                  padding: '20px 32px',
-                  borderTop: '1px solid var(--border-color)',
-                  background: 'var(--bg-hover)',
-                  borderRadius: '0 0 10px 10px',
+                  padding: '16px 24px',
+                  borderTop: '1px solid var(--ink-3)',
+                  background: 'var(--ink-1)',
+                  borderRadius: '0 0 12px 12px',
                   display: 'flex',
                   justifyContent: 'flex-end',
                 }}
               >
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '12px 24px',
-                    background: 'var(--brand-primary)',
-                    color: '#fff',
-                    borderRadius: '6px',
-                    fontWeight: '700',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                  }}
-                >
-                  <ShieldIcon /> Update Operator Password
+                <button type="submit" style={primaryButtonStyle}>
+                  <ShieldIcon /> Update operator password
                 </button>
               </div>
             )}
@@ -1093,66 +1146,80 @@ export default function Settings({ currentUser }) {
         {/* BACKUP TAB */}
         {activeTab === 'backup' && (
           <div
-            style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+            style={{
+              ...sansFamily,
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+            }}
           >
-            <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+            <div
+              style={{
+                ...sansFamily,
+                flex: 1,
+                overflowY: 'auto',
+                padding: '24px',
+              }}
+            >
               <div
                 style={{
-                  marginBottom: '24px',
-                  borderBottom: '1px solid var(--border-color)',
+                  marginBottom: '20px',
+                  borderBottom: '1px solid var(--ink-3)',
                   paddingBottom: '16px',
                 }}
               >
-                <h4
+                <h3
                   style={{
+                    ...typeScale.sectionTitle,
                     margin: 0,
-                    color: 'var(--text-primary)',
-                    fontSize: '1.1rem',
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    color: 'var(--ink-fg)',
                   }}
                 >
-                  Database Backup & Recovery
-                </h4>
+                  Database backup and recovery
+                </h3>
                 <p
                   style={{
+                    ...typeScale.helper,
                     margin: '4px 0 0 0',
-                    fontSize: '0.8rem',
-                    color: 'var(--text-secondary)',
+                    color: 'var(--ink-fg-3)',
                   }}
                 >
-                  Safeguard your business records. Export a complete copy of
-                  your database or restore from a previous archive.
+                  Export a snapshot of your SQLite ledger or restore from a
+                  saved archive.
                 </p>
               </div>
+
               {backupStatus && (
                 <div
+                  role="status"
                   style={{
-                    background: 'var(--bg-hover)',
-                    color: 'var(--text-primary)',
-                    padding: '12px 16px',
+                    ...typeScale.helper,
+                    background: 'var(--ink-1)',
+                    color: 'var(--ink-fg)',
+                    padding: '10px 14px',
                     borderRadius: '8px',
-                    fontSize: '0.85rem',
-                    marginBottom: '20px',
-                    border: '1px solid var(--border-strong)',
-                    fontWeight: '600',
+                    marginBottom: '16px',
+                    border: '1px solid var(--ink-3)',
+                    fontWeight: 500,
                   }}
                 >
                   {backupStatus}
                 </div>
               )}
+
               <div
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr',
-                  gap: '20px',
+                  gap: '16px',
                 }}
               >
                 <div
                   style={{
-                    background: 'var(--info-bg)',
+                    background: 'var(--ink-1)',
                     padding: '24px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--info)',
+                    borderRadius: '12px',
+                    border: '1px solid var(--ink-3)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '12px',
@@ -1160,65 +1227,58 @@ export default function Settings({ currentUser }) {
                 >
                   <div
                     style={{
-                      color: 'var(--info)',
-                      background: 'var(--bg-card)',
+                      color: 'var(--brand-primary)',
+                      background: 'var(--ink-0)',
                       width: '40px',
                       height: '40px',
                       borderRadius: '8px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                      border: '1px solid var(--ink-3)',
                     }}
                   >
                     <DownloadIcon />
                   </div>
                   <div>
-                    <h5
+                    <h4
                       style={{
+                        ...typeScale.cardTitle,
                         margin: 0,
-                        color: 'var(--text-primary)',
-                        fontSize: '0.95rem',
-                        fontWeight: '800',
+                        color: 'var(--ink-fg)',
                       }}
                     >
-                      Export Backup
-                    </h5>
+                      Export backup
+                    </h4>
                     <p
                       style={{
+                        ...typeScale.helper,
                         margin: '4px 0 0 0',
-                        fontSize: '0.75rem',
-                        color: 'var(--text-secondary)',
-                        lineHeight: '1.4',
+                        color: 'var(--ink-fg-3)',
                       }}
                     >
-                      Download a complete copy of your SQLite database file.
+                      Save a complete copy of your local SQLite database file.
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={handleExportBackup}
                     style={{
+                      ...primaryButtonStyle,
                       marginTop: 'auto',
-                      padding: '10px',
-                      background: 'var(--info)',
-                      color: '#fff',
-                      fontWeight: '700',
-                      fontSize: '0.85rem',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
+                      width: '100%',
                     }}
                   >
-                    Download .sqlite File
+                    Download .sqlite file
                   </button>
                 </div>
+
                 <div
                   style={{
-                    background: 'var(--danger-bg)',
+                    background: 'var(--ink-1)',
                     padding: '24px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--danger)',
+                    borderRadius: '12px',
+                    border: '1px solid var(--ink-3)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '12px',
@@ -1226,58 +1286,58 @@ export default function Settings({ currentUser }) {
                 >
                   <div
                     style={{
-                      color: 'var(--danger)',
-                      background: 'var(--bg-card)',
+                      color: 'var(--ink-danger)',
+                      background: 'var(--ink-0)',
                       width: '40px',
                       height: '40px',
                       borderRadius: '8px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                      border: '1px solid var(--ink-3)',
                     }}
                   >
                     <UploadIcon />
                   </div>
                   <div>
-                    <h5
+                    <h4
                       style={{
+                        ...typeScale.cardTitle,
                         margin: 0,
-                        color: 'var(--text-primary)',
-                        fontSize: '0.95rem',
-                        fontWeight: '800',
+                        color: 'var(--ink-fg)',
                       }}
                     >
-                      Restore Data
-                    </h5>
+                      Restore data
+                    </h4>
                     <p
                       style={{
+                        ...typeScale.helper,
                         margin: '4px 0 0 0',
-                        fontSize: '0.75rem',
-                        color: 'var(--text-secondary)',
-                        lineHeight: '1.4',
+                        color: 'var(--ink-fg-3)',
                       }}
                     >
-                      Overwrite current data with a backup file. Use with
-                      caution.
+                      Replace current sales, stock, and khata entries with a
+                      backup file.
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={handleRestoreBackup}
                     style={{
+                      ...typeScale.control,
                       marginTop: 'auto',
-                      padding: '10px',
-                      background: 'var(--danger)',
-                      color: '#fff',
-                      fontWeight: '700',
-                      fontSize: '0.85rem',
+                      width: '100%',
+                      minHeight: '38px',
+                      padding: '8px 16px',
+                      background: 'var(--ink-danger)',
+                      color: 'var(--ink-0)',
+                      fontWeight: 500,
                       border: 'none',
-                      borderRadius: '6px',
+                      borderRadius: '8px',
                       cursor: 'pointer',
                     }}
                   >
-                    Restore from Backup
+                    Restore from backup
                   </button>
                 </div>
               </div>
@@ -1288,79 +1348,91 @@ export default function Settings({ currentUser }) {
         {/* ABOUT TAB */}
         {activeTab === 'about' && (
           <div
-            style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+            style={{
+              ...sansFamily,
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+            }}
           >
-            <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+            <div
+              style={{
+                ...sansFamily,
+                flex: 1,
+                overflowY: 'auto',
+                padding: '24px',
+              }}
+            >
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '16px',
-                  marginBottom: '24px',
-                  borderBottom: '1px solid var(--border-color)',
+                  gap: '12px',
+                  marginBottom: '20px',
+                  borderBottom: '1px solid var(--ink-3)',
                   paddingBottom: '16px',
                 }}
               >
                 <img
                   src={logoImage}
-                  alt="ShopMate Logo"
+                  alt="ShopMate logo"
                   style={{
-                    width: '48px',
-                    height: '48px',
+                    width: '44px',
+                    height: '44px',
                     objectFit: 'contain',
-                    borderRadius: '10px',
-                    background: 'var(--bg-hover)',
+                    borderRadius: '8px',
+                    background: 'var(--ink-1)',
                     padding: '6px',
-                    border: '1px solid var(--border-color)',
+                    border: '1px solid var(--ink-3)',
                   }}
                 />
                 <div>
-                  <h4
+                  <h3
                     style={{
+                      ...typeScale.sectionTitle,
                       margin: 0,
-                      color: 'var(--text-primary)',
-                      fontSize: '1.1rem',
-                      fontFamily: "'Plus Jakarta Sans', sans-serif",
+                      color: 'var(--ink-fg)',
                     }}
                   >
                     ShopMate Desktop POS
-                  </h4>
+                  </h3>
                   <p
                     style={{
-                      margin: '2px 0 0 0',
-                      fontSize: '0.75rem',
-                      color: 'var(--text-secondary)',
-                      fontWeight: '600',
+                      ...typeScale.helper,
+                      margin: '4px 0 0 0',
+                      color: 'var(--ink-fg-3)',
+                      fontWeight: 500,
+                      fontVariantNumeric: 'tabular-nums',
                     }}
                   >
-                    Version {updateInfo.currentVersion || '1.1.0'} (Offline
-                    Desktop WAL Edition)
+                    Version {updateInfo.currentVersion} (Offline Desktop WAL
+                    Edition)
                   </p>
                 </div>
               </div>
+
               <p
                 style={{
-                  fontSize: '0.85rem',
-                  color: 'var(--text-secondary)',
-                  lineHeight: '1.6',
-                  marginBottom: '24px',
+                  ...typeScale.body,
+                  color: 'var(--ink-fg-2)',
+                  marginBottom: '20px',
                 }}
               >
-                ShopMate is an enterprise-grade, offline-first Windows POS &
-                Khata management system built for high performance, accuracy,
-                and reliability.
+                Offline-first Windows point-of-sale, inventory, and khata
+                accounting suite built for fast counter operation and local data
+                durability.
               </p>
 
               <div
                 style={{
-                  background: 'var(--bg-hover)',
+                  background: 'var(--ink-1)',
                   padding: '24px',
-                  borderRadius: '10px',
-                  border: '1px solid var(--border-color)',
+                  borderRadius: '12px',
+                  border: '1px solid var(--ink-3)',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '16px',
-                  marginBottom: '20px',
+                  gap: '12px',
+                  marginBottom: '16px',
                 }}
               >
                 <div
@@ -1368,145 +1440,165 @@ export default function Settings({ currentUser }) {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
+                    gap: '16px',
                   }}
                 >
                   <div>
-                    <h5
+                    <h4
                       style={{
+                        ...typeScale.cardTitle,
                         margin: 0,
-                        color: 'var(--text-primary)',
-                        fontSize: '0.95rem',
-                        fontWeight: '800',
-                        textTransform: 'uppercase',
+                        color: 'var(--ink-fg)',
                       }}
                     >
-                      Software Updates
-                    </h5>
+                      Software updates
+                    </h4>
                     <p
                       style={{
+                        ...typeScale.helper,
                         margin: '4px 0 0 0',
-                        fontSize: '0.8rem',
-                        color: 'var(--text-secondary)',
+                        color: 'var(--ink-fg-3)',
                       }}
                     >
-                      Check for the latest features and security patches.
+                      Check for feature releases and stability fixes.
                     </p>
                   </div>
                   <button
+                    type="button"
                     onClick={handleCheckUpdates}
-                    disabled={updateStatus === 'checking'}
-                    className="btn btn-primary"
+                    disabled={
+                      updateStatus === 'checking' ||
+                      downloadState === 'downloading'
+                    }
                     style={{
-                      padding: '10px 20px',
-                      fontSize: '0.85rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      opacity: updateStatus === 'checking' ? 0.7 : 1,
-                      cursor: updateStatus === 'checking' ? 'wait' : 'pointer',
+                      ...primaryButtonStyle,
+                      flexShrink: 0,
+                      opacity:
+                        updateStatus === 'checking' ||
+                        downloadState === 'downloading'
+                          ? 0.7
+                          : 1,
+                      cursor:
+                        updateStatus === 'checking' ||
+                        downloadState === 'downloading'
+                          ? 'wait'
+                          : 'pointer',
                     }}
                   >
-                    {updateStatus === 'checking' ? (
-                      <>
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          style={{ animation: 'spin 1s linear infinite' }}
-                        >
-                          <polyline points="23 4 23 10 17 10"></polyline>
-                          <polyline points="1 20 1 14 7 14"></polyline>
-                          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                        </svg>
-                        Checking...
-                      </>
-                    ) : (
-                      <>
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <polyline points="23 4 23 10 17 10"></polyline>
-                          <polyline points="1 20 1 14 7 14"></polyline>
-                          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                        </svg>
-                        Check for Updates
-                      </>
-                    )}
+                    <RefreshIcon />
+                    {updateStatus === 'checking'
+                      ? 'Checking...'
+                      : downloadState === 'downloading'
+                        ? `Downloading (${downloadPercent}%)`
+                        : 'Check for updates'}
                   </button>
                 </div>
+
                 {updateStatus === 'up-to-date' && (
                   <div
+                    role="status"
                     style={{
-                      background: 'var(--success-bg)',
-                      color: 'var(--success)',
-                      padding: '12px 16px',
+                      ...typeScale.helper,
+                      background: 'var(--ink-0)',
+                      color: 'var(--ink-success)',
+                      padding: '10px 14px',
                       borderRadius: '8px',
-                      fontSize: '0.85rem',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
+                      fontWeight: 500,
+                      border: '1px solid var(--ink-3)',
+                      fontVariantNumeric: 'tabular-nums',
                     }}
                   >
-                    ✅ You are on the latest version (v
-                    {updateInfo.currentVersion}).
+                    Up to date on v{updateInfo.currentVersion}.
+                  </div>
+                )}
+
+                {downloadState === 'downloading' && (
+                  <div
+                    role="status"
+                    style={{
+                      ...typeScale.helper,
+                      background: 'var(--ink-0)',
+                      color: 'var(--ink-fg-2)',
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--ink-3)',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    Downloading update v{updateInfo.version}… {downloadPercent}%
+                  </div>
+                )}
+
+                {downloadState === 'downloaded' && (
+                  <div
+                    role="status"
+                    style={{
+                      ...typeScale.helper,
+                      background: 'var(--ink-0)',
+                      color: 'var(--ink-fg)',
+                      padding: '12px 14px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--ink-3)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '12px',
+                    }}
+                  >
+                    <span>
+                      Update v{updateInfo.version} is ready to install.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleInstallNow}
+                      style={{
+                        ...primaryButtonStyle,
+                        minHeight: '36px',
+                        padding: '6px 14px',
+                      }}
+                    >
+                      Restart & install
+                    </button>
                   </div>
                 )}
               </div>
 
               <div
                 style={{
-                  background: 'var(--bg-hover)',
+                  background: 'var(--ink-1)',
                   padding: '24px',
-                  borderRadius: '10px',
-                  border: '1px solid var(--border-color)',
+                  borderRadius: '12px',
+                  border: '1px solid var(--ink-3)',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '16px',
+                  gap: '8px',
                 }}
               >
-                <h5
+                <h4
                   style={{
+                    ...typeScale.cardTitle,
                     margin: 0,
-                    color: 'var(--brand-primary)',
-                    fontSize: '0.95rem',
-                    fontWeight: '800',
-                    textTransform: 'uppercase',
+                    color: 'var(--ink-fg)',
                   }}
                 >
-                  Support & Developer Contact
-                </h5>
+                  Support and developer contact
+                </h4>
                 <div
                   style={{
-                    fontSize: '0.85rem',
-                    color: 'var(--text-primary)',
+                    ...typeScale.body,
+                    color: 'var(--ink-fg)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '8px',
+                    gap: '6px',
+                    fontVariantNumeric: 'tabular-nums',
                   }}
                 >
                   <div>
-                    <strong style={{ color: 'var(--text-secondary)' }}>
-                      Email:
-                    </strong>{' '}
+                    <span style={{ color: 'var(--ink-fg-3)' }}>Email: </span>
                     fahadfida400@gmail.com
                   </div>
                   <div>
-                    <strong style={{ color: 'var(--text-secondary)' }}>
-                      WhatsApp:
-                    </strong>{' '}
+                    <span style={{ color: 'var(--ink-fg-3)' }}>WhatsApp: </span>
                     +92 331 546 9223
                   </div>
                 </div>
@@ -1518,25 +1610,29 @@ export default function Settings({ currentUser }) {
         {/* UPDATE CONFIRM MODAL */}
         {isUpdateModalOpen && (
           <div
-            className="receipt-modal-backdrop"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="update-modal-title"
             style={{
+              ...sansFamily,
               position: 'fixed',
               inset: 0,
-              background: 'rgba(15, 23, 42, 0.6)',
+              background: 'rgba(0, 0, 0, 0.55)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               zIndex: 9999,
+              padding: '16px',
             }}
           >
             <div
               style={{
-                background: 'var(--bg-card)',
+                background: 'var(--ink-0)',
                 borderRadius: '12px',
                 width: '400px',
-                padding: '28px',
-                border: '1px solid var(--border-color)',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+                maxWidth: '100%',
+                padding: '24px',
+                border: '1px solid var(--ink-3)',
               }}
             >
               <div
@@ -1544,73 +1640,66 @@ export default function Settings({ currentUser }) {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '12px',
-                  marginBottom: '16px',
+                  marginBottom: '12px',
                 }}
               >
                 <div
                   style={{
-                    background: 'var(--info-bg)',
-                    color: 'var(--info)',
-                    padding: '12px',
+                    background: 'var(--ink-1)',
+                    color: 'var(--brand-primary)',
+                    padding: '10px',
                     borderRadius: '50%',
+                    border: '1px solid var(--ink-3)',
+                    display: 'flex',
                   }}
                 >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                  </svg>
+                  <DownloadIcon />
                 </div>
                 <h3
+                  id="update-modal-title"
                   style={{
+                    ...typeScale.sectionTitle,
                     margin: 0,
-                    color: 'var(--text-primary)',
-                    fontSize: '1.1rem',
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    color: 'var(--ink-fg)',
                   }}
                 >
-                  Update Available
+                  Update available
                 </h3>
               </div>
+
               <p
                 style={{
-                  fontSize: '0.9rem',
-                  color: 'var(--text-secondary)',
-                  lineHeight: '1.5',
-                  marginBottom: '24px',
+                  ...typeScale.body,
+                  color: 'var(--ink-fg-2)',
+                  marginBottom: '20px',
+                  fontVariantNumeric: 'tabular-nums',
                 }}
               >
-                ShopMate <strong>v{updateInfo.version}</strong> is available!
-                Your current version is{' '}
-                <strong>v{updateInfo.currentVersion}</strong>.<br />
-                <br />
-                Do you want to download and install the update now?
+                ShopMate <strong>v{updateInfo.version}</strong> is ready to
+                download. Current version:{' '}
+                <strong>v{updateInfo.currentVersion}</strong>.
               </p>
-              <div style={{ display: 'flex', gap: '12px' }}>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
                 <button
+                  type="button"
                   onClick={handleStartUpdate}
-                  className="btn btn-primary"
-                  style={{ flex: 1, padding: '12px', fontSize: '0.9rem' }}
+                  style={{ ...primaryButtonStyle, flex: 1 }}
                 >
-                  Yes, Update Now
+                  Update now
                 </button>
                 <button
+                  type="button"
                   onClick={() => setIsUpdateModalOpen(false)}
-                  className="btn"
                   style={{
-                    padding: '12px 20px',
-                    background: 'var(--bg-hover)',
-                    color: 'var(--text-primary)',
-                    border: '1px solid var(--border-color)',
+                    ...typeScale.control,
+                    minHeight: '38px',
+                    padding: '8px 16px',
+                    background: 'var(--ink-1)',
+                    color: 'var(--ink-fg)',
+                    border: '1px solid var(--ink-3)',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
                   }}
                 >
                   Later

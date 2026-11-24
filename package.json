@@ -1,7 +1,7 @@
 {
   "name": "ShopMate",
   "type": "module",
-  "version": "1.1.0",
+  "version": "2.2.1",
   "description": "ShopMate POS System by Fahad.",
   "main": "electron/main.js",
   "scripts": {
@@ -52,12 +52,14 @@
       "allowToChangeInstallationDirectory": true,
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
-      "shortcutName": "ShopMate"
+      "shortcutName": "ShopMate",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
     }
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",
-    "node-machine-id": "^1.1.12"
+    "node-machine-id": "^1.1.12",
+    "electron-updater": "^6.1.7"
   },
   "devDependencies": {
     "concurrently": "^10.0.6",

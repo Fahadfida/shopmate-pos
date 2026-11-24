@@ -15,36 +15,60 @@ import MasterLedger from './components/MasterLedger';
 import ActivationModal from './components/ActivationModal';
 import RefundsRepairs from './components/RefundsRepairs';
 import Sidebar from './components/Sidebar';
-import Toast from './components/Toast'; // 👈 Import Toast component
+import Toast from './components/Toast';
 import { getIpc } from './utils/ipc';
-// import './theme.css';
+import Reports from './components/Reports';
+import Consignment from './components/Consignment';
+const MenuIcon = () => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="4" y1="6" x2="20" y2="6" />
+    <line x1="4" y1="12" x2="20" y2="12" />
+    <line x1="4" y1="18" x2="20" y2="18" />
+  </svg>
+);
+
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // 🔔 Global Toast Notification State
-  const [toast, setToast] = useState({ message: '', type: 'success' });
+  const [toasts, setToasts] = useState([]); // 1
 
   const showToast = (message, type = 'success') => {
-    setToast({ message, type });
+    // 2
+    if (!message) return;
+    const id = Date.now() + Math.random();
+    setToasts((prev) => [...prev, { id, message, type }]);
   };
-
-  // 🛡️ License States
   const [licenseChecked, setLicenseChecked] = useState(false);
   const [isLicensed, setIsLicensed] = useState(false);
 
   useEffect(() => {
     const verifyLicenseOnStartup = async () => {
-      const ipc = getIpc();
-      if (ipc) {
-        const res = await ipc.invoke('check-license-status');
-        setIsLicensed(res.active);
-      } else {
-        setIsLicensed(true);
+      try {
+        const ipc = getIpc();
+        if (ipc) {
+          const res = await ipc.invoke('check-license-status');
+          setIsLicensed(res?.active === true);
+        } else {
+          setIsLicensed(true);
+        }
+      } catch (err) {
+        console.error('License check failed:', err);
+        setIsLicensed(false);
+      } finally {
+        setLicenseChecked(true);
       }
-      setLicenseChecked(true);
     };
     verifyLicenseOnStartup();
   }, []);
@@ -57,14 +81,34 @@ export default function App() {
           height: '100vh',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#0a1128',
-          color: '#fefcfb',
+          background: 'var(--ink-sidebar)',
+          color: 'var(--ink-sidebar-fg-strong)',
+          fontFamily: "'Inter', sans-serif",
         }}
       >
-        <div
-          style={{ textAlign: 'center', fontWeight: '600', fontSize: '0.9rem' }}
-        >
-          🔒 Verifying ShopMate security & license status...
+        <div style={{ textAlign: 'center' }}>
+          <div
+            style={{
+              width: '22px',
+              height: '22px',
+              border: '2px solid var(--ink-sidebar-hairline)',
+              borderTopColor: 'var(--brand-primary)',
+              borderRadius: '50%',
+              margin: '0 auto',
+              animation: 'spin 0.8s linear infinite',
+            }}
+          />
+          <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+          <div
+            style={{
+              marginTop: '12px',
+              fontWeight: 500,
+              fontSize: '0.8rem',
+              color: 'var(--ink-sidebar-fg)',
+            }}
+          >
+            Verifying license
+          </div>
         </div>
       </div>
     );
@@ -80,19 +124,25 @@ export default function App() {
 
   return (
     <div className="shopmate-container">
-      {/* Mobile Top Header with Burger Menu */}
       <header className="mobile-header">
         <button
           className="mobile-burger-btn"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          aria-label="Toggle Menu"
+          aria-label="Toggle menu"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '0.8rem',
+            fontWeight: 500,
+          }}
         >
-          ☰ Menu
+          <MenuIcon />
+          <span>Menu</span>
         </button>
-        <span className="mobile-header-title">ShopMate POS</span>
+        <span className="mobile-header-title">ShopMate</span>
       </header>
 
-      {/* Extracted Responsive Sidebar Component */}
       <Sidebar
         currentUser={currentUser}
         activeTab={activeTab}
@@ -104,7 +154,6 @@ export default function App() {
         onLogout={() => setCurrentUser(null)}
       />
 
-      {/* Main Content Workspace with showToast passed down */}
       <main className="shopmate-content">
         {activeTab === 'dashboard' && <Dashboard showToast={showToast} />}
         {activeTab === 'pos' && (
@@ -140,14 +189,38 @@ export default function App() {
         {activeTab === 'settings' && (
           <Settings currentUser={currentUser} showToast={showToast} />
         )}
+        {activeTab === 'reports' && (
+          <Reports currentUser={currentUser} showToast={showToast} />
+        )}
+        {activeTab === 'consignment' && (
+          <Consignment currentUser={currentUser} showToast={showToast} />
+        )}
       </main>
 
-      {/* 🔔 Global Toast Notification Layer */}
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ message: '', type: 'success' })}
-      />
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px', // design.md §4
+          zIndex: 9999,
+          pointerEvents: 'none',
+        }}
+      >
+        {toasts.map((t) => (
+          <div key={t.id} style={{ pointerEvents: 'auto' }}>
+            <Toast
+              message={t.message}
+              type={t.type}
+              onClose={() =>
+                setToasts((prev) => prev.filter((x) => x.id !== t.id))
+              }
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

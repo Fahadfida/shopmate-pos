@@ -68,6 +68,14 @@ const validInvokeChannels = [
   //updates
   'check-for-updates',
   'download-update',
+  //reports
+  'get-reports-summary',
+  //consignments
+  'get-consignment-data',
+  'add-consignment-item',
+  'record-consignment-payout',
+  'update-consignment-item', // Add this
+  'delete-consignment-item',
 ];
 
 contextBridge.exposeInMainWorld('electronAPI', {
