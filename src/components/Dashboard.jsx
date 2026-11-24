@@ -3,7 +3,7 @@ import { getIpc } from '../utils/ipc';
 import '../index.css';
 
 // ─────────────────────────────────────────────────────────────
-// Icons — one set, 16px, 1.5 stroke, muted color. Skill §3.
+// Icons
 // ─────────────────────────────────────────────────────────────
 const iconProps = {
   width: 16,
@@ -215,8 +215,7 @@ export default function Dashboard() {
 
   if (!stats || !analytics) return <LoadingUI />;
 
-  // ── Data (with local date fix for UTC offset mismatch)
-  // ── Data (with local date fix for UTC offset mismatch)
+  // ── Data
   const localTodayStr = (() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -226,7 +225,6 @@ export default function Dashboard() {
     (d) => d.sale_date === localTodayStr,
   );
 
-  // 🛡️ Fallback to stats.dailySales if trend array lags behind local time query
   const dailyTotal = matchingTodayTrend?.total ?? stats.dailySales?.total ?? 0;
   const dailyCount = matchingTodayTrend?.count ?? stats.dailySales?.count ?? 0;
 
@@ -239,6 +237,7 @@ export default function Dashboard() {
   const expensesTotal = summary?.totalExpenses ?? 0;
   const purchasesTotal = summary?.totalPurchases ?? 0;
   const refundsTotal = summary?.totalRefunds ?? 0;
+  const commissionTotal = summary?.totalCommission ?? 0;
   const repairsCount = refundsList.length;
 
   const trendData = analytics.salesTrend || [];
@@ -399,11 +398,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ─────────── TIER 1: HERO + 4 ─────────── */}
+      {/* ─────────── TIER 1: HERO + 5 ─────────── */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
+          gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr',
           gap: '16px',
         }}
       >
@@ -441,7 +440,24 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        {/* Compact 2 — Customer Dues */}
+        {/* Compact 2 — Commission Income (NEW) */}
+        <Card>
+          <CardTitle accent="#8b5cf6">Commission</CardTitle>
+          <Figure color="#8b5cf6">
+            Rs. {commissionTotal.toLocaleString()}
+          </Figure>
+          <div
+            style={{
+              fontSize: '0.72rem',
+              color: 'var(--ink-fg-3)',
+              marginTop: '4px',
+            }}
+          >
+            Consignment earnings
+          </div>
+        </Card>
+
+        {/* Compact 3 — Customer Dues */}
         <Card>
           <CardTitle accent="var(--ink-danger)">Customer dues</CardTitle>
           <Figure color="var(--ink-danger)">
@@ -458,7 +474,7 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        {/* Compact 3 — Supplier Payables */}
+        {/* Compact 4 — Supplier Payables */}
         <Card>
           <CardTitle accent="var(--ink-warning)">Supplier debt</CardTitle>
           <Figure color="var(--ink-warning)">
@@ -475,7 +491,7 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        {/* Compact 4 — Stock Valuation */}
+        {/* Compact 5 — Stock Valuation */}
         <Card>
           <CardTitle>Stock value</CardTitle>
           <Figure>Rs. {stockValuation.toLocaleString()}</Figure>
@@ -495,7 +511,7 @@ export default function Dashboard() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
+          gridTemplateColumns: 'repeat(5, 1fr)',
           gap: '0',
           background: 'var(--ink-0)',
           border: '1px solid var(--ink-3)',
@@ -524,6 +540,11 @@ export default function Dashboard() {
             value: repairsCount,
             color: 'var(--ink-info)',
             isCount: true,
+          },
+          {
+            label: 'Commission earned',
+            value: commissionTotal,
+            color: '#8b5cf6',
           },
         ].map((item, i) => (
           <div

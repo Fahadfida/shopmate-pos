@@ -204,7 +204,7 @@ export default function POS({ currentUser, showToast }) {
 
   const toast = (msg, type = 'info') => {
     if (showToast) showToast(msg, type);
-    else if (type === 'error') alert(msg);
+    else if (type === 'error') console.error(msg);
   };
 
   const loadCatalog = async () => {
@@ -1449,7 +1449,9 @@ export default function POS({ currentUser, showToast }) {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.55)',
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -1466,6 +1468,7 @@ export default function POS({ currentUser, showToast }) {
               borderRadius: '10px',
               width: '320px',
               border: '1px solid var(--ink-3)',
+              boxShadow: '0 24px 48px rgba(0, 0, 0, 0.3)',
               fontFamily: "'JetBrains Mono', monospace",
               fontSize: '0.78rem',
             }}
@@ -1674,8 +1677,24 @@ export default function POS({ currentUser, showToast }) {
               </div>
             </div>
 
+            {/* Thermal Slip Footer Message */}
+            <div
+              style={{
+                marginTop: '14px',
+                paddingTop: '10px',
+                borderTop: '1px dashed var(--ink-3)',
+                textAlign: 'center',
+                fontSize: '0.68rem',
+                color: 'var(--ink-fg-3)',
+                letterSpacing: '0.02em',
+              }}
+            >
+              Pos made by fahad
+            </div>
+
             {/* Actions */}
             <div
+              className="receipt-actions-row"
               style={{
                 display: 'flex',
                 gap: '6px',

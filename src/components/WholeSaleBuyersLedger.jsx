@@ -70,6 +70,12 @@ const CloseIcon = () => (
     <line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
+const EyeIcon = () => (
+  <svg {...iconBase} width={14} height={14}>
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
 const BookIcon = () => (
   <svg {...iconBase} width="28" height="28">
     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
@@ -138,6 +144,7 @@ const inputStyle = {
   color: 'var(--ink-fg)',
   fontSize: '0.82rem',
   width: '100%',
+  boxSizing: 'border-box',
   outline: 'none',
 };
 
@@ -149,7 +156,8 @@ const Modal = ({ children, onClose, width = 480 }) => (
     style={{
       position: 'fixed',
       inset: 0,
-      background: 'rgba(0,0,0,0.55)',
+      background: 'rgba(15, 23, 42, 0.6)',
+      backdropFilter: 'blur(4px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -165,8 +173,9 @@ const Modal = ({ children, onClose, width = 480 }) => (
         overflowY: 'auto',
         background: 'var(--ink-0)',
         padding: '20px',
-        borderRadius: '12px',
+        borderRadius: '14px',
         border: '1px solid var(--ink-3)',
+        boxShadow: '0 24px 48px rgba(0, 0, 0, 0.28)',
       }}
     >
       {children}
@@ -225,6 +234,7 @@ export default function KhataLedger({ currentUser, showToast }) {
   const [inventoryItems, setInventoryItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [hoveredRow, setHoveredRow] = useState(null);
 
   // Filters
   const [filterStartDate, setFilterStartDate] = useState('');
@@ -234,14 +244,14 @@ export default function KhataLedger({ currentUser, showToast }) {
 
   // Modals
   const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false);
-  const [isEditRecordModalOpen, setIsEditRecordModalOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [isRecordEditMode, setIsRecordEditMode] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
 
   // Forms
   const [entryType, setEntryType] = useState('DEBIT');
   const [entryData, setEntryData] = useState(emptyEntryData());
-  const [editingRecord, setEditingRecord] = useState(null);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [customerForm, setCustomerForm] = useState(emptyCustomerForm());
   const [isSaving, setIsSaving] = useState(false);
@@ -306,11 +316,41 @@ export default function KhataLedger({ currentUser, showToast }) {
   useEffect(() => {
     loadCustomers();
   }, []);
+
   useEffect(() => {
     if (selectedCustomer) loadLedger(selectedCustomer.id);
   }, [selectedCustomer]);
 
+  // Close record detail modal on Escape
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && selectedRecord) {
+        closeRecordModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedRecord]);
+
   const sanitizePhone = (val) => val.replace(/[^0-9+]/g, '');
+
+  const openRecordModal = (entry) => {
+    setSelectedRecord(entry);
+    setEntryData({
+      ...emptyEntryData(),
+      date: entry.created_at ? entry.created_at.substring(0, 10) : '',
+      notes: entry.description || '',
+      amount: entry.debit || entry.credit || '',
+    });
+    setIsRecordEditMode(false);
+    setConfirmDelete(null);
+  };
+
+  const closeRecordModal = () => {
+    setSelectedRecord(null);
+    setIsRecordEditMode(false);
+    setConfirmDelete(null);
+  };
 
   // ── Handlers
   const handleSaveCustomer = async (e) => {
@@ -408,41 +448,53 @@ export default function KhataLedger({ currentUser, showToast }) {
   const handleEditRecord = async (e) => {
     e.preventDefault();
     const ipc = getIpc();
-    if (!ipc || !editingRecord) return;
-    const res = await ipc.invoke('update-ledger-entry', {
-      ledgerId: editingRecord.id,
-      newDate: entryData.date,
-      newNotes: entryData.notes,
-      currentUser,
-    });
-    if (res.success) {
-      setIsEditRecordModalOpen(false);
-      setEditingRecord(null);
-      await loadLedger(selectedCustomer.id);
-      toast('Record updated.', 'success');
-    } else {
-      toast('Error: ' + res.error, 'error');
+    if (!ipc || !selectedRecord) return;
+    setIsSaving(true);
+    try {
+      const res = await ipc.invoke('update-ledger-entry', {
+        ledgerId: selectedRecord.id,
+        newDate: entryData.date,
+        newNotes: entryData.notes,
+        currentUser,
+      });
+      if (res.success) {
+        setSelectedRecord({
+          ...selectedRecord,
+          created_at: entryData.date,
+          description: entryData.notes,
+        });
+        setIsRecordEditMode(false);
+        await loadLedger(selectedCustomer.id);
+        toast('Record updated.', 'success');
+      } else {
+        toast('Error: ' + res.error, 'error');
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleDeleteRecord = async (recordId) => {
     const ipc = getIpc();
     if (!ipc) return;
-    const res = await ipc.invoke('delete-ledger-entry', {
-      ledgerId: recordId,
-      customerId: selectedCustomer.id,
-      currentUser,
-    });
-    if (res.success) {
-      setIsEditRecordModalOpen(false);
-      setEditingRecord(null);
-      await loadCustomers();
-      await loadLedger(selectedCustomer.id);
-      toast('Record deleted.', 'success');
-    } else {
-      toast('Error: ' + res.error, 'error');
+    setIsSaving(true);
+    try {
+      const res = await ipc.invoke('delete-ledger-entry', {
+        ledgerId: recordId,
+        customerId: selectedCustomer.id,
+        currentUser,
+      });
+      if (res.success) {
+        closeRecordModal();
+        await loadCustomers();
+        await loadLedger(selectedCustomer.id);
+        toast('Record deleted.', 'success');
+      } else {
+        toast('Error: ' + res.error, 'error');
+      }
+    } finally {
+      setIsSaving(false);
     }
-    setConfirmDelete(null);
   };
 
   const handleDeleteCustomer = async () => {
@@ -576,6 +628,8 @@ export default function KhataLedger({ currentUser, showToast }) {
   const totalDebit = ledgerEntries.reduce((s, e) => s + (e.debit || 0), 0);
   const totalCredit = ledgerEntries.reduce((s, e) => s + (e.credit || 0), 0);
   const currentBalance = selectedCustomer?.balance || 0;
+
+  const ledgerGridTemplate = '0.95fr 2.7fr 0.9fr 1fr 1fr 1fr 0.4fr';
 
   if (loading) {
     return (
@@ -756,6 +810,7 @@ export default function KhataLedger({ currentUser, showToast }) {
                   alignItems: 'center',
                   gap: '10px',
                   fontFamily: 'inherit',
+                  width: '230px',
                 }}
               >
                 {selected && (
@@ -945,6 +1000,9 @@ export default function KhataLedger({ currentUser, showToast }) {
                   setIsAddEntryModalOpen(true);
                 }}
                 style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
                   padding: '7px 12px',
                   fontSize: '0.78rem',
                   fontWeight: 500,
@@ -1126,7 +1184,7 @@ export default function KhataLedger({ currentUser, showToast }) {
               </span>
               <input
                 type="text"
-                placeholder="Search particulars"
+                placeholder="Search transaction name or particulars"
                 value={ledgerSearch}
                 onChange={(e) => setLedgerSearch(e.target.value)}
                 style={{
@@ -1208,28 +1266,37 @@ export default function KhataLedger({ currentUser, showToast }) {
               overflowY: 'auto',
               display: 'flex',
               flexDirection: 'column',
+              padding: '10px 14px',
+              gap: '6px',
               minHeight: 0,
             }}
           >
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: '0.9fr 2.5fr 1fr 1fr 1fr',
-                background: 'var(--ink-2)',
+                gridTemplateColumns: ledgerGridTemplate,
+                gap: '12px',
+                background: 'var(--ink-1)',
                 color: 'var(--ink-fg-2)',
-                padding: '10px 16px',
+                padding: '10px 14px',
+                borderRadius: '6px',
+                borderBottom: '1px solid var(--ink-3)',
                 fontSize: '0.7rem',
-                fontWeight: 500,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.03em',
                 position: 'sticky',
                 top: 0,
                 zIndex: 10,
               }}
             >
               <span>Date</span>
-              <span>Particulars</span>
+              <span>Transaction / Particulars</span>
+              <span>Type</span>
               <span style={{ textAlign: 'right' }}>Debit +</span>
               <span style={{ textAlign: 'right' }}>Credit −</span>
               <span style={{ textAlign: 'right' }}>Balance</span>
+              <span style={{ textAlign: 'center' }}></span>
             </div>
 
             {filteredLedger.length === 0 ? (
@@ -1254,83 +1321,191 @@ export default function KhataLedger({ currentUser, showToast }) {
                 </div>
               </div>
             ) : (
-              filteredLedger.map((entry, idx) => (
-                <div
-                  key={entry.id}
-                  onClick={() => {
-                    setEditingRecord(entry);
-                    setEntryData({
-                      ...emptyEntryData(),
-                      date: entry.created_at
-                        ? entry.created_at.substring(0, 10)
-                        : '',
-                      notes: entry.description || '',
-                      amount: entry.debit || entry.credit || '',
-                    });
-                    setIsEditRecordModalOpen(true);
-                  }}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '0.9fr 2.5fr 1fr 1fr 1fr',
-                    padding: '10px 16px',
-                    fontSize: '0.8rem',
-                    borderBottom:
-                      idx === filteredLedger.length - 1
-                        ? 'none'
-                        : '1px solid var(--ink-3)',
-                    cursor: 'pointer',
-                    background: 'var(--ink-0)',
-                  }}
-                >
-                  <span
-                    className="monospace"
+              filteredLedger.map((entry, idx) => {
+                const isHovered = hoveredRow === idx;
+                const isDebit = (entry.debit || 0) > 0;
+                const txTitle =
+                  entry.description ||
+                  (isDebit ? 'Udhaar / Debit Entry' : 'Payment Received');
+
+                return (
+                  <div
+                    key={entry.id || idx}
+                    onClick={() => openRecordModal(entry)}
+                    onMouseEnter={() => setHoveredRow(idx)}
+                    onMouseLeave={() => setHoveredRow(null)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        openRecordModal(entry);
+                      }
+                    }}
+                    title="Click to inspect, edit, or delete entry"
                     style={{
-                      color: 'var(--ink-fg-3)',
-                      fontSize: '0.72rem',
+                      display: 'grid',
+                      gridTemplateColumns: ledgerGridTemplate,
+                      gap: '12px',
+                      alignItems: 'center',
+                      padding: '11px 14px',
+                      fontSize: '0.8rem',
+                      borderRadius: '8px',
+                      border: isHovered
+                        ? '1px solid var(--brand-primary)'
+                        : '1px solid var(--ink-3)',
+                      cursor: 'pointer',
+                      background: isHovered ? 'var(--ink-2)' : 'var(--ink-1)',
+                      transition: 'all 0.14s ease',
+                      transform: isHovered ? 'translateY(-1px)' : 'none',
                     }}
                   >
-                    {entry.created_at ? entry.created_at.substring(0, 10) : ''}
-                  </span>
-                  <span style={{ color: 'var(--ink-fg)', fontWeight: 500 }}>
-                    {entry.description || '—'}
-                  </span>
-                  <span
-                    className="monospace tabular"
-                    style={{
-                      textAlign: 'right',
-                      color:
-                        entry.debit > 0
+                    {/* Date */}
+                    <span
+                      className="monospace"
+                      style={{
+                        color: 'var(--ink-fg)',
+                        fontSize: '0.73rem',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {entry.created_at
+                        ? entry.created_at.substring(0, 10)
+                        : '—'}
+                    </span>
+
+                    {/* Transaction Name / Particulars */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '2px',
+                        minWidth: 0,
+                      }}
+                    >
+                      <span
+                        style={{
+                          color: 'var(--ink-fg)',
+                          fontWeight: 600,
+                          fontSize: '0.83rem',
+                          lineHeight: 1.35,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {txTitle}
+                      </span>
+                    </div>
+
+                    {/* Type Badge */}
+                    <div>
+                      <span
+                        style={{
+                          padding: '3px 8px',
+                          borderRadius: '5px',
+                          fontSize: '0.68rem',
+                          fontWeight: 600,
+                          display: 'inline-block',
+                          background: isDebit
+                            ? 'rgba(239, 68, 68, 0.12)'
+                            : 'rgba(16, 185, 129, 0.12)',
+                          color: isDebit
+                            ? 'var(--ink-danger, #ef4444)'
+                            : 'var(--ink-success, #10b981)',
+                          border: isDebit
+                            ? '1px solid rgba(239, 68, 68, 0.28)'
+                            : '1px solid rgba(16, 185, 129, 0.28)',
+                        }}
+                      >
+                        {isDebit ? 'UDHAAR' : 'JAMA'}
+                      </span>
+                    </div>
+
+                    {/* Debit */}
+                    <span
+                      className="monospace tabular"
+                      style={{
+                        textAlign: 'right',
+                        fontWeight: isDebit ? 600 : 'normal',
+                        color: isDebit
                           ? 'var(--ink-danger)'
                           : 'var(--ink-fg-3)',
-                    }}
-                  >
-                    {entry.debit > 0 ? fmt(entry.debit) : '—'}
-                  </span>
-                  <span
-                    className="monospace tabular"
-                    style={{
-                      textAlign: 'right',
-                      color:
-                        entry.credit > 0
-                          ? 'var(--ink-success)'
+                      }}
+                    >
+                      {isDebit ? fmt(entry.debit) : '—'}
+                    </span>
+
+                    {/* Credit */}
+                    <span
+                      className="monospace tabular"
+                      style={{
+                        textAlign: 'right',
+                        fontWeight:
+                          !isDebit && entry.credit > 0 ? 600 : 'normal',
+                        color:
+                          entry.credit > 0
+                            ? 'var(--ink-success)'
+                            : 'var(--ink-fg-3)',
+                      }}
+                    >
+                      {entry.credit > 0 ? fmt(entry.credit) : '—'}
+                    </span>
+
+                    {/* Running Balance */}
+                    <span
+                      className="monospace tabular"
+                      style={{
+                        textAlign: 'right',
+                        fontWeight: 600,
+                        color: 'var(--ink-fg)',
+                      }}
+                    >
+                      {fmt(entry.balance_after)}
+                    </span>
+
+                    {/* View Cue */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        color: isHovered
+                          ? 'var(--brand-primary)'
                           : 'var(--ink-fg-3)',
-                    }}
-                  >
-                    {entry.credit > 0 ? fmt(entry.credit) : '—'}
-                  </span>
-                  <span
-                    className="monospace tabular"
-                    style={{
-                      textAlign: 'right',
-                      fontWeight: 600,
-                      color: 'var(--ink-fg)',
-                    }}
-                  >
-                    {fmt(entry.balance_after)}
-                  </span>
-                </div>
-              ))
+                        opacity: isHovered ? 1 : 0.55,
+                      }}
+                    >
+                      <EyeIcon />
+                    </div>
+                  </div>
+                );
+              })
             )}
+          </div>
+
+          {/* Footer hint */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '10px 16px',
+              borderTop: '1px solid var(--ink-3)',
+              background: 'var(--ink-1)',
+              fontSize: '0.73rem',
+              color: 'var(--ink-fg-3)',
+            }}
+          >
+            <span>
+              Showing {filteredLedger.length} of {ledgerEntries.length} entries
+              • Click any row to view details, edit, or delete
+            </span>
+            <span className="monospace tabular" style={{ fontWeight: 600 }}>
+              Net Balance: {fmt(currentBalance)}
+            </span>
           </div>
         </div>
       ) : (
@@ -1562,135 +1737,527 @@ export default function KhataLedger({ currentUser, showToast }) {
         </Modal>
       )}
 
-      {/* ────────── EDIT RECORD MODAL ────────── */}
-      {isEditRecordModalOpen && editingRecord && (
-        <Modal onClose={() => setIsEditRecordModalOpen(false)} width={440}>
-          <ModalHeader
-            title="Edit record"
-            onClose={() => setIsEditRecordModalOpen(false)}
-          />
-          <form
-            onSubmit={handleEditRecord}
-            style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+      {/* ────────── TRANSACTION DETAIL / EDIT / DELETE CARD MODAL ────────── */}
+      {selectedRecord && (
+        <div
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeRecordModal();
+          }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.6)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            zIndex: 60,
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '520px',
+              background: 'var(--ink-0)',
+              borderRadius: '14px',
+              border: '1px solid var(--ink-3)',
+              boxShadow: '0 24px 48px rgba(0, 0, 0, 0.28)',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
           >
-            <Field label="Amount (locked)">
-              <input
-                type="text"
-                disabled
-                className="monospace tabular"
-                value={fmt(entryData.amount)}
-                style={{
-                  ...inputStyle,
-                  background: 'var(--ink-1)',
-                  color: 'var(--ink-fg-2)',
-                  cursor: 'not-allowed',
-                }}
-              />
-            </Field>
-            <Field label="Date">
-              <input
-                type="date"
-                required
-                style={inputStyle}
-                value={entryData.date}
-                onChange={(e) =>
-                  setEntryData({ ...entryData, date: e.target.value })
-                }
-              />
-            </Field>
-            <Field label="Notes / particulars">
-              <input
-                type="text"
-                required
-                style={inputStyle}
-                value={entryData.notes}
-                onChange={(e) =>
-                  setEntryData({ ...entryData, notes: e.target.value })
-                }
-              />
-            </Field>
-
+            {/* CARD HEADER */}
             <div
               style={{
+                padding: '18px 22px',
+                background: 'var(--ink-1)',
+                borderBottom: '1px solid var(--ink-3)',
                 display: 'flex',
-                gap: '8px',
                 justifyContent: 'space-between',
-                paddingTop: '12px',
-                borderTop: '1px solid var(--ink-3)',
-                marginTop: '4px',
+                alignItems: 'flex-start',
+                gap: '12px',
               }}
             >
-              {confirmDelete === editingRecord.id ? (
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteRecord(editingRecord.id)}
+              <div
+                style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}
+              >
+                <div
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <span
                     style={{
-                      padding: '8px 12px',
-                      background: 'var(--ink-danger)',
-                      color: '#ffffff',
-                      border: 'none',
-                      borderRadius: '6px',
-                      fontWeight: 500,
-                      cursor: 'pointer',
-                      fontSize: '0.8rem',
+                      padding: '3px 8px',
+                      borderRadius: '5px',
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      background:
+                        (selectedRecord.debit || 0) > 0
+                          ? 'rgba(239, 68, 68, 0.12)'
+                          : 'rgba(16, 185, 129, 0.12)',
+                      color:
+                        (selectedRecord.debit || 0) > 0
+                          ? 'var(--ink-danger, #ef4444)'
+                          : 'var(--ink-success, #10b981)',
+                      border:
+                        (selectedRecord.debit || 0) > 0
+                          ? '1px solid rgba(239, 68, 68, 0.28)'
+                          : '1px solid rgba(16, 185, 129, 0.28)',
                     }}
                   >
-                    Confirm delete
-                  </button>
+                    {(selectedRecord.debit || 0) > 0
+                      ? 'UDHAAR (DEBIT)'
+                      : 'JAMA (CREDIT)'}
+                  </span>
+                  {selectedRecord.id && (
+                    <span
+                      className="monospace"
+                      style={{
+                        fontSize: '0.72rem',
+                        color: 'var(--ink-fg-3)',
+                      }}
+                    >
+                      #{selectedRecord.id}
+                    </span>
+                  )}
+                </div>
+                <h3
+                  style={{
+                    margin: 0,
+                    fontSize: '1.06rem',
+                    fontWeight: 600,
+                    color: 'var(--ink-fg)',
+                    lineHeight: 1.35,
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  }}
+                >
+                  {isRecordEditMode
+                    ? 'Edit Khata Record'
+                    : selectedRecord.description || 'Transaction Details'}
+                </h3>
+              </div>
+
+              <button
+                onClick={closeRecordModal}
+                aria-label="Close modal"
+                style={{
+                  background: 'var(--ink-0)',
+                  border: '1px solid var(--ink-3)',
+                  color: 'var(--ink-fg-2)',
+                  borderRadius: '8px',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                }}
+              >
+                <CloseIcon />
+              </button>
+            </div>
+
+            {/* VIEW MODE VS EDIT MODE */}
+            {!isRecordEditMode ? (
+              <div
+                style={{
+                  padding: '22px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px',
+                }}
+              >
+                {/* AMOUNT & BALANCE BANNER */}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '12px',
+                  }}
+                >
+                  <div
+                    style={{
+                      padding: '14px 16px',
+                      borderRadius: '10px',
+                      background: 'var(--ink-1)',
+                      border: '1px solid var(--ink-3)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '0.68rem',
+                        textTransform: 'uppercase',
+                        fontWeight: 600,
+                        color: 'var(--ink-fg-3)',
+                        letterSpacing: '0.03em',
+                      }}
+                    >
+                      {(selectedRecord.debit || 0) > 0
+                        ? 'Debit Amount (+)'
+                        : 'Credit Amount (−)'}
+                    </div>
+                    <div
+                      className="monospace tabular"
+                      style={{
+                        fontSize: '1.15rem',
+                        fontWeight: 700,
+                        marginTop: '4px',
+                        color:
+                          (selectedRecord.debit || 0) > 0
+                            ? 'var(--ink-danger)'
+                            : 'var(--ink-success)',
+                      }}
+                    >
+                      {fmt(selectedRecord.debit || selectedRecord.credit || 0)}
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      padding: '14px 16px',
+                      borderRadius: '10px',
+                      background: 'var(--ink-1)',
+                      border: '1px solid var(--ink-3)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '0.68rem',
+                        textTransform: 'uppercase',
+                        fontWeight: 600,
+                        color: 'var(--ink-fg-3)',
+                        letterSpacing: '0.03em',
+                      }}
+                    >
+                      Balance After
+                    </div>
+                    <div
+                      className="monospace tabular"
+                      style={{
+                        fontSize: '1.15rem',
+                        fontWeight: 700,
+                        marginTop: '4px',
+                        color: 'var(--ink-fg)',
+                      }}
+                    >
+                      {fmt(selectedRecord.balance_after)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* METADATA GRID */}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '14px',
+                    padding: '14px 16px',
+                    borderRadius: '10px',
+                    background: 'var(--ink-1)',
+                    border: '1px solid var(--ink-3)',
+                    fontSize: '0.82rem',
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        fontSize: '0.7rem',
+                        color: 'var(--ink-fg-3)',
+                        marginBottom: '3px',
+                      }}
+                    >
+                      Wholesale Party
+                    </div>
+                    <div style={{ fontWeight: 600, color: 'var(--ink-fg)' }}>
+                      {selectedCustomer?.name || 'N/A'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div
+                      style={{
+                        fontSize: '0.7rem',
+                        color: 'var(--ink-fg-3)',
+                        marginBottom: '3px',
+                      }}
+                    >
+                      Date Recorded
+                    </div>
+                    <div
+                      className="monospace"
+                      style={{ fontWeight: 500, color: 'var(--ink-fg)' }}
+                    >
+                      {selectedRecord.created_at
+                        ? selectedRecord.created_at
+                            .replace('T', ' ')
+                            .substring(0, 19)
+                        : 'N/A'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* FULL PARTICULARS */}
+                <div
+                  style={{
+                    padding: '14px 16px',
+                    borderRadius: '10px',
+                    background: 'var(--ink-1)',
+                    border: '1px solid var(--ink-3)',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: '0.7rem',
+                      color: 'var(--ink-fg-3)',
+                      marginBottom: '6px',
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.03em',
+                    }}
+                  >
+                    Particulars / Notes
+                  </div>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: '0.84rem',
+                      lineHeight: 1.5,
+                      color: 'var(--ink-fg)',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {selectedRecord.description ||
+                      'No additional notes recorded.'}
+                  </p>
+                </div>
+
+                {/* INLINE DELETE CONFIRMATION */}
+                {confirmDelete === selectedRecord.id && (
+                  <div
+                    style={{
+                      padding: '12px 14px',
+                      borderRadius: '8px',
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid rgba(239, 68, 68, 0.35)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '12px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: '0.78rem',
+                        color: 'var(--ink-danger)',
+                        fontWeight: 500,
+                      }}
+                    >
+                      Delete this record and recalculate party balance?
+                    </span>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDelete(null)}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          border: '1px solid var(--ink-3)',
+                          background: 'var(--ink-0)',
+                          color: 'var(--ink-fg)',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isSaving}
+                        onClick={() => handleDeleteRecord(selectedRecord.id)}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          border: 'none',
+                          background: 'var(--ink-danger)',
+                          color: '#fff',
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {isSaving ? 'Deleting…' : 'Confirm delete'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* CARD FOOTER ACTIONS */}
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    paddingTop: '10px',
+                    borderTop: '1px solid var(--ink-3)',
+                  }}
+                >
                   <button
                     type="button"
-                    onClick={() => setConfirmDelete(null)}
+                    onClick={() => setConfirmDelete(selectedRecord.id)}
                     style={{
-                      padding: '8px 12px',
-                      background: 'var(--ink-1)',
-                      color: 'var(--ink-fg-2)',
-                      border: '1px solid var(--ink-3)',
-                      borderRadius: '6px',
+                      padding: '8px 14px',
+                      borderRadius: '7px',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      background: 'rgba(239, 68, 68, 0.08)',
+                      color: 'var(--ink-danger)',
+                      fontSize: '0.78rem',
                       fontWeight: 500,
                       cursor: 'pointer',
-                      fontSize: '0.8rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <TrashIcon /> Delete
+                  </button>
+
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={closeRecordModal}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '7px',
+                        border: '1px solid var(--ink-3)',
+                        background: 'var(--ink-1)',
+                        color: 'var(--ink-fg)',
+                        fontSize: '0.78rem',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Close
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsRecordEditMode(true)}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '7px',
+                        border: 'none',
+                        background: 'var(--brand-primary)',
+                        color: '#fff',
+                        fontSize: '0.78rem',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <EditIcon /> Edit Record
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* EDIT MODE FORM */
+              <form
+                onSubmit={handleEditRecord}
+                style={{
+                  padding: '22px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                }}
+              >
+                <Field label="Amount (locked)">
+                  <input
+                    type="text"
+                    disabled
+                    className="monospace tabular"
+                    value={fmt(entryData.amount)}
+                    style={{
+                      ...inputStyle,
+                      background: 'var(--ink-1)',
+                      color: 'var(--ink-fg-2)',
+                      cursor: 'not-allowed',
+                    }}
+                  />
+                </Field>
+                <Field label="Date">
+                  <input
+                    type="date"
+                    required
+                    style={inputStyle}
+                    value={entryData.date}
+                    onChange={(e) =>
+                      setEntryData({ ...entryData, date: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="Notes / particulars">
+                  <textarea
+                    rows={3}
+                    required
+                    style={{ ...inputStyle, resize: 'vertical' }}
+                    value={entryData.notes}
+                    onChange={(e) =>
+                      setEntryData({ ...entryData, notes: e.target.value })
+                    }
+                  />
+                </Field>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '8px',
+                    justifyContent: 'flex-end',
+                    paddingTop: '12px',
+                    borderTop: '1px solid var(--ink-3)',
+                    marginTop: '4px',
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setIsRecordEditMode(false)}
+                    style={{
+                      padding: '8px 16px',
+                      background: 'var(--ink-1)',
+                      color: 'var(--ink-fg)',
+                      border: '1px solid var(--ink-3)',
+                      borderRadius: '7px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      fontSize: '0.78rem',
                     }}
                   >
                     Cancel
                   </button>
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    style={{
+                      padding: '8px 20px',
+                      background: 'var(--brand-primary)',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '7px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      fontSize: '0.78rem',
+                    }}
+                  >
+                    {isSaving ? 'Saving…' : 'Save Changes'}
+                  </button>
                 </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setConfirmDelete(editingRecord.id)}
-                  style={{
-                    padding: '8px 12px',
-                    background: 'var(--ink-1)',
-                    color: 'var(--ink-danger)',
-                    border: '1px solid var(--ink-3)',
-                    borderRadius: '6px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    fontSize: '0.8rem',
-                  }}
-                >
-                  Delete
-                </button>
-              )}
-              <button
-                type="submit"
-                style={{
-                  padding: '8px 20px',
-                  background: 'var(--brand-primary)',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  fontSize: '0.8rem',
-                }}
-              >
-                Update
-              </button>
-            </div>
-          </form>
-        </Modal>
+              </form>
+            )}
+          </div>
+        </div>
       )}
 
       {/* ────────── CUSTOMER PROFILE MODAL ────────── */}

@@ -426,7 +426,7 @@ export default function Login({ onLoginSuccess }) {
                 fontWeight: 500,
                 marginTop: '4px',
                 background: 'var(--ink-fg)',
-                color: '#ffffff',
+                color: 'var(--brand-primary)',
                 border: 'none',
                 borderRadius: '6px',
                 cursor: isLoading ? 'wait' : 'pointer',

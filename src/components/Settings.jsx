@@ -417,14 +417,17 @@ export default function Settings({ currentUser, showToast }) {
     const ipc = getIpc();
     if (ipc) {
       try {
-        await ipc.invoke('save-settings', { theme: applied });
+        const res = await ipc.invoke('save-settings', { theme: applied });
+        if (!res?.success) {
+          console.warn('Theme saved locally but DB write failed:', res?.error);
+          // do NOT revert — localStorage remains authoritative
+        }
       } catch (err) {
         console.error('Failed to persist theme setting:', err);
       }
     }
     notify(`Switched to ${applied} mode`);
   };
-
   const handleSave = async (e) => {
     e.preventDefault();
     const ipc = getIpc();
@@ -1402,8 +1405,8 @@ export default function Settings({ currentUser, showToast }) {
                       fontVariantNumeric: 'tabular-nums',
                     }}
                   >
-                    Version {updateInfo.currentVersion || '2.1.0'} (Offline
-                    Desktop WAL Edition)
+                    Version {updateInfo.currentVersion} (Offline Desktop WAL
+                    Edition)
                   </p>
                 </div>
               </div>

@@ -192,8 +192,6 @@ ipcMain.handle('get-users', async () => {
     return [];
   }
 });
-
-// 1. DASHBOARD STATS HANDLER
 // 1. DASHBOARD STATS HANDLER
 ipcMain.handle('get-dashboard-stats', () => {
   try {
@@ -390,7 +388,7 @@ ipcMain.handle(
         restockItems,
         topCustomers,
         topCreditHolders,
-        yearlyPerformance, // 👈 New data injected for the Bar Chart
+        yearlyPerformance,
       };
     } catch (err) {
       console.error('Dashboard Analytics Error:', err);
@@ -1615,67 +1613,6 @@ ipcMain.handle(
     }
   },
 );
-// Get Shop/Thermal Printer Logo from SQLite settings
-// ipcMain.handle("get-setting", (event, key) => {
-//   try {
-//     const row = db.prepare("SELECT value FROM settings WHERE key = ?").get(key);
-//     if (!row) return { success: false, error: "Setting not found" };
-//     return { success: true, value: row.value };
-//   } catch (err) {
-//     return { success: false, error: err.message };
-//   }
-// });
-
-// ✏️ Universal Ledger Entry Update Handler
-// ipcMain.handle(
-//   'update-ledger-entry',
-//   (event, { type, id, data, currentUser }) => {
-//     try {
-//       if (!currentUser || currentUser.role !== 'ADMIN') {
-//         throw new Error(
-//           'Unauthorized: Only Managers/Admins can edit financial records.',
-//         );
-//       }
-
-//       const transaction = db.transaction(() => {
-//         if (type === 'SALES') {
-//           db.prepare(
-//             `UPDATE sales SET total_amount = ?, payment_type = ? WHERE id = ?`,
-//           ).run(data.total_amount, data.payment_type, id);
-//         } else if (type === 'EXPENSES') {
-//           db.prepare(
-//             `UPDATE business_expenses SET category = ?, amount = ?, description = ? WHERE id = ?`,
-//           ).run(data.category, data.amount, data.description, id);
-//         } else if (type === 'PURCHASES') {
-//           db.prepare(
-//             `UPDATE purchase_lines SET qty_received = ?, unit_cost = ?, payment_type = ? WHERE id = ?`,
-//           ).run(
-//             parseFloat(data.qty_received) || 0,
-//             parseFloat(data.unit_cost) || 0,
-//             data.payment_type || 'CREDIT',
-//             id,
-//           );
-//         }
-//       });
-
-//       transaction();
-
-//       db.prepare(
-//         'INSERT INTO audit_logs (user_id, username, action, details) VALUES (?, ?, ?, ?)',
-//       ).run(
-//         currentUser.id,
-//         currentUser.username,
-//         'EDIT_LEDGER',
-//         `Updated ${type} record ID #${id}`,
-//       );
-
-//       return { success: true };
-//     } catch (err) {
-//       return { success: false, error: err.message };
-//     }
-//   },
-// );
-// 🛡️ Update Ledger Entry (Safely updates date and notes, protects the amount)
 // 🛡️ Update Ledger Entry (Safely updates date and notes, protects the amount)
 ipcMain.handle(
   'update-ledger-entry',
@@ -1700,55 +1637,7 @@ ipcMain.handle(
   },
 );
 
-// 🛡️ Delete Ledger Entry (Recalculates balance if deleted)
-// ipcMain.handle(
-//   'delete-ledger-entry',
-//   (event, { ledgerId, customerId, currentUser }) => {
-//     try {
-//       if (currentUser?.role !== 'ADMIN')
-//         throw new Error('Only Admins can delete ledger records.');
-
-//       const record = db
-//         .prepare('SELECT debit, credit FROM customer_ledger WHERE id = ?')
-//         .get(ledgerId);
-//       if (!record) throw new Error('Record not found.');
-
-//       const transaction = db.transaction(() => {
-//         db.prepare('DELETE FROM customer_ledger WHERE id = ?').run(ledgerId);
-
-//         const balanceAdjustment = (record.debit || 0) - (record.credit || 0);
-//         db.prepare(
-//           'UPDATE customers SET balance = balance - ? WHERE id = ?',
-//         ).run(balanceAdjustment, customerId);
-
-//         // 👈 Changed 'date' to 'created_at' in the ORDER BY
-//         const remainingEntries = db
-//           .prepare(
-//             'SELECT id, debit, credit FROM customer_ledger WHERE customer_id = ? ORDER BY created_at ASC, id ASC',
-//           )
-//           .all(customerId);
-//         let runningBalance = 0;
-//         const updateStmt = db.prepare(
-//           'UPDATE customer_ledger SET balance_after = ? WHERE id = ?',
-//         );
-
-//         for (const entry of remainingEntries) {
-//           runningBalance += (entry.debit || 0) - (entry.credit || 0);
-//           updateStmt.run(runningBalance, entry.id);
-//         }
-//       });
-
-//       transaction();
-//       return { success: true };
-//     } catch (err) {
-//       return { success: false, error: err.message };
-//     }
-//   },
-// );
-// ==========================================
 // REFUNDS & REPAIRS IPC HANDLERS
-// ==========================================
-
 ipcMain.handle('get-refunds-repairs', () => {
   try {
     // 1. Check if 'manual_item_name' column exists in the table
@@ -1857,8 +1746,8 @@ ipcMain.handle('get-financial-ledger', (event, filters = {}) => {
 
     let salesQuery = `
       SELECT s.id as sale_id, s.date, s.payment_type, s.total_amount as invoice_total,
-             c.name as customer_name, u.username,
-             i.name as item_name, sl.qty as qty_sold, sl.price as unit_price, (sl.qty * sl.price) as total_line
+      c.name as customer_name, u.username,
+      i.name as item_name, sl.qty as qty_sold, sl.price as unit_price, (sl.qty * sl.price) as total_line
       FROM sales s
       LEFT JOIN sale_lines sl ON s.id = sl.sale_id
       LEFT JOIN items i ON sl.item_id = i.id
@@ -1867,32 +1756,83 @@ ipcMain.handle('get-financial-ledger', (event, filters = {}) => {
       WHERE 1=1
     `;
 
-    // 🔄 Dedicated Refund Query (Independent of operating expenses)
     let refundQuery = `
-      SELECT r.id, r.date, r.amount_refunded, r.qty, r.customer_name, r.description,
+      SELECT r.id, r.date, r.amount_refunded, r.qty, r.customer_name, r.description, r.type,
              i.name as item_name, u.username
       FROM refunds_repairs r
       LEFT JOIN items i ON r.item_id = i.id
       LEFT JOIN users u ON r.user_id = u.id
-      WHERE r.type = 'REFUND'
+      WHERE 1=1
+    `;
+
+    // ── CONSIGNMENT QUERIES ──
+    let consignmentQuery = `
+      SELECT 
+        'SALE' as type,
+        sl.id as id,
+        s.date as date,
+        i.name as item_name,
+        i.code as sku,
+        i.consignment_owner as party,
+        sl.qty as qty,
+        sl.price as amount,
+        (sl.qty * sl.price) as total,
+        i.commission_rate as commission_rate,
+        ((sl.qty * sl.price) * (i.commission_rate / 100.0)) as our_commission,
+        ((sl.qty * sl.price) * ((100 - i.commission_rate) / 100.0)) as partner_share,
+        u.username as username
+      FROM sale_lines sl
+      JOIN sales s ON sl.sale_id = s.id
+      JOIN items i ON sl.item_id = i.id
+      LEFT JOIN users u ON s.user_id = u.id
+      WHERE i.is_consignment = 1
+    `;
+
+    let payoutQuery = `
+      SELECT 
+        'PAYOUT' as type,
+        cp.id as id,
+        cp.date as date,
+        'Partner Payout' as item_name,
+        '—' as sku,
+        cp.owner_name as party,
+        0 as qty,
+        cp.amount_paid as amount,
+        cp.amount_paid as total,
+        0 as commission_rate,
+        0 as our_commission,
+        cp.amount_paid as partner_share,
+        u.username as username
+      FROM consignment_payouts cp
+      LEFT JOIN users u ON cp.user_id = u.id
+      WHERE 1=1
     `;
 
     let expParams = [],
       purParams = [],
       salParams = [],
-      refParams = [];
+      refParams = [],
+      conParams = [],
+      payoutParams = [];
 
+    // Date Filters
     if (startDate && endDate) {
       expenseQuery += ` AND date(e.date) >= date(?) AND date(e.date) <= date(?)`;
       purchaseQuery += ` AND date(pl.date) >= date(?) AND date(pl.date) <= date(?)`;
       salesQuery += ` AND date(s.date) >= date(?) AND date(s.date) <= date(?)`;
       refundQuery += ` AND date(r.date) >= date(?) AND date(r.date) <= date(?)`;
+      consignmentQuery += ` AND date(s.date) >= date(?) AND date(s.date) <= date(?)`;
+      payoutQuery += ` AND date(cp.date) >= date(?) AND date(cp.date) <= date(?)`;
+
       expParams.push(startDate, endDate);
       purParams.push(startDate, endDate);
       salParams.push(startDate, endDate);
       refParams.push(startDate, endDate);
+      conParams.push(startDate, endDate);
+      payoutParams.push(startDate, endDate);
     }
 
+    // User Filters
     if (user_id) {
       expenseQuery += ` AND e.user_id = ?`;
       expParams.push(user_id);
@@ -1900,17 +1840,35 @@ ipcMain.handle('get-financial-ledger', (event, filters = {}) => {
       salParams.push(user_id);
       refundQuery += ` AND r.user_id = ?`;
       refParams.push(user_id);
+      consignmentQuery += ` AND s.user_id = ?`;
+      conParams.push(user_id);
+      payoutQuery += ` AND cp.user_id = ?`;
+      payoutParams.push(user_id);
     }
 
-    if (payment_type && payment_type !== 'REFUND') {
-      salesQuery += ` AND s.payment_type = ?`;
-      salParams.push(payment_type);
+    // Payment Type Filters
+    if (payment_type) {
+      if (payment_type === 'CONSIGNMENT') {
+        // If filtering by consignment, we ONLY want consignment sales, no payouts
+        payoutQuery += ` AND 1=0`;
+      } else if (payment_type === 'REFUND') {
+        consignmentQuery += ` AND 1=0`;
+        payoutQuery += ` AND 1=0`;
+      } else {
+        salesQuery += ` AND s.payment_type = ?`;
+        salParams.push(payment_type);
+        // Hide consignment data if a standard payment type is selected
+        consignmentQuery += ` AND 1=0`;
+        payoutQuery += ` AND 1=0`;
+      }
     }
 
     let expenses = db.prepare(expenseQuery).all(...expParams);
     let purchases = db.prepare(purchaseQuery).all(...purParams);
     let sales = db.prepare(salesQuery).all(...salParams);
     let refunds = db.prepare(refundQuery).all(...refParams);
+    let consignmentSales = db.prepare(consignmentQuery).all(...conParams);
+    let consignmentPayouts = db.prepare(payoutQuery).all(...payoutParams);
 
     const sortFn = (a, b) => {
       const dateA = new Date(a.date || 0);
@@ -1924,6 +1882,12 @@ ipcMain.handle('get-financial-ledger', (event, filters = {}) => {
     sales.sort(sortFn);
     refunds.sort(sortFn);
 
+    // Combine Consignment Sales and Payouts
+    const consignment = [...consignmentSales, ...consignmentPayouts].sort(
+      sortFn,
+    );
+
+    // ── SUMMARY CALCULATIONS ──
     const grossSales = db
       .prepare('SELECT COALESCE(SUM(total_amount), 0) as total FROM sales')
       .get().total;
@@ -1939,23 +1903,34 @@ ipcMain.handle('get-financial-ledger', (event, filters = {}) => {
         'SELECT COALESCE(SUM(amount), 0) as total FROM business_expenses',
       )
       .get().total;
+
     const totalPurchases = db
       .prepare(
         'SELECT COALESCE(SUM(qty_received * unit_cost), 0) as total FROM purchase_lines',
       )
       .get().total;
 
+    // Calculate Total Commission Income
+    const totalCommission = consignmentSales.reduce(
+      (sum, c) => sum + Number(c.our_commission || 0),
+      0,
+    );
+
+    const allRefundsAndRepairs = refunds.sort(sortFn);
+
     return {
       expenses,
       purchases,
       sales,
-      refunds,
+      refunds: allRefundsAndRepairs,
+      consignment,
       summary: {
         totalSales,
         totalExpenses,
         totalPurchases,
         totalRefunds,
-        netCashFlow: totalSales - totalExpenses,
+        totalCommission,
+        netCashFlow: totalSales + totalCommission - totalExpenses,
       },
     };
   } catch (err) {
@@ -1965,17 +1940,18 @@ ipcMain.handle('get-financial-ledger', (event, filters = {}) => {
       purchases: [],
       sales: [],
       refunds: [],
+      consignment: [],
       summary: {
         totalSales: 0,
         totalExpenses: 0,
         totalPurchases: 0,
         totalRefunds: 0,
+        totalCommission: 0,
         netCashFlow: 0,
       },
     };
   }
 });
-
 ipcMain.handle(
   'delete-ledger-entry',
   (event, { ledgerId, customerId, isSupplier, currentUser }) => {
@@ -2156,5 +2132,358 @@ autoUpdater.on('error', (err) => {
       'update-error',
       err?.message || 'Update download failed.',
     );
+  }
+});
+// REPORTS SUMMARY — one round-trip for the Reports page
+ipcMain.handle('get-reports-summary', (_event, { startDate, endDate } = {}) => {
+  try {
+    const hasRange = Boolean(startDate && endDate); // strictly require both
+    let whereClause = '';
+    let rangeParams = [];
+
+    if (hasRange) {
+      // 1. Build the clause and params together
+      whereClause = `WHERE date(date, 'localtime') BETWEEN date(?) AND date(?)`;
+      rangeParams = [startDate, endDate];
+    }
+
+    // 2. Setup Previous Period logic
+    let prevWhereClause = '';
+    let prevParams = [];
+    let spanDays = 30;
+
+    if (hasRange) {
+      spanDays = db
+        .prepare(
+          `SELECT MAX(1, CAST(julianday(?) - julianday(?) AS INTEGER) + 1) AS d`,
+        )
+        .get(endDate, startDate).d;
+
+      prevWhereClause = `WHERE date(date, 'localtime') BETWEEN date(?, '-' || ? || ' day') AND date(?, '-1 day')`;
+      prevParams = [startDate, spanDays, startDate];
+    } else {
+      // Default to last 30 days for previous period if no range is selected
+      prevWhereClause = `WHERE date(date, 'localtime') BETWEEN date('now', 'localtime', '-60 day') AND date('now', 'localtime', '-31 day')`;
+      prevParams = [];
+    }
+
+    // Helper to safely run a query with its matching params
+    const runQuery = (sql, params) => db.prepare(sql).get(...params);
+
+    // --- SALES ---
+    const salesSql = `
+      SELECT
+        COALESCE(SUM(total_amount), 0) AS total,
+        COUNT(*) AS count,
+        COALESCE(SUM(CASE WHEN payment_type='CASH'   THEN total_amount END), 0) AS cash,
+        COALESCE(SUM(CASE WHEN payment_type='CREDIT' THEN total_amount END), 0) AS credit,
+        COALESCE(SUM(CASE WHEN payment_type='COD'    THEN total_amount END), 0) AS cod,
+        COUNT(DISTINCT user_id) AS operators
+      FROM sales
+      ${whereClause}`;
+    const salesRow = runQuery(salesSql, rangeParams);
+
+    const prevSalesSql = `SELECT COALESCE(SUM(total_amount), 0) AS total FROM sales ${prevWhereClause}`;
+    const prevSalesRow = runQuery(prevSalesSql, prevParams);
+
+    // --- REFUNDS ---
+    const refundsSql = `
+      SELECT
+        COALESCE(SUM(CASE WHEN type='REFUND' THEN amount_refunded END), 0) AS refunds,
+        COALESCE(SUM(CASE WHEN type='REPAIR' THEN amount_refunded END), 0) AS repairs,
+        COALESCE(SUM(CASE WHEN type='REPAIR' AND status='PENDING' THEN 1 END), 0) AS repairs_pending
+      FROM refunds_repairs
+      ${whereClause}`;
+    const refundsRow = runQuery(refundsSql, rangeParams);
+
+    // --- EXPENSES ---
+    const expensesSql = `SELECT COALESCE(SUM(amount), 0) AS total FROM business_expenses ${whereClause}`;
+    const expensesRow = runQuery(expensesSql, rangeParams);
+
+    const prevExpensesSql = `SELECT COALESCE(SUM(amount), 0) AS total FROM business_expenses ${prevWhereClause}`;
+    const prevExpensesRow = runQuery(prevExpensesSql, prevParams);
+
+    // --- PURCHASES ---
+    const purchasesSql = `SELECT COALESCE(SUM(qty_received * unit_cost), 0) AS total FROM purchase_lines ${whereClause}`;
+    const purchasesRow = runQuery(purchasesSql, rangeParams);
+
+    // --- STOCK (Static, no date filter) ---
+    const stockRow = db
+      .prepare(
+        `
+      SELECT
+        COALESCE(SUM(CASE WHEN stock_qty <= 5 AND stock_qty > 0 THEN 1 END), 0) AS low_stock,
+        COALESCE(SUM(CASE WHEN stock_qty <= 0 THEN 1 END), 0) AS out_of_stock,
+        COALESCE(SUM(stock_qty * avg_cost), 0) AS stock_value,
+        COUNT(*) AS total_skus
+      FROM items
+      WHERE is_active = 1
+    `,
+      )
+      .get();
+
+    // --- BALANCES (Static) ---
+    const supplierRow = db
+      .prepare(
+        `SELECT COALESCE(SUM(CASE WHEN balance > 0 THEN balance END), 0) AS payables FROM suppliers WHERE is_active = 1`,
+      )
+      .get();
+    const customerRow = db
+      .prepare(
+        `SELECT COALESCE(SUM(CASE WHEN balance > 0 THEN balance END), 0) AS receivables FROM customers WHERE is_active = 1`,
+      )
+      .get();
+
+    // --- TOP ITEM ---
+    // We construct this carefully so the column names don't break the 'date' alias
+    let topItemSql = `
+      SELECT i.name AS item_name, i.code AS sku,
+             COALESCE(SUM(sl.qty), 0) AS qty_sold,
+             COALESCE(SUM(sl.qty * sl.price), 0) AS revenue
+      FROM sale_lines sl
+      JOIN sales s ON s.id = sl.sale_id
+      JOIN items i ON i.id = sl.item_id
+    `;
+    let topItemParams = [];
+    if (hasRange) {
+      topItemSql += ` WHERE date(s.date, 'localtime') BETWEEN date(?) AND date(?)`;
+      topItemParams = [startDate, endDate];
+    }
+    topItemSql += ` GROUP BY i.id ORDER BY qty_sold DESC LIMIT 1`;
+
+    const topItem =
+      topItemParams.length > 0
+        ? db.prepare(topItemSql).get(...topItemParams)
+        : db.prepare(topItemSql).get();
+
+    const cashIn = salesRow.cash;
+    const netCash = cashIn - refundsRow.refunds - expensesRow.total;
+
+    return {
+      success: true,
+      scope: {
+        startDate: startDate || null,
+        endDate: endDate || null,
+        days: spanDays,
+      },
+      sales: {
+        total: salesRow.total,
+        count: salesRow.count,
+        operators: salesRow.operators,
+        cash: salesRow.cash,
+        credit: salesRow.credit,
+        cod: salesRow.cod,
+        prevTotal: prevSalesRow.total,
+      },
+      cashIn,
+      netCash,
+      refunds: refundsRow.refunds,
+      repairs: refundsRow.repairs,
+      repairsPending: refundsRow.repairs_pending,
+      expenses: { total: expensesRow.total, prevTotal: prevExpensesRow.total },
+      purchases: purchasesRow.total,
+      stock: {
+        lowStock: stockRow.low_stock,
+        outOfStock: stockRow.out_of_stock,
+        value: stockRow.stock_value,
+        totalSkus: stockRow.total_skus,
+      },
+      payables: supplierRow.payables,
+      receivables: customerRow.receivables,
+      topItem: topItem || null,
+    };
+  } catch (err) {
+    console.error('get-reports-summary error:', err);
+    return { success: false, error: err.message };
+  }
+});
+// CONSIGNMENT MODULE
+// 1. Add a Consignment Item
+ipcMain.handle('add-consignment-item', (event, { item, currentUser }) => {
+  try {
+    const autoCode = item.code || generateNextSku(item.category, item.name);
+
+    db.prepare(
+      `
+      INSERT INTO items (
+        code, name, description, category, stock_qty, avg_cost, 
+        selling_price, unit, is_consignment, consignment_owner, commission_rate
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+    `,
+    ).run(
+      autoCode,
+      item.name,
+      item.description || '',
+      item.category || 'General',
+      item.stock_qty,
+      item.avg_cost || 0,
+      item.selling_price,
+      item.unit || 'Pcs',
+      item.consignment_owner,
+      item.commission_rate,
+    );
+
+    db.prepare(
+      'INSERT INTO audit_logs (user_id, username, action, details) VALUES (?, ?, ?, ?)',
+    ).run(
+      currentUser.id,
+      currentUser.username,
+      'ADD_CONSIGNMENT',
+      `Added consignment item ${item.name} from ${item.consignment_owner}`,
+    );
+
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// 2. Get Consignment Dashboard Data
+ipcMain.handle('get-consignment-data', () => {
+  try {
+    const items = db
+      .prepare(
+        `
+      SELECT * FROM items 
+      WHERE is_consignment = 1 AND is_active = 1
+      ORDER BY id DESC
+    `,
+      )
+      .all();
+
+    // Calculate total sales, commission, and total owed per owner
+    const financials = db
+      .prepare(
+        `
+      SELECT 
+        i.consignment_owner,
+        SUM(sl.qty * sl.price) as total_sold,
+        SUM((sl.qty * sl.price) * (i.commission_rate / 100.0)) as our_commission,
+        SUM((sl.qty * sl.price) * ((100 - i.commission_rate) / 100.0)) as total_owed
+      FROM sale_lines sl
+      JOIN items i ON sl.item_id = i.id
+      JOIN sales s ON sl.sale_id = s.id
+      WHERE i.is_consignment = 1
+      GROUP BY i.consignment_owner
+    `,
+      )
+      .all();
+
+    // Get total paid per owner
+    const payouts = db
+      .prepare(
+        `
+      SELECT owner_name, SUM(amount_paid) as total_paid 
+      FROM consignment_payouts 
+      GROUP BY owner_name
+    `,
+      )
+      .all();
+
+    // Merge them to find the current balance
+    const balances = financials.map((f) => {
+      const paid =
+        payouts.find((p) => p.owner_name === f.consignment_owner)?.total_paid ||
+        0;
+      return {
+        ...f,
+        total_paid: paid,
+        balance_due: f.total_owed - paid,
+      };
+    });
+
+    return { items, balances };
+  } catch (err) {
+    console.error('Consignment data error:', err);
+    return { items: [], balances: [] };
+  }
+});
+
+// Update Payout to use the new table
+ipcMain.handle(
+  'record-consignment-payout',
+  (event, { owner, amount, notes, currentUser }) => {
+    try {
+      db.prepare(
+        'INSERT INTO consignment_payouts (owner_name, amount_paid, notes, user_id) VALUES (?, ?, ?, ?)',
+      ).run(owner, amount, notes || '', currentUser.id);
+
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  },
+);
+// CONSIGNMENT: EDIT & DELETE
+// 1. Update Consignment Item
+ipcMain.handle(
+  'update-consignment-item',
+  (event, { id, item, currentUser }) => {
+    try {
+      db.prepare(
+        `
+      UPDATE items 
+      SET name = ?, category = ?, stock_qty = ?, selling_price = ?, 
+          consignment_owner = ?, commission_rate = ?, image_path = ?
+      WHERE id = ? AND is_consignment = 1
+    `,
+      ).run(
+        item.name,
+        item.category || 'General',
+        item.stock_qty,
+        item.selling_price,
+        item.consignment_owner,
+        item.commission_rate,
+        item.image_path || '',
+        id,
+      );
+
+      db.prepare(
+        'INSERT INTO audit_logs (user_id, username, action, details) VALUES (?, ?, ?, ?)',
+      ).run(
+        currentUser.id,
+        currentUser.username,
+        'UPDATE_CONSIGNMENT',
+        `Updated consignment item ID #${id}`,
+      );
+
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  },
+);
+
+// 2. Delete (Archive) Consignment Item
+ipcMain.handle('delete-consignment-item', (event, { id, currentUser }) => {
+  try {
+    // Check if it has been sold yet
+    const soldCheck = db
+      .prepare('SELECT COUNT(*) as count FROM sale_lines WHERE item_id = ?')
+      .get(id);
+
+    if (soldCheck.count > 0) {
+      return {
+        success: false,
+        error:
+          'Cannot hard-delete an item that has already been sold. It has been archived instead to protect financial history.',
+      };
+    }
+
+    // If not sold, we can safely hard delete it
+    db.prepare('DELETE FROM items WHERE id = ? AND is_consignment = 1').run(id);
+
+    db.prepare(
+      'INSERT INTO audit_logs (user_id, username, action, details) VALUES (?, ?, ?, ?)',
+    ).run(
+      currentUser.id,
+      currentUser.username,
+      'DELETE_CONSIGNMENT',
+      `Deleted consignment item ID #${id}`,
+    );
+
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
   }
 });

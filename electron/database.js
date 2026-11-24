@@ -223,6 +223,15 @@ export function initDB() {
   user_id INTEGER,
   date TEXT DEFAULT CURRENT_TIMESTAMP
 );
+ -- 14. CONSIGNMENT PAYOUTS
+    CREATE TABLE IF NOT EXISTS consignment_payouts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      owner_name TEXT NOT NULL,
+      amount_paid REAL NOT NULL,
+      notes TEXT,
+      user_id INTEGER,
+      date TEXT DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   // Seed Default Users if empty
@@ -326,6 +335,22 @@ export function initDB() {
   // if (!customerTableInfo.some((col) => col.name === "address")) {
   //   db.exec("ALTER TABLE customers ADD COLUMN address TEXT DEFAULT ''");
   // }
+
+  // 🛡️ CONSIGNMENT MIGRATION
+  try {
+    const itemInfo = db.prepare('PRAGMA table_info(items)').all();
+    if (!itemInfo.some((c) => c.name === 'is_consignment')) {
+      db.exec('ALTER TABLE items ADD COLUMN is_consignment INTEGER DEFAULT 0');
+    }
+    if (!itemInfo.some((c) => c.name === 'consignment_owner')) {
+      db.exec('ALTER TABLE items ADD COLUMN consignment_owner TEXT DEFAULT ""');
+    }
+    if (!itemInfo.some((c) => c.name === 'commission_rate')) {
+      db.exec('ALTER TABLE items ADD COLUMN commission_rate REAL DEFAULT 0');
+    }
+  } catch (err) {
+    console.error('Consignment migration error:', err);
+  }
 
   return db;
 }

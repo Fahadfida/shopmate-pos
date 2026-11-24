@@ -17,7 +17,8 @@ import RefundsRepairs from './components/RefundsRepairs';
 import Sidebar from './components/Sidebar';
 import Toast from './components/Toast';
 import { getIpc } from './utils/ipc';
-
+import Reports from './components/Reports';
+import Consignment from './components/Consignment';
 const MenuIcon = () => (
   <svg
     width="16"
@@ -187,6 +188,12 @@ export default function App() {
         )}
         {activeTab === 'settings' && (
           <Settings currentUser={currentUser} showToast={showToast} />
+        )}
+        {activeTab === 'reports' && (
+          <Reports currentUser={currentUser} showToast={showToast} />
+        )}
+        {activeTab === 'consignment' && (
+          <Consignment currentUser={currentUser} showToast={showToast} />
         )}
       </main>
 

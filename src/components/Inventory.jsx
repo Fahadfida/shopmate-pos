@@ -40,7 +40,7 @@ function emptyForm() {
 function emptyPurchaseForm() {
   return {
     enabled: false,
-    mode: 'NEW', // 'NEW' (opening stock) | 'EXISTING' (restock existing item_id)
+    mode: 'NEW',
     existing_item_id: '',
     supplier_id: '',
     qty_received: '',
@@ -52,7 +52,7 @@ function emptyPurchaseForm() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Icons — 16px, 1.5 stroke
+// Icons
 // ─────────────────────────────────────────────────────────────
 const iconBase = {
   width: 16,
@@ -193,7 +193,7 @@ const inputStyle = {
 };
 
 // ─────────────────────────────────────────────────────────────
-// Inventory
+// Inventory Component
 // ─────────────────────────────────────────────────────────────
 export default function Inventory({ currentUser, showToast }) {
   const [items, setItems] = useState([]);
@@ -368,7 +368,6 @@ export default function Inventory({ currentUser, showToast }) {
       return;
     }
 
-    // Mode === 'NEW': Create product (+ optional opening purchase)
     const shouldRecordPurchase =
       purchaseForm.enabled || Boolean(supplierId) || qty > 0;
 
@@ -442,16 +441,13 @@ export default function Inventory({ currentUser, showToast }) {
         });
 
         if (!purRes?.success) {
-          // Attempt compensation delete if main process didn't wrap in a single transaction
           try {
             await ipc.invoke('delete-ledger-entry', {
               type: 'ITEMS',
               id: createdItemId,
               currentUser,
             });
-          } catch (_) {
-            // No-op if handler doesn't exist
-          }
+          } catch (_) {}
           toast(
             'Opening stock failed: ' +
               (purRes?.error || 'Could not record purchase'),
@@ -596,7 +592,6 @@ export default function Inventory({ currentUser, showToast }) {
         color: 'var(--ink-fg)',
       }}
     >
-      {/* Error banner */}
       {error && (
         <div
           role="alert"
@@ -861,11 +856,12 @@ export default function Inventory({ currentUser, showToast }) {
             )}
           </div>
         ) : viewMode === 'GRID' ? (
+          /* ─────────── FANCY GRID CARDS ─────────── */
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-              gap: '12px',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+              gap: '16px',
             }}
           >
             {filteredItems.map((item) => {
@@ -877,197 +873,55 @@ export default function Inventory({ currentUser, showToast }) {
                     background: archived ? 'var(--ink-1)' : 'var(--ink-0)',
                     border: '1px solid var(--ink-3)',
                     borderRadius: '12px',
-                    padding: '14px',
+                    overflow: 'hidden',
                     display: 'flex',
                     flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    gap: '12px',
                   }}
                 >
+                  {/* IMAGE HEADER WITH FLOATING ACTIONS */}
                   <div
                     style={{
+                      height: '140px',
+                      background: 'var(--ink-1)',
+                      borderBottom: '1px solid var(--ink-3)',
+                      position: 'relative',
                       display: 'flex',
-                      gap: '12px',
-                      alignItems: 'flex-start',
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: '48px',
-                        height: '48px',
-                        background: 'var(--ink-2)',
-                        borderRadius: '8px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '1px solid var(--ink-3)',
-                        overflow: 'hidden',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {item.image_path ? (
-                        <img
-                          src={item.image_path}
-                          alt={item.name}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                          }}
-                        />
-                      ) : (
-                        <span
-                          style={{
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            color: 'var(--ink-fg-3)',
-                          }}
-                        >
-                          {getInitials(item.name)}
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontSize: '0.85rem',
-                          fontWeight: 600,
-                          color: 'var(--ink-fg)',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                        }}
-                        title={item.name}
-                      >
-                        {item.name}
-                      </div>
-                      <div
-                        className="monospace"
-                        style={{
-                          fontSize: '0.7rem',
-                          color: 'var(--ink-fg-3)',
-                          marginTop: '2px',
-                        }}
-                      >
-                        {item.code}
-                      </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          gap: '6px',
-                          marginTop: '6px',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <span
-                          className="monospace tabular"
-                          style={{
-                            fontSize: '0.7rem',
-                            fontWeight: 500,
-                            color:
-                              item.stock_qty <= 5 && !archived
-                                ? 'var(--ink-danger)'
-                                : 'var(--ink-fg-2)',
-                            border: '1px solid var(--ink-3)',
-                            padding: '2px 6px',
-                            borderRadius: '6px',
-                          }}
-                        >
-                          {item.stock_qty} {item.unit || 'pcs'}
-                        </span>
-                        {archived && (
-                          <span
-                            style={{
-                              fontSize: '0.68rem',
-                              color: 'var(--ink-fg-3)',
-                            }}
-                          >
-                            Archived
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      borderTop: '1px solid var(--ink-3)',
-                      paddingTop: '10px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '4px',
-                      fontSize: '0.75rem',
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        color: 'var(--ink-fg-2)',
-                      }}
-                    >
-                      <span>Cost</span>
-                      <span className="monospace tabular">
-                        {fmt2(item.avg_cost)}
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        color: 'var(--ink-fg-2)',
-                      }}
-                    >
-                      <span>Min</span>
-                      <span className="monospace tabular">
-                        {fmt2(item.min_price)}
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        color: 'var(--ink-fg-2)',
-                      }}
-                    >
-                      <span>Max</span>
-                      <span className="monospace tabular">
-                        {fmt2(item.max_price)}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
                       alignItems: 'center',
-                      borderTop: '1px solid var(--ink-3)',
-                      paddingTop: '10px',
-                      gap: '6px',
+                      justifyContent: 'center',
                     }}
                   >
-                    <div>
-                      <div
+                    {item.image_path ? (
+                      <img
+                        src={item.image_path}
+                        alt={item.name}
                         style={{
-                          fontSize: '0.68rem',
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'contain',
+                        }}
+                      />
+                    ) : (
+                      <span
+                        style={{
+                          fontSize: '2.5rem',
+                          fontWeight: 700,
                           color: 'var(--ink-fg-3)',
                         }}
                       >
-                        Selling
-                      </div>
-                      <div
-                        className="monospace tabular"
-                        style={{
-                          fontSize: '0.95rem',
-                          fontWeight: 600,
-                          color: 'var(--ink-fg)',
-                        }}
-                      >
-                        {fmt2(item.selling_price)}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '4px' }}>
+                        {getInitials(item.name)}
+                      </span>
+                    )}
+
+                    {/* FLOATING BUTTONS */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: '8px',
+                        right: '8px',
+                        display: 'flex',
+                        gap: '6px',
+                      }}
+                    >
                       <button
                         type="button"
                         onClick={() => {
@@ -1075,23 +929,23 @@ export default function Inventory({ currentUser, showToast }) {
                           setEditMarginType('custom');
                           setIsEditModalOpen(true);
                         }}
-                        aria-label="Edit product"
+                        title="Edit Item"
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: '6px 8px',
-                          fontSize: '0.72rem',
-                          fontWeight: 500,
-                          background: 'var(--ink-1)',
-                          color: 'var(--ink-fg)',
+                          padding: '6px',
+                          background: 'var(--ink-0)',
                           border: '1px solid var(--ink-3)',
                           borderRadius: '6px',
                           cursor: 'pointer',
+                          color: 'var(--brand-primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                         }}
                       >
-                        <EditIcon /> Edit
+                        <EditIcon />
                       </button>
+
                       {confirmArchive === item.id ? (
                         <div style={{ display: 'flex', gap: '4px' }}>
                           <button
@@ -1106,6 +960,7 @@ export default function Inventory({ currentUser, showToast }) {
                               border: 'none',
                               borderRadius: '6px',
                               cursor: 'pointer',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                             }}
                           >
                             Confirm
@@ -1117,11 +972,12 @@ export default function Inventory({ currentUser, showToast }) {
                               padding: '6px 10px',
                               fontSize: '0.72rem',
                               fontWeight: 500,
-                              background: 'var(--ink-1)',
+                              background: 'var(--ink-0)',
                               color: 'var(--ink-fg-2)',
                               border: '1px solid var(--ink-3)',
                               borderRadius: '6px',
                               cursor: 'pointer',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                             }}
                           >
                             Cancel
@@ -1131,16 +987,20 @@ export default function Inventory({ currentUser, showToast }) {
                         <button
                           type="button"
                           onClick={() => setConfirmArchive(item.id)}
-                          aria-label={archived ? 'Reactivate' : 'Archive'}
+                          title={archived ? 'Reactivate' : 'Archive'}
                           style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            padding: '6px 8px',
-                            background: 'var(--ink-1)',
-                            color: 'var(--ink-fg-2)',
+                            padding: '6px',
+                            background: 'var(--ink-0)',
                             border: '1px solid var(--ink-3)',
                             borderRadius: '6px',
                             cursor: 'pointer',
+                            color: archived
+                              ? 'var(--ink-success)'
+                              : 'var(--ink-danger)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                           }}
                         >
                           {archived ? <RestoreIcon /> : <ArchiveIcon />}
@@ -1148,11 +1008,164 @@ export default function Inventory({ currentUser, showToast }) {
                       )}
                     </div>
                   </div>
+
+                  {/* CARD DETAILS */}
+                  <div
+                    style={{
+                      padding: '16px',
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '0.75rem',
+                        color: 'var(--brand-primary)',
+                        fontWeight: 600,
+                        marginBottom: '4px',
+                      }}
+                    >
+                      {item.code}
+                    </div>
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        fontSize: '0.9375rem',
+                        marginBottom: '8px',
+                        color: 'var(--ink-fg)',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                      title={item.name}
+                    >
+                      {item.name}
+                    </div>
+
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: '6px',
+                        marginBottom: '16px',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <span
+                        className="monospace tabular"
+                        style={{
+                          fontSize: '0.7rem',
+                          fontWeight: 500,
+                          color:
+                            item.stock_qty <= 5 && !archived
+                              ? 'var(--ink-danger)'
+                              : 'var(--ink-fg-2)',
+                          border: '1px solid var(--ink-3)',
+                          padding: '2px 6px',
+                          borderRadius: '6px',
+                        }}
+                      >
+                        {item.stock_qty} {item.unit || 'pcs'}
+                      </span>
+                      {archived && (
+                        <span
+                          style={{
+                            fontSize: '0.68rem',
+                            color: 'var(--ink-fg-3)',
+                            fontWeight: 500,
+                          }}
+                        >
+                          Archived
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Cost / Min / Max Block */}
+                    <div
+                      style={{
+                        borderTop: '1px solid var(--ink-3)',
+                        paddingTop: '10px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px',
+                        fontSize: '0.75rem',
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          color: 'var(--ink-fg-2)',
+                        }}
+                      >
+                        <span>Cost</span>
+                        <span className="monospace tabular">
+                          {fmt2(item.avg_cost)}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          color: 'var(--ink-fg-2)',
+                        }}
+                      >
+                        <span>Min</span>
+                        <span className="monospace tabular">
+                          {fmt2(item.min_price)}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          color: 'var(--ink-fg-2)',
+                        }}
+                      >
+                        <span>Max</span>
+                        <span className="monospace tabular">
+                          {fmt2(item.max_price)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Selling Price */}
+                    <div
+                      style={{
+                        marginTop: 'auto',
+                        borderTop: '1px solid var(--ink-3)',
+                        paddingTop: '10px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: '0.68rem',
+                          color: 'var(--ink-fg-3)',
+                        }}
+                      >
+                        Selling
+                      </div>
+                      <div
+                        className="monospace tabular"
+                        style={{
+                          fontSize: '1rem',
+                          fontWeight: 600,
+                          color: 'var(--ink-fg)',
+                        }}
+                      >
+                        {fmt2(item.selling_price)}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               );
             })}
           </div>
         ) : (
+          /* ─────────── LIST VIEW (UNCHANGED) ─────────── */
           <div
             style={{
               border: '1px solid var(--ink-3)',
@@ -1454,7 +1467,7 @@ export default function Inventory({ currentUser, showToast }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Shared / Intake Modal
+// Shared / Intake Modal (UNCHANGED)
 // ─────────────────────────────────────────────────────────────
 function ProductModal({
   title,
@@ -1902,7 +1915,7 @@ function ProductModal({
             </div>
           )}
 
-          {/* Opening stock / Supplier purchase block (New product collapsible, Restock existing always expanded) */}
+          {/* Opening stock / Supplier purchase block */}
           {isNew && purchaseForm && (
             <div
               style={{

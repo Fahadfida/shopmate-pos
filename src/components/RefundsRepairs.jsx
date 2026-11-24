@@ -67,37 +67,37 @@ const sansFamily = {
 const typeScale = {
   pageTitle: {
     ...sansFamily,
-    fontSize: '1.125rem', // 18px
+    fontSize: '1.125rem',
     fontWeight: 600,
     lineHeight: 1.3,
   },
   sectionTitle: {
     ...sansFamily,
-    fontSize: '0.9375rem', // 15px
+    fontSize: '0.9375rem',
     fontWeight: 600,
     lineHeight: 1.4,
   },
   body: {
     ...sansFamily,
-    fontSize: '0.875rem', // 14px
+    fontSize: '0.875rem',
     fontWeight: 400,
     lineHeight: 1.45,
   },
   label: {
     ...sansFamily,
-    fontSize: '0.8125rem', // 13px
+    fontSize: '0.8125rem',
     fontWeight: 500,
     lineHeight: 1.35,
   },
   helper: {
     ...sansFamily,
-    fontSize: '0.8125rem', // 13px
+    fontSize: '0.8125rem',
     fontWeight: 400,
     lineHeight: 1.4,
   },
   control: {
     ...sansFamily,
-    fontSize: '0.8125rem', // 13px
+    fontSize: '0.8125rem',
     fontWeight: 500,
     lineHeight: 1.3,
   },
@@ -187,7 +187,6 @@ export default function RefundsRepairs({ currentUser }) {
   const customItemId = useId();
   const qtyId = useId();
   const amountId = useId();
-  const statusId = useId();
   const descriptionId = useId();
   const catalogSearchId = useId();
 
@@ -196,7 +195,7 @@ export default function RefundsRepairs({ currentUser }) {
   const [catalogSearch, setCatalogSearch] = useState('');
   const [toasts, setToasts] = useState([]);
 
-  // Form State
+  // Form State (Removed status entirely)
   const [form, setForm] = useState({
     type: 'REFUND', // 'REFUND' or 'REPAIR'
     sale_id: '',
@@ -205,7 +204,6 @@ export default function RefundsRepairs({ currentUser }) {
     amount_refunded: '',
     customer_name: '',
     phone: '',
-    status: 'PENDING',
     description: '',
   });
 
@@ -257,6 +255,7 @@ export default function RefundsRepairs({ currentUser }) {
         ...form,
         item_id: isManualMode ? null : form.item_id,
         manual_item_name: isManualMode ? manualItemName.trim() : null,
+        status: 'COMPLETED', // 👈 Force complete status
         currentUser,
       };
       const res = await ipc.invoke('record-refund-repair', payload);
@@ -274,7 +273,6 @@ export default function RefundsRepairs({ currentUser }) {
           amount_refunded: '',
           customer_name: '',
           phone: '',
-          status: 'PENDING',
           description: '',
         });
         setItemSearchText('');
@@ -285,15 +283,6 @@ export default function RefundsRepairs({ currentUser }) {
         addToast('Error: ' + res.error, 'error');
       }
     }
-  };
-
-  const handleStatusUpdate = async (recordId, newStatus) => {
-    addToast(`Status updated to ${newStatus}`, 'success');
-    setRecentRecords(
-      recentRecords.map((r) =>
-        r.id === recordId ? { ...r, status: newStatus } : r,
-      ),
-    );
   };
 
   const filteredLookupItems = items.filter(
@@ -635,7 +624,7 @@ export default function RefundsRepairs({ currentUser }) {
                             ...sansFamily,
                             width: '100%',
                             padding: '10px 12px',
-                            fontSize: '0.8125rem', // 13px
+                            fontSize: '0.8125rem',
                             cursor: 'pointer',
                             background: 'transparent',
                             border: 'none',
@@ -659,7 +648,7 @@ export default function RefundsRepairs({ currentUser }) {
                           </span>
                           <span
                             style={{
-                              fontSize: '0.75rem', // 12px
+                              fontSize: '0.75rem',
                               color: 'var(--brand-primary)',
                               background: 'var(--ink-1)',
                               padding: '2px 8px',
@@ -741,25 +730,6 @@ export default function RefundsRepairs({ currentUser }) {
               </Field>
             </div>
 
-            {form.type === 'REPAIR' && (
-              <Field label="Repair status" htmlFor={statusId}>
-                <select
-                  id={statusId}
-                  style={inputStyle}
-                  value={form.status}
-                  onChange={(e) => setForm({ ...form, status: e.target.value })}
-                >
-                  <option value="PENDING">Pending (In workshop)</option>
-                  <option value="COMPLETED">
-                    Completed (Ready for pickup)
-                  </option>
-                  <option value="DELIVERED">
-                    Delivered (Handed to customer)
-                  </option>
-                </select>
-              </Field>
-            )}
-
             <Field label="Reason or repair details" htmlFor={descriptionId}>
               <textarea
                 id={descriptionId}
@@ -783,7 +753,7 @@ export default function RefundsRepairs({ currentUser }) {
                     ? 'var(--ink-danger)'
                     : 'var(--brand-primary)',
                 fontWeight: 500,
-                fontSize: '0.875rem', // 14px
+                fontSize: '0.875rem',
                 borderRadius: '8px',
                 border: 'none',
                 color: 'var(--ink-0)',
@@ -877,7 +847,7 @@ export default function RefundsRepairs({ currentUser }) {
                     style={{
                       display: 'grid',
                       gridTemplateColumns: '0.55fr 2fr 1.15fr 1fr 1fr',
-                      fontSize: '0.8125rem', // 13px
+                      fontSize: '0.8125rem',
                       alignItems: 'center',
                       background: 'var(--ink-1)',
                       padding: '10px 12px',
@@ -911,7 +881,7 @@ export default function RefundsRepairs({ currentUser }) {
                       </div>
                       <div
                         style={{
-                          fontSize: '0.75rem', // 12px
+                          fontSize: '0.75rem',
                           color: 'var(--ink-fg-3)',
                           marginTop: '2px',
                           fontVariantNumeric: 'tabular-nums',
@@ -937,46 +907,20 @@ export default function RefundsRepairs({ currentUser }) {
                       {Number(rec.amount_refunded || 0).toLocaleString()}
                     </span>
                     <div style={{ textAlign: 'center' }}>
-                      {rec.type === 'REPAIR' ? (
-                        <select
-                          aria-label={`Status for ${rec.item_name || 'repair'}`}
-                          value={rec.status || 'PENDING'}
-                          onChange={(e) =>
-                            handleStatusUpdate(rec.id, e.target.value)
-                          }
-                          style={{
-                            ...sansFamily,
-                            padding: '4px 8px',
-                            fontSize: '0.75rem', // 12px
-                            borderRadius: '6px',
-                            border: '1px solid var(--ink-3)',
-                            background: 'var(--ink-0)',
-                            color: 'var(--ink-fg)',
-                            fontWeight: 500,
-                            cursor: 'pointer',
-                            outline: 'none',
-                          }}
-                        >
-                          <option value="PENDING">Pending</option>
-                          <option value="COMPLETED">Completed</option>
-                          <option value="DELIVERED">Delivered</option>
-                        </select>
-                      ) : (
-                        <span
-                          style={{
-                            fontSize: '0.75rem', // 12px
-                            color: 'var(--ink-fg-3)',
-                            fontWeight: 500,
-                          }}
-                        >
-                          Refunded
-                        </span>
-                      )}
+                      <span
+                        style={{
+                          fontSize: '0.75rem',
+                          color: 'var(--ink-fg-3)',
+                          fontWeight: 500,
+                        }}
+                      >
+                        Completed
+                      </span>
                     </div>
                     <span
                       style={{
                         textAlign: 'right',
-                        fontSize: '0.75rem', // 12px
+                        fontSize: '0.75rem',
                         color: 'var(--ink-fg-3)',
                       }}
                     >
@@ -1031,7 +975,7 @@ export default function RefundsRepairs({ currentUser }) {
                     ...inputStyle,
                     minHeight: '34px',
                     padding: '6px 32px 6px 10px',
-                    fontSize: '0.8125rem', // 13px
+                    fontSize: '0.8125rem',
                   }}
                 />
                 <span
@@ -1119,7 +1063,7 @@ export default function RefundsRepairs({ currentUser }) {
                     ) : (
                       <span
                         style={{
-                          fontSize: '0.75rem', // 12px
+                          fontSize: '0.75rem',
                           fontWeight: 600,
                           color: 'var(--ink-fg-3)',
                         }}
@@ -1131,7 +1075,7 @@ export default function RefundsRepairs({ currentUser }) {
                   <div style={{ minWidth: 0 }}>
                     <div
                       style={{
-                        fontSize: '0.8125rem', // 13px
+                        fontSize: '0.8125rem',
                         fontWeight: 500,
                         color: 'var(--ink-fg)',
                         whiteSpace: 'nowrap',
@@ -1144,7 +1088,7 @@ export default function RefundsRepairs({ currentUser }) {
                     <div
                       className="monospace tabular"
                       style={{
-                        fontSize: '0.75rem', // 12px
+                        fontSize: '0.75rem',
                         color: 'var(--ink-fg-3)',
                         fontVariantNumeric: 'tabular-nums',
                       }}
